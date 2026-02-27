@@ -1,0 +1,2454 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>铁路安监现场检查查询系统</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        /* ========== 全局变量 & 基础样式 ========== */
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --primary-dark: #0d1b2a;
+            --accent: #c53030;
+            --accent-light: #e53e3e;
+            --success: #276749;
+            --warning: #c05621;
+            --info: #2b6cb0;
+            --bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text: #1a202c;
+            --text-secondary: #4a5568;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        /* ========== 头部导航 ========== */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 0;
+        }
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            backdrop-filter: blur(10px);
+        }
+        .logo-text { color: white; }
+        .logo-title { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
+        .logo-subtitle { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
+        
+        .nav { display: flex; gap: 8px; }
+        .nav-btn {
+            padding: 12px 24px;
+            color: rgba(255,255,255,0.85);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+        .nav-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+        .nav-btn.active { color: white; background: rgba(255,255,255,0.2); }
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background: var(--accent-light);
+            border-radius: 3px 3px 0 0;
+        }
+        
+        /* ========== 主容器 ========== */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .panel { display: none; animation: fadeIn 0.3s ease; }
+        .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* ========== 卡片通用 ========== */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #f8fafc, #fff);
+        }
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-title-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        .card-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            margin-left: 46px;
+        }
+        .card-body { padding: 24px; }
+        
+        /* ========== 统计栏 ========== */
+        .stats-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 16px 20px;
+            background: linear-gradient(to right, #edf2f7, #f7fafc);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        .stats-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stat-label { font-size: 0.875rem; color: var(--text-secondary); }
+        .stat-value { font-size: 0.95rem; font-weight: 600; color: var(--primary); }
+        .storage-bar {
+            width: 120px;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .storage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), #48bb78);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .storage-fill.warning { background: linear-gradient(90deg, var(--warning), #ed8936); }
+        .storage-fill.danger { background: linear-gradient(90deg, var(--accent), var(--accent-light)); }
+        
+        /* ========== 按钮系统 ========== */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1.2;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+        .btn:active { transform: translateY(0); }
+        .btn-lg { padding: 12px 24px; font-size: 1rem; }
+        
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; }
+        .btn-success { background: linear-gradient(135deg, var(--success), #38a169); color: white; }
+        .btn-warning { background: linear-gradient(135deg, var(--warning), #dd6b20); color: white; }
+        .btn-danger { background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; }
+        .btn-secondary { background: #edf2f7; color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-info { background: linear-gradient(135deg, var(--info), #4299e1); color: white; }
+        
+        .btn-small { padding: 6px 12px; font-size: 0.75rem; border-radius: 6px; }
+        
+        /* ========== 搜索框区域 ========== */
+        .search-box {
+            background: linear-gradient(to right, #ebf8ff, #f0fff4);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #bee3f8;
+            margin-bottom: 20px;
+        }
+        .keyword-list { margin-bottom: 16px; }
+        .keyword-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .keyword-row label {
+            width: 70px;
+            font-weight: 500;
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+        .keyword-row input {
+            flex: 1;
+            max-width: 400px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            background: white;
+            transition: all 0.2s;
+        }
+        .keyword-row input:focus {
+            outline: none;
+            border-color: var(--info);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+        .btn-remove {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #fed7d7;
+            color: var(--accent);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .btn-remove:hover { background: var(--accent); color: white; }
+        .btn-add {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #90cdf4;
+            background: rgba(255,255,255,0.5);
+            color: var(--info);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .btn-add:hover { background: white; border-color: var(--info); }
+        .btn-add:disabled {
+            border-color: #e2e8f0;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+        .search-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        
+        /* 电话模块专用搜索条 */
+        .phone-search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .phone-search-bar input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+        }
+        
+        /* ========== 结果统计条 ========== */
+        .results-stats {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 14px 18px;
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .results-stats-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .stat-highlight { font-size: 1.25rem; font-weight: 700; color: var(--info); }
+        
+        /* ========== 结果卡片 ========== */
+        .result-list { display: flex; flex-direction: column; gap: 16px; }
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid #cbd5e0;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .result-card:hover { box-shadow: var(--shadow-lg); transform: translateX(4px); }
+        
+        .result-card.level-a { border-left-color: var(--accent); background: linear-gradient(to right, rgba(197,48,48,0.03), white); }
+        .result-card.level-b { border-left-color: var(--warning); background: linear-gradient(to right, rgba(192,86,33,0.03), white); }
+        .result-card.level-c { border-left-color: var(--info); background: linear-gradient(to right, rgba(43,108,176,0.03), white); }
+        .result-card.level-hongxian { border-left-color: #742a2a; background: linear-gradient(to right, rgba(116,42,42,0.05), white); }
+        .result-card.level-kongbai { border-left-color: #718096; background: linear-gradient(to right, rgba(113,128,150,0.03), white); }
+        
+        .match-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: linear-gradient(135deg, #805ad5, #6b46c1);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            padding-right: 100px;
+        }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .tag-xingzhi { color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .tag-xz-a { background: linear-gradient(135deg, var(--accent), var(--accent-light)); }
+        .tag-xz-b { background: linear-gradient(135deg, var(--warning), #ed8936); }
+        .tag-xz-c { background: linear-gradient(135deg, var(--info), #4299e1); }
+        .tag-xz-hongxian { background: linear-gradient(135deg, #742a2a, #9b2c2c); }
+        .tag-xz-kongbai { background: linear-gradient(135deg, #718096, #a0aec0); }
+        .tag-category { background: #edf2f7; color: var(--text); border: 1px solid var(--border); }
+        .tag-time { background: #f7fafc; color: var(--text-secondary); border: 1px solid var(--border); font-size: 0.75rem; }
+        
+        .result-content {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 3px solid var(--info);
+        }
+        .result-content-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        .btn-copy {
+            padding: 6px 14px;
+            background: var(--info);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-copy:hover { background: var(--primary-light); }
+        .btn-copy.copied { background: var(--success); }
+        .result-text { line-height: 1.8; color: var(--text); font-size: 0.95rem; }
+        .highlight { background: #fef3c7; color: var(--accent); font-weight: 600; padding: 1px 3px; border-radius: 3px; }
+        
+        /* 电话卡片专用样式 */
+        .phone-link {
+            color: var(--info);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .phone-link:hover { text-decoration: underline; }
+        
+        /* ========== 规章制度卡片 ========== */
+        .rule-card-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        .rule-card-item:hover { box-shadow: var(--shadow-lg); border-color: #90cdf4; }
+        .rule-title { font-size: 1.1rem; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+        .rule-trade {
+            display: inline-block;
+            background: linear-gradient(135deg, #ebf8ff, #e6fffa);
+            color: var(--primary-light);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            border: 1px solid #90cdf4;
+        }
+        .rule-snippet {
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--text);
+            border-left: 3px solid var(--info);
+        }
+        .rule-highlight { background: #fef3c7; color: var(--accent); font-weight: 500; padding: 1px 4px; border-radius: 3px; }
+        
+        /* ========== 工作写实专用 ========== */
+        .diary-form {
+            background: linear-gradient(to right, #fffaf0, #f0fff4);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #fbd38d;
+            margin-bottom: 20px;
+        }
+        .diary-date-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .diary-date-row label { font-weight: 500; color: var(--primary); }
+        .diary-date-row input {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+        }
+        .diary-section { margin-bottom: 16px; }
+        .diary-section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .diary-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+        .diary-textarea:focus {
+            outline: none;
+            border-color: var(--info);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+        .diary-issue-row {
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .diary-issue-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 40px;
+            box-sizing: border-box;
+            padding-right: 40px;
+        }
+        .diary-issue-input:focus { outline: none; border-color: var(--info); }
+        .btn-remove-issue {
+            position: absolute;
+            top: 6px;
+            right: 0;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #fed7d7;
+            color: var(--accent);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-remove-issue:hover { background: var(--accent); color: white; }
+        .btn-add-issue {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #fbbf6e;
+            background: rgba(255,255,255,0.5);
+            color: var(--warning);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .btn-add-issue:hover { background: white; border-color: var(--warning); }
+        .btn-add-issue:disabled {
+            border-color: #e2e8f0;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+        .diary-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .diary-list { display: flex; flex-direction: column; gap: 16px; }
+        .diary-card {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .diary-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .diary-card-date { font-weight: 600; color: var(--primary); font-size: 1rem; }
+        .diary-card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .diary-work-block, .diary-issues-block {
+            margin-bottom: 12px;
+        }
+        .diary-work-header, .diary-issues-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .diary-work-title, .diary-issues-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .diary-work-content, .diary-issue-item-content {
+            background: #f7fafc;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .diary-issue-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .diary-issue-item-num {
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .diary-issue-item-content {
+            flex: 1;
+            background: #fff5f5;
+            padding: 10px;
+            border-left: 3px solid var(--accent);
+            min-width: 200px;
+        }
+        .diary-issue-item-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .diary-issue-item-actions .btn-small {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+        }
+        
+        /* ========== 空状态 ========== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+        
+        /* ========== 模态框 ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlide 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-content.wide { max-width: 700px; }
+        @keyframes modalSlide { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-header {
+            padding: 20px 24px;
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            color: white;
+            flex-shrink: 0;
+        }
+        .modal-title { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+        /* 规章详情文本域 - 调大默认高度 */
+        #rule-viewContent {
+            resize: vertical;
+            min-height: 300px;
+            width: 100%;
+        }
+        /* 编辑规章标题输入框 - 调大 */
+        #rule-editTitle {
+            font-size: 1rem;
+            padding: 12px 16px;
+        }
+        
+        /* ========== 目录列表 ========== */
+        .catalog-list { max-height: 50vh; overflow-y: auto; }
+        .catalog-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f7fafc;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        .catalog-item:hover { background: #ebf8ff; border-color: #90cdf4; }
+        .catalog-info { flex: 1; min-width: 0; }
+        .catalog-title {
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .catalog-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .catalog-trade {
+            background: #ebf8ff;
+            color: var(--info);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .catalog-actions { display: flex; gap: 6px; }
+        
+        /* ========== 加载动画 ========== */
+        .loading { text-align: center; padding: 40px; }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e2e8f0;
+            border-top-color: var(--info);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* ========== 页脚 ========== */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+        
+        /* ========== 响应式调整 ========== */
+        @media (max-width: 768px) {
+            .header-inner { flex-direction: column; padding: 12px 16px; }
+            .logo { padding: 8px 0; }
+            .nav { width: 100%; justify-content: center; }
+            .nav-btn { padding: 10px 16px; font-size: 0.85rem; border-radius: 6px; }
+            .nav-btn.active::after { display: none; }
+            
+            .main { padding: 16px; }
+            .card-header, .card-body { padding: 16px; }
+            
+            .stats-bar { flex-direction: column; align-items: stretch; }
+            .stats-left { justify-content: center; }
+            .btn-group { justify-content: center; }
+            
+            .keyword-row { flex-wrap: wrap; }
+            .keyword-row label { width: 100%; }
+            .keyword-row input { max-width: none; }
+            
+            .result-header { padding-right: 0; margin-top: 40px; }
+            .match-badge { top: 12px; left: 12px; right: auto; }
+            
+            .phone-search-bar { flex-direction: column; align-items: stretch; }
+            .phone-search-bar button { width: 100%; }
+            
+            .diary-date-row { flex-direction: column; align-items: stretch; }
+            
+            .diary-card-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            .diary-card-actions .btn-small {
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+            }
+            .diary-work-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .diary-work-header .btn-small {
+                width: 100%;
+            }
+            .diary-issue-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .diary-issue-item-actions {
+                justify-content: flex-end;
+                margin-top: 4px;
+            }
+            .diary-issue-item-actions .btn-small {
+                flex: 1;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">🛤️</div>
+                <div class="logo-text">
+                    <div class="logo-title">铁路安监现场检查查询系统</div>
+                    <div class="logo-subtitle">SAFETY INSPECTION QUERY SYSTEM</div>
+                </div>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" onclick="switchTab('issue')" id="tab-issue">
+                    <span>🔍</span> 检查问题库
+                </button>
+                <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule">
+                    <span>📋</span> 规章制度
+                </button>
+                <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary">
+                    <span>📝</span> 工作写实
+                </button>
+                <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone">
+                    <span>📞</span> 车站电话
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- 检查问题库 -->
+        <div id="panel-issue" class="panel active">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">🔍</div>
+                        检查问题库智能查询
+                    </div>
+                    <div class="card-subtitle">性质分级(A类/B类/C类/红线/空白) · 智能匹配(≥75%) · Excel导入导出</div>
+                </div>
+                <div class="card-body">
+                    <div class="stats-bar">
+                        <div class="stats-left">
+                            <div class="stat-item">
+                                <span class="stat-label">💾 存储:</span>
+                                <span class="stat-value" id="issue-storageText">计算中...</span>
+                                <div class="storage-bar"><div class="storage-fill" id="issue-storageBar" style="width:0%"></div></div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">记录数:</span>
+                                <span class="stat-value" id="issue-recordCount">0 条</span>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-success" onclick="issueImportExcel()">📥 导入Excel</button>
+                            <button class="btn btn-primary" onclick="issueExportExcel()">📤 导出Excel</button>
+                            <button class="btn btn-info" onclick="issueDownloadTemplate()">📄 模板</button>
+                            <button class="btn btn-warning" onclick="issueShowClear()">🗑️ 清空</button>
+                            <button class="btn btn-secondary" onclick="issueLoadDemo()">📋 示例</button>
+                        </div>
+                    </div>
+                    <input type="file" id="issue-fileInput" accept=".xlsx,.xls" onchange="issueHandleExcel(event)" style="display:none;">
+                    
+                    <div class="search-box">
+                        <div id="issue-keywordContainer" class="keyword-list"></div>
+                        <button class="btn-add" id="issue-btnAdd" onclick="issueAddKeyword()">+ 添加关键词 (最多4个)</button>
+                        <div class="search-actions">
+                            <button class="btn btn-primary btn-lg" onclick="issueDoSearch()">🔍 智能搜索</button>
+                            <button class="btn btn-secondary btn-lg" onclick="issueClearSearch()">重置条件</button>
+                        </div>
+                    </div>
+                    
+                    <div id="issue-statsBar" class="results-stats" style="display:none;">
+                        <div class="results-stats-left">
+                            <span>高匹配(≥75%): <span class="stat-highlight" id="issue-highMatchCount">0</span> 条</span>
+                            <span class="stat-muted" id="issue-lowMatchInfo" style="display:none;">(低匹配&lt;75%: <span id="issue-lowMatchCount" style="color:var(--accent);">0</span> 条隐藏)</span>
+                        </div>
+                        <button class="btn btn-secondary" id="issue-toggleLowMatchBtn" onclick="issueToggleLowMatch()" style="display:none;">显示低匹配</button>
+                    </div>
+                    
+                    <div id="issue-results"></div>
+                    <div id="issue-lowMatchResults" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 规章制度 -->
+        <div id="panel-rule" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">📋</div>
+                        规章制度智能查询
+                    </div>
+                    <div class="card-subtitle">多专业分类 · PDF/Word导入 · 智能检索</div>
+                </div>
+                <div class="card-body">
+                    <div class="control-bar stats-bar">
+                        <div class="control-stats stats-left">
+                            <span class="control-label">📚</span>
+                            <span class="control-value stat-value" id="rule-totalBadge" style="cursor:pointer;">0 条</span>
+                            <span class="control-divider">|</span>
+                            <span class="control-label">💾</span>
+                            <div class="storage-bar-mini storage-bar"><div class="storage-fill" id="rule-storageBar" style="width:0%"></div></div>
+                            <span class="control-value-small stat-value" id="rule-storageText">0/200MB</span>
+                        </div>
+                        <div class="control-btns btn-group">
+                            <button class="btn btn-import btn-success" id="rule-importBtn">📥 导入</button>
+                            <button class="btn btn-export btn-primary" id="rule-exportBtn">📤 导出</button>
+                            <button class="btn btn-catalog btn-info" id="rule-catalogBtn">📋 目录</button>
+                            <button class="btn btn-clear btn-warning" id="rule-clearBtn">🗑️ 清空</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:16px;">
+                        <label class="form-label">选择专业</label>
+                        <select id="rule-tradeSelect" class="form-select">
+                            <option value="">全部专业</option>
+                        </select>
+                    </div>
+
+                    <div class="search-box">
+                        <div id="rule-keywordContainer" class="keyword-list"></div>
+                        <button class="btn-add" id="rule-btnAdd">+ 添加关键词 (最多4个)</button>
+                        <div class="search-actions">
+                            <button class="btn btn-primary btn-lg" id="rule-searchBtn">🔍 智能搜索</button>
+                            <button class="btn btn-secondary btn-lg" id="rule-clearSearchBtn">重置条件</button>
+                        </div>
+                    </div>
+
+                    <input type="file" id="rule-fileInput" accept=".pdf,.doc,.docx,.json" style="display:none;" multiple>
+
+                    <div class="results-header">
+                        <span class="results-title">📋 查询结果</span>
+                        <span class="results-count" id="rule-resultCount">0 项</span>
+                    </div>
+
+                    <div id="rule-resultsList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <p>选择专业或输入关键词开始搜索</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工作写实（优化版） -->
+        <div id="panel-diary" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">📝</div>
+                        工作日写实
+                    </div>
+                    <div class="card-subtitle">每日工作内容 · 检查问题记录</div>
+                </div>
+                <div class="card-body">
+                    <div class="diary-form">
+                        <div class="diary-date-row">
+                            <label>📅 日期:</label>
+                            <input type="date" id="diary-date">
+                        </div>
+                        
+                        <div class="diary-section">
+                            <div class="diary-section-title">📋 工作内容</div>
+                            <textarea id="diary-work" class="diary-textarea" placeholder="请输入今日工作内容..." oninput="autoResize(this)"></textarea>
+                        </div>
+                        
+                        <div class="diary-section">
+                            <div class="diary-section-title">⚠️ 检查发现问题</div>
+                            <div id="diary-issues-container"></div>
+                            <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
+                        </div>
+                        
+                        <div class="diary-actions">
+                            <button class="btn btn-primary btn-lg" onclick="saveDiary()">💾 保存记录</button>
+                            <button class="btn btn-secondary btn-lg" onclick="clearDiaryForm()">重置</button>
+                        </div>
+                    </div>
+
+                    <div class="results-header">
+                        <span class="results-title">📚 历史记录</span>
+                        <span class="results-count" id="diary-count">0 条</span>
+                    </div>
+                    
+                    <div id="diary-list" class="diary-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📝</div>
+                            <p>暂无工作记录</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 车站电话查询 -->
+        <div id="panel-phone" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">📞</div>
+                        车站电话查询
+                    </div>
+                    <div class="card-subtitle">单位·线名·站名查询 · 市电一键拨号</div>
+                </div>
+                <div class="card-body">
+                    <div class="stats-bar">
+                        <div class="stats-left">
+                            <div class="stat-item">
+                                <span class="stat-label">💾 存储:</span>
+                                <span class="stat-value" id="phone-storageText">0 MB</span>
+                                <div class="storage-bar"><div class="storage-fill" id="phone-storageBar" style="width:0%"></div></div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">记录数:</span>
+                                <span class="stat-value" id="phone-recordCount">0 条</span>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-success" onclick="document.getElementById('phone-fileInput').click()">📥 导入Excel</button>
+                            <button class="btn btn-primary" onclick="phoneExportExcel()">📤 导出Excel</button>
+                            <button class="btn btn-info" onclick="phoneDownloadTemplate()">📄 模板</button>
+                            <button class="btn btn-warning" onclick="phoneShowClear()">🗑️ 清空</button>
+                            <button class="btn btn-secondary" onclick="phoneLoadDemo()">📋 示例</button>
+                        </div>
+                    </div>
+                    <input type="file" id="phone-fileInput" accept=".xlsx,.xls" style="display:none;">
+
+                    <div class="search-box">
+                        <div class="phone-search-bar">
+                            <input type="text" id="phone-searchInput" placeholder="输入站名、单位或线名">
+                            <button class="btn btn-primary btn-lg" onclick="phoneDoSearch()">🔍 搜索</button>
+                            <button class="btn btn-secondary btn-lg" onclick="phoneClearSearch()">重置</button>
+                        </div>
+                    </div>
+
+                    <div class="results-header">
+                        <span class="results-title">📞 查询结果</span>
+                        <span class="results-count" id="phone-resultCount">0 条</span>
+                    </div>
+
+                    <div id="phone-results" class="result-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📞</div>
+                            <p>暂无电话数据，请导入Excel或加载示例</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div>铁路安监现场检查查询系统 · 开发者：赵海兵</div>
+        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览</div>
+    </footer>
+
+    <!-- Modals -->
+    <div id="issue-clearModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><div class="modal-title">⚠️ 确认清空数据</div></div>
+            <div class="modal-body">
+                <p>确定要清空所有数据吗？此操作不可恢复！</p>
+                <p style="margin-top:12px;color:var(--accent);font-weight:600;">当前共有: <span id="issue-clearCount">0</span> 条记录</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="issueHideModal('issue-clearModal')">取消</button>
+                <button class="btn btn-danger" onclick="issueConfirmClear()">确认清空</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="issue-importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><div class="modal-title">📥 正在导入数据</div></div>
+            <div class="modal-body" style="text-align:center;">
+                <div class="spinner"></div>
+                <p id="issue-importStatus">正在解析Excel...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="rule-importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><div class="modal-title" id="rule-importTitle">📥 导入规章</div></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">选择专业</label>
+                    <select id="rule-importTrade" class="form-select">
+                        <option value="">-- 选择专业 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">或输入新专业</label>
+                    <input type="text" id="rule-importNewTrade" class="form-input" placeholder="新专业名称">
+                </div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px;">💡 选择专业后将开始导入文件</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeImportModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmImportTrade()">开始导入</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rule-catalogModal" class="modal">
+        <div class="modal-content wide">
+            <div class="modal-header"><div class="modal-title">📋 规章目录 <span id="rule-catalogStats" style="font-size:0.8rem;font-weight:normal;opacity:0.8;margin-left:10px;">共 0 条</span></div></div>
+            <div class="modal-body">
+                <div style="display:flex;gap:10px;margin-bottom:16px;">
+                    <input type="text" id="rule-catalogFilter" class="form-input" placeholder="🔍 搜索规章标题...">
+                    <select id="rule-catalogTradeFilter" class="form-select" style="width:150px;">
+                        <option value="">全部专业</option>
+                    </select>
+                </div>
+                <div class="catalog-list" id="rule-catalogList"><div class="empty-state">暂无规章</div></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="clearAllRules()">🗑️ 清空所有</button>
+                <button class="btn btn-secondary" onclick="closeModal('rule-catalogModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rule-viewModal" class="modal">
+        <div class="modal-content wide">
+            <div class="modal-header"><div class="modal-title" id="rule-viewTitle">规章详情</div></div>
+            <div class="modal-body">
+                <span class="rule-trade" id="rule-viewTrade"></span>
+                <textarea id="rule-viewContent" class="form-textarea" readonly style="min-height:300px; margin-top:12px; resize:vertical;"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rule-viewModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rule-editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><div class="modal-title">✏️ 编辑规章</div></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">规章标题</label>
+                    <input type="text" id="rule-editTitle" class="form-input" style="font-size:1rem; padding:12px 16px;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">选择专业</label>
+                    <select id="rule-editTrade" class="form-select"><option value="">-- 选择专业 --</option></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">或输入新专业</label>
+                    <input type="text" id="rule-editNewTrade" class="form-input" placeholder="新专业名称">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rule-editModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveRuleEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rule-exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><div class="modal-title">📤 按专业导出</div></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">选择要导出的专业</label>
+                    <select id="rule-exportTrade" class="form-select">
+                        <option value="">所有专业 (全部导出)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rule-exportModal')">取消</button>
+                <button class="btn btn-primary" onclick="doExport()">导出 JSON</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ========== 全局工具函数 ==========
+window.switchTab = function(tab) {
+    document.querySelectorAll('.nav-btn').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+};
+
+window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
+window.openModal = function(id) { document.getElementById(id).classList.add('active'); };
+
+window.autoResize = function(textarea) {
+    if (!textarea) return;
+    void textarea.offsetHeight;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.max(40, textarea.scrollHeight) + 'px';
+};
+
+window.addEventListener('resize', function() {
+    setTimeout(function() {
+        document.querySelectorAll('.diary-issue-input, .diary-textarea').forEach(function(el) {
+            autoResize(el);
+        });
+    }, 100);
+});
+
+// ========== Issue System ==========
+(function() {
+    const DB_NAME = 'RailwayIssueDB_v2', STORE_NAME = 'issues', DB_VERSION = 1;
+    let db = null, dataCache = [], keywordNum = 0, MAX_KEYWORDS = 4;
+    let showLowMatch = false, currentResults = [], currentKeywords = [], MATCH_THRESHOLD = 75;
+
+    async function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => { db = request.result; resolve(db); };
+            request.onupgradeneeded = (e) => {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains(STORE_NAME)) {
+                    const store = database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('性质', '性质', { unique: false });
+                    store.createIndex('datetime', 'datetime', { unique: false });
+                    store.createIndex('category', 'category', { unique: false });
+                }
+            };
+        });
+    }
+
+    async function saveData(dataArray) {
+        if (!db) await initDB();
+        await clearAllData();
+        const batchSize = 500;
+        for (let i = 0; i < dataArray.length; i += batchSize) {
+            await insertBatch(dataArray.slice(i, i + batchSize));
+        }
+        dataCache = dataArray;
+    }
+
+    function insertBatch(batch) {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            let count = 0;
+            batch.forEach(item => {
+                const request = store.put(item);
+                request.onsuccess = () => { count++; if (count === batch.length) resolve(); };
+                request.onerror = () => reject(request.error);
+            });
+        });
+    }
+
+    async function loadData() {
+        if (!db) await initDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+            request.onsuccess = () => { dataCache = request.result; resolve(dataCache); };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function clearAllData() {
+        if (!db) await initDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.clear();
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function updateStorage() {
+        try {
+            const data = await loadData(), count = data.length;
+            let sizeMB = 0;
+            if (count > 0) {
+                const sample = JSON.stringify(data.slice(0, 10));
+                const avgSize = sample.length / Math.min(10, count);
+                sizeMB = (avgSize * count * 2 / 1024 / 1024).toFixed(2);
+            }
+            document.getElementById('issue-recordCount').textContent = count + ' 条';
+            document.getElementById('issue-storageText').textContent = sizeMB + ' MB';
+            const percent = Math.min((sizeMB / 50) * 100, 100);
+            const bar = document.getElementById('issue-storageBar');
+            bar.style.width = percent + '%';
+            if (percent > 80) bar.className = 'storage-fill danger';
+            else if (percent > 60) bar.className = 'storage-fill warning';
+            else bar.className = 'storage-fill';
+        } catch (e) {}
+    }
+
+    window.issueAddKeyword = function() {
+        if (keywordNum >= MAX_KEYWORDS) return;
+        keywordNum++;
+        const container = document.getElementById('issue-keywordContainer');
+        const div = document.createElement('div');
+        div.className = 'keyword-row';
+        div.id = 'issue-kw_' + keywordNum;
+        div.innerHTML = '<label>关键词' + keywordNum + '</label><input type="text" id="issue-input_' + keywordNum + '" placeholder="输入关键词' + keywordNum + '" onkeypress="issueHandleKeyPress(event,' + keywordNum + ')">' + (keywordNum > 1 ? '<button class="btn-remove" onclick="issueRemoveKeyword(' + keywordNum + ')">×</button>' : '');
+        container.appendChild(div);
+        setTimeout(() => document.getElementById('issue-input_' + keywordNum).focus(), 100);
+        issueUpdateAddBtn();
+    };
+
+    window.issueRemoveKeyword = function(n) {
+        const el = document.getElementById('issue-kw_' + n);
+        if (el) el.remove();
+        const items = document.querySelectorAll('#issue-keywordContainer .keyword-row');
+        keywordNum = 0;
+        items.forEach((item) => {
+            keywordNum++;
+            item.id = 'issue-kw_' + keywordNum;
+            item.querySelector('label').textContent = '关键词' + keywordNum;
+            const input = item.querySelector('input');
+            input.id = 'issue-input_' + keywordNum;
+            input.placeholder = '输入关键词' + keywordNum;
+            input.setAttribute('onkeypress', 'issueHandleKeyPress(event,' + keywordNum + ')');
+            const btn = item.querySelector('.btn-remove');
+            if (btn) {
+                if (keywordNum === 1) btn.remove();
+                else btn.setAttribute('onclick', 'issueRemoveKeyword(' + keywordNum + ')');
+            }
+        });
+        issueUpdateAddBtn();
+    };
+
+    function issueUpdateAddBtn() {
+        const btn = document.getElementById('issue-btnAdd');
+        if (keywordNum >= MAX_KEYWORDS) {
+            btn.disabled = true;
+            btn.textContent = '已达到最大关键词数量(4个)';
+        } else {
+            btn.disabled = false;
+            btn.textContent = '+ 添加关键词 (还可添加' + (MAX_KEYWORDS - keywordNum) + '个)';
+        }
+    }
+
+    window.issueHandleKeyPress = function(event, currentIndex) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (currentIndex < MAX_KEYWORDS && currentIndex === keywordNum) issueAddKeyword();
+            else if (currentIndex < keywordNum) document.getElementById('issue-input_' + (currentIndex + 1)).focus();
+            else issueDoSearch();
+        }
+    };
+
+    window.issueClearSearch = function() {
+        document.getElementById('issue-keywordContainer').innerHTML = '';
+        keywordNum = 0;
+        issueAddKeyword();
+        document.getElementById('issue-results').innerHTML = '';
+        document.getElementById('issue-lowMatchResults').innerHTML = '';
+        document.getElementById('issue-statsBar').style.display = 'none';
+        showLowMatch = false;
+    };
+
+    function getXingzhi(item) {
+        if (item['性质'] !== undefined && item['性质'] !== null && item['性质'] !== '') return String(item['性质']).trim();
+        const fields = ['xingzhi', '问题库性质', '等级', '级别', 'level', '类型', '分类'];
+        for (let field of fields) {
+            if (item[field] !== undefined && item[field] !== null && item[field] !== '') return String(item[field]).trim();
+        }
+        return '空白';
+    }
+
+    window.issueDoSearch = async function() {
+        const keywords = [];
+        for (let i = 1; i <= keywordNum; i++) {
+            const val = document.getElementById('issue-input_' + i)?.value.trim();
+            if (val) keywords.push(val);
+        }
+        if (keywords.length === 0) { alert('请输入至少一个关键词'); return; }
+        document.getElementById('issue-results').innerHTML = '<div class="loading"><div class="spinner"></div><p>正在搜索...</p></div>';
+        const data = dataCache.length > 0 ? dataCache : await loadData();
+        setTimeout(() => {
+            const results = [];
+            data.forEach(item => {
+                const xingzhi = getXingzhi(item);
+                const text = (xingzhi + ' ' + (item.category || '') + ' ' + (item.content || '')).toLowerCase();
+                let match = 0;
+                keywords.forEach(k => { if (text.includes(k.toLowerCase())) match++; });
+                if (match > 0) {
+                    const matchRate = Math.round((match / keywords.length) * 100);
+                    results.push({ ...item, matchCount: match, totalKw: keywords.length, matchRate: matchRate, xingzhi: xingzhi });
+                }
+            });
+            results.sort((a, b) => { if (b.matchCount !== a.matchCount) return b.matchCount - a.matchCount; return new Date(b.datetime || 0) - new Date(a.datetime || 0); });
+            currentResults = results; currentKeywords = keywords;
+            issueDisplayResults(results, keywords);
+        }, 50);
+    };
+
+    function issueDisplayResults(results, keywords) {
+        const container = document.getElementById('issue-results'), lowContainer = document.getElementById('issue-lowMatchResults'), stats = document.getElementById('issue-statsBar');
+        const highMatch = results.filter(r => r.matchRate >= MATCH_THRESHOLD), lowMatch = results.filter(r => r.matchRate < MATCH_THRESHOLD);
+        stats.style.display = 'flex';
+        document.getElementById('issue-highMatchCount').textContent = highMatch.length;
+        const lowMatchInfo = document.getElementById('issue-lowMatchInfo'), toggleBtn = document.getElementById('issue-toggleLowMatchBtn');
+        if (lowMatch.length > 0) {
+            lowMatchInfo.style.display = 'inline';
+            document.getElementById('issue-lowMatchCount').textContent = lowMatch.length;
+            toggleBtn.style.display = 'inline-block';
+            toggleBtn.textContent = showLowMatch ? '🔼 隐藏低匹配' : '👁️ 显示低匹配';
+        } else { lowMatchInfo.style.display = 'none'; toggleBtn.style.display = 'none'; }
+        if (highMatch.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>未找到高匹配度结果（≥' + MATCH_THRESHOLD + '%）</p></div>';
+        } else {
+            container.innerHTML = '<div class="result-list">' + highMatch.map(item => issueCreateResultCard(item, keywords)).join('') + '</div>';
+        }
+        if (showLowMatch && lowMatch.length > 0) {
+            lowContainer.style.display = 'block';
+            lowContainer.innerHTML = '<div class="low-match-section"><div class="low-match-header"><span class="low-match-title">📝 低匹配度结果（<' + MATCH_THRESHOLD + '%匹配，' + lowMatch.length + '条）</span></div><div class="result-list">' + lowMatch.map(item => issueCreateResultCard(item, keywords)).join('') + '</div></div>';
+        } else { lowContainer.style.display = 'none'; lowContainer.innerHTML = ''; }
+    }
+
+    function issueCreateResultCard(item, keywords) {
+        let xingzhi = item.xingzhi || getXingzhi(item), levelClass = 'level-kongbai', xingzhiClass = 'tag-xz-kongbai', xz = String(xingzhi).trim();
+        if (xz === 'A类' || xz.includes('A')) { levelClass = 'level-a'; xingzhiClass = 'tag-xz-a'; }
+        else if (xz === 'B类' || xz.includes('B')) { levelClass = 'level-b'; xingzhiClass = 'tag-xz-b'; }
+        else if (xz === 'C类' || xz.includes('C')) { levelClass = 'level-c'; xingzhiClass = 'tag-xz-c'; }
+        else if (xz === '红线' || xz.includes('红线')) { levelClass = 'level-hongxian'; xingzhiClass = 'tag-xz-hongxian'; }
+        else if (xz === '空白' || xz === '' || xz.includes('空白')) { levelClass = 'level-kongbai'; xingzhiClass = 'tag-xz-kongbai'; xingzhi = '空白'; }
+        else { levelClass = 'level-kongbai'; xingzhiClass = 'tag-xz-kongbai'; }
+        let content = item.content || '';
+        keywords.forEach(k => {
+            const reg = new RegExp('(' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+            content = content.replace(reg, '<span class="highlight">$1</span>');
+        });
+        return '<div class="result-card ' + levelClass + '"><div class="match-badge">' + item.matchCount + '/' + item.totalKw + ' 匹配 ' + item.matchRate + '%</div><div class="result-header"><span class="tag tag-xingzhi ' + xingzhiClass + '">' + xingzhi + '</span><span class="tag tag-category">' + (item.category || '其他') + '</span><span class="tag tag-time">📅 ' + (item.datetime || '无日期') + '</span></div><div class="result-content"><div class="result-content-header"><button class="btn-copy" onclick="issueCopyContent(this)">📋 复制</button></div><div class="result-text" data-content="' + encodeURIComponent(content.replace(/"/g, '&quot;')) + '">' + content + '</div></div></div>';
+    }
+
+    window.issueCopyContent = function(btn) {
+        const contentDiv = btn.closest('.result-content').querySelector('.result-text'), encodedContent = contentDiv.getAttribute('data-content'), htmlContent = decodeURIComponent(encodedContent), tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent; const plainText = tempDiv.textContent || tempDiv.innerText || '';
+        navigator.clipboard.writeText(plainText).then(() => {
+            btn.classList.add('copied'); btn.textContent = '✅ 已复制';
+            setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 复制'; }, 2000);
+        }).catch(() => {
+            const textarea = document.createElement('textarea'); textarea.value = plainText; textarea.style.position = 'fixed'; textarea.style.opacity = '0'; document.body.appendChild(textarea); textarea.select();
+            try { document.execCommand('copy'); btn.classList.add('copied'); btn.textContent = '✅ 已复制'; setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 复制'; }, 2000); } catch (e) { alert('复制失败'); }
+            document.body.removeChild(textarea);
+        });
+    };
+
+    window.issueToggleLowMatch = function() { showLowMatch = !showLowMatch; if (currentResults.length > 0) issueDisplayResults(currentResults, currentKeywords); };
+    window.issueImportExcel = function() { document.getElementById('issue-fileInput').click(); };
+
+    window.issueHandleExcel = async function(e) {
+        const file = e.target.files[0]; if (!file) return;
+        openModal('issue-importModal');
+        try {
+            const data = await file.arrayBuffer(), workbook = XLSX.read(data, { type: 'array' }), firstSheet = workbook.Sheets[workbook.SheetNames[0]], jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            if (jsonData.length < 2) throw new Error('Excel文件数据不足');
+            const headers = jsonData[0].map(h => String(h).trim());
+            const findCol = (names) => { for (let i = 0; i < headers.length; i++) { const header = headers[i].toLowerCase().replace(/\s/g, ''); for (let name of names) { if (header === name.toLowerCase() || header.includes(name.toLowerCase())) return i; } } return -1; };
+            const cols = { xingzhi: findCol(['性质', '问题库性质', '等级', '级别', 'level']), datetime: findCol(['时间', '日期', 'datetime', 'date']), category: findCol(['类别', '专业', 'category', '项目']), content: findCol(['内容', '描述', 'content', '问题', '问题描述']) };
+            if (cols.content === -1) throw new Error('未找到"内容"列');
+            const newData = []; let skipCount = 0;
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i]; if (!row || row.length === 0) { skipCount++; continue; }
+                const content = cols.content !== -1 ? String(row[cols.content] || '').trim() : ''; if (!content) { skipCount++; continue; }
+                let xz = '空白'; if (cols.xingzhi !== -1 && row[cols.xingzhi] !== undefined && row[cols.xingzhi] !== null) { xz = String(row[cols.xingzhi]).trim(); if (xz === '') xz = '空白'; }
+                newData.push({ id: Date.now() + i, '性质': xz, datetime: cols.datetime !== -1 ? formatExcelDate(row[cols.datetime]) : new Date().toLocaleString('zh-CN'), category: cols.category !== -1 ? String(row[cols.category] || '其他').trim() : '其他', content: content });
+            }
+            if (newData.length === 0) throw new Error('未找到有效数据');
+            const xzStats = {}; newData.forEach(d => { const key = d['性质'] || '空白'; xzStats[key] = (xzStats[key] || 0) + 1; });
+            const existingCount = dataCache.length; let finalData = newData, msg = '成功解析 ' + newData.length + ' 条记录';
+            if (Object.keys(xzStats).length > 0) msg += '\n性质分布: ' + Object.entries(xzStats).map(([k, v]) => k + '=' + v + '条').join(', ');
+            if (existingCount > 0) { const action = confirm(msg + '\n\n当前已有 ' + existingCount + ' 条记录。\n点击"确定"：覆盖现有数据\n点击"取消"：追加合并'); if (!action) finalData = [...dataCache, ...newData]; } else alert(msg);
+            document.getElementById('issue-importStatus').textContent = '正在保存...';
+            await saveData(finalData); await updateStorage(); closeModal('issue-importModal');
+        } catch (err) { closeModal('issue-importModal'); alert('导入失败: ' + err.message); }
+        e.target.value = '';
+    };
+
+    function formatExcelDate(cell) {
+        if (!cell) return new Date().toLocaleString('zh-CN');
+        if (typeof cell === 'number') { const date = XLSX.SSF.parse_date_code(cell); if (date) return date.y + '-' + String(date.m).padStart(2, '0') + '-' + String(date.d).padStart(2, '0') + ' ' + String(date.H).padStart(2, '0') + ':' + String(date.M).padStart(2, '0'); }
+        return String(cell);
+    }
+
+    window.issueExportExcel = function() {
+        if (dataCache.length === 0) { alert('没有数据可导出'); return; }
+        const exportData = dataCache.map(item => ({ '性质': getXingzhi(item), '时间': item.datetime, '类别': item.category, '问题描述': item.content }));
+        const ws = XLSX.utils.json_to_sheet(exportData), wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '问题库数据'); ws['!cols'] = [{ wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 100 }];
+        XLSX.writeFile(wb, '铁路检查问题库_' + new Date().toISOString().slice(0, 10) + '_' + dataCache.length + '条.xlsx');
+    };
+
+    window.issueDownloadTemplate = function() {
+        const template = [{ '性质': 'A类', '时间': '2025-12-29 17:09', '类别': '消防安全', '问题描述': '示例：A类问题描述...' }, { '性质': 'B类', '时间': '2025-12-29 16:32', '类别': '规章制度', '问题描述': '示例：B类问题描述...' }, { '性质': 'C类', '时间': '2025-12-29 10:00', '类别': '设备管理', '问题描述': '示例：C类问题描述...' }, { '性质': '红线', '时间': '2025-12-29 09:00', '类别': '安全红线', '问题描述': '示例：红线问题描述...' }, { '性质': '空白', '时间': '2025-12-29 08:00', '类别': '待分类', '问题描述': '示例：空白性质问题描述...' }];
+        const ws = XLSX.utils.json_to_sheet(template), wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '导入模板'); ws['!cols'] = [{ wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 100 }];
+        XLSX.writeFile(wb, '问题库导入模板.xlsx');
+    };
+
+    window.issueLoadDemo = async function() { if (confirm('确定加载示例数据吗？将覆盖现有数据')) await issueLoadDemoData(); };
+    async function issueLoadDemoData() {
+        const demo = [{ id: 1, '性质': 'A类', datetime: '2025-12-29 17:09', category: '消防安全', content: '兰州高铁基础设施段动车所信号工区遗漏机械室门口的七氟丙烷消防柜柜门无法打开。' }, { id: 2, '性质': 'B类', datetime: '2025-12-29 16:32', category: '规章制度', content: '检查兰州高铁基础设施段注浆施工，4号道口南侧汽车吊吊装作业时支腿下未放垫木。' }, { id: 3, '性质': 'C类', datetime: '2025-12-29 10:00', category: '设备管理', content: '检查发现设备标识不清，台账记录不完整。' }, { id: 4, '性质': '红线', datetime: '2025-12-29 09:00', category: '安全红线', content: '触碰安全红线：未设置防护上道作业。' }, { id: 5, '性质': '空白', datetime: '2025-12-29 08:00', category: '待分类', content: '问题描述暂未完成性质判定。' }];
+        await saveData(demo); await updateStorage(); alert('示例数据已加载');
+    }
+
+    window.issueShowClear = function() { document.getElementById('issue-clearCount').textContent = dataCache.length; openModal('issue-clearModal'); };
+    window.issueHideModal = function(id) { closeModal(id); };
+    window.issueConfirmClear = async function() {
+        try { await clearAllData(); dataCache = []; await updateStorage(); closeModal('issue-clearModal'); document.getElementById('issue-results').innerHTML = ''; document.getElementById('issue-lowMatchResults').innerHTML = ''; document.getElementById('issue-statsBar').style.display = 'none'; alert('所有数据已清空'); } catch (e) { alert('清空失败: ' + e.message); }
+    };
+
+    window.addEventListener('load', async function() {
+        try { await initDB(); await updateStorage(); issueAddKeyword(); const data = await loadData(); if (data.length === 0) await issueLoadDemoData(); } catch (e) { alert('初始化失败: ' + e.message); }
+    });
+
+    window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
+})();
+
+// ========== Rule System ==========
+(function() {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    let rules = []; const STORAGE_KEY = 'railway_rules_v1', MAX_STORAGE_SIZE = 200 * 1024 * 1024;
+    const sampleRules = [{ trade: '车务', title: '接发列车作业标准', content: '接发列车时，必须办理行车凭证。\n列车进站应确认信号开放。\n接发列车人员应严格执行眼看、手指、口述制度。' }, { trade: '车务', title: '调车作业细则', content: '调车作业前必须排风摘管，核对计划。\n驼峰调车严格控制推送速度。\n铁鞋制动时，严禁使用不符合标准的铁鞋。' }, { trade: '机务', title: '机车牵引操作规', content: '机车起动前确认制动缸压力，鸣笛动车。\n牵引运行中注意接触网电压，通过分相区断电降弓。' }, { trade: '工务', title: '线路维修安全规则', content: '天窗点内方可上道作业。\n作业前后清点工机具。\n无缝线路作业必须测量轨温，防止胀轨跑道。' }, { trade: '电务', title: '信号设备检修规程', content: '信号机显示距离应符合标准。\n轨道电路电压调整在规定范围。\n电缆绝缘测试每月一次。' }, { trade: '供电', title: '接触网安全工作规程', content: 'V停作业必须穿戴绝缘靴手套。\n地线接设位置正确，验电接地。\n作业车平台升降严禁侵入邻线。' }];
+    let keywordCount = 0, MAX_KEYWORDS = 4, pendingFiles = [], isProcessing = false, currentEditIndex = null;
+
+    function saveToStorage() { 
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rules)); updateStorageInfo(); return true; } 
+        catch (e) { if (e.name === 'QuotaExceededError') alert('存储空间不足！'); else alert('保存失败：' + e.message); return false; } 
+    }
+    function loadFromStorage() { 
+        try { const data = localStorage.getItem(STORAGE_KEY); if (data) { const parsed = JSON.parse(data); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } } 
+        catch (e) {} return null; 
+    }
+    function updateStorageInfo() { 
+        try { 
+            const data = localStorage.getItem(STORAGE_KEY) || '', size = new Blob([data]).size, percent = Math.min(100, (size / MAX_STORAGE_SIZE) * 100); 
+            document.getElementById('rule-storageBar').style.width = percent + '%'; 
+            document.getElementById('rule-storageText').textContent = (size / 1024 / 1024).toFixed(2) + '/200MB'; 
+            const bar = document.getElementById('rule-storageBar'); 
+            bar.classList.remove('warning', 'danger'); 
+            if (percent > 80) bar.classList.add('danger'); else if (percent > 60) bar.classList.add('warning'); 
+        } catch (e) { document.getElementById('rule-storageText').textContent = '未知'; } 
+    }
+    function updateTotalBadge() { document.getElementById('rule-totalBadge').textContent = rules.length + ' 条'; document.getElementById('rule-resultCount').textContent = rules.length + ' 项'; }
+    
+    function refreshTradeSelect() { 
+        const select = document.getElementById('rule-tradeSelect'), currentValue = select.value;
+        const tradesSet = new Set(); rules.forEach(rule => tradesSet.add(rule.trade));
+        const sortedTrades = Array.from(tradesSet).sort((a, b) => a.localeCompare(b, 'zh'));
+        select.innerHTML = '<option value="">全部专业</option>';
+        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; select.appendChild(option); });
+        if (currentValue && sortedTrades.includes(currentValue)) select.value = currentValue; else select.value = '';
+        
+        const importSelect = document.getElementById('rule-importTrade');
+        importSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
+        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; importSelect.appendChild(option); });
+        
+        const exportSelect = document.getElementById('rule-exportTrade');
+        exportSelect.innerHTML = '<option value="">所有专业 (全部导出)</option>';
+        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; exportSelect.appendChild(option); });
+        
+        const editSelect = document.getElementById('rule-editTrade');
+        editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
+        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option); });
+        
+        const catalogFilter = document.getElementById('rule-catalogTradeFilter');
+        catalogFilter.innerHTML = '<option value="">全部专业</option>';
+        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; catalogFilter.appendChild(option); });
+    }
+    
+    function escapeHtml(unsafe) { return unsafe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
+    function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    
+    function highlightKeywords(text, keywords) { 
+        if (keywords.length === 0) return escapeHtml(text); 
+        let result = escapeHtml(text); 
+        keywords.forEach(kw => { 
+            if (!kw.trim()) return; 
+            const regex = new RegExp('(' + escapeRegExp(kw) + ')', 'gi'); 
+            result = result.replace(regex, '<span class="rule-highlight">$1</span>'); 
+        }); 
+        return result; 
+    }
+    
+    function getSnippet(content, keywords) { 
+        if (keywords.length === 0) { const preview = content.substring(0, 200); return escapeHtml(preview) + (content.length > 200 ? '…' : ''); }
+        const paragraphs = content.split(/\r?\n/).filter(p => p.trim()), lowerKeywords = keywords.map(kw => kw.toLowerCase());
+        const matched = paragraphs.filter(para => lowerKeywords.every(kw => para.toLowerCase().includes(kw)));
+        if (matched.length === 0) { const preview = content.substring(0, 200); return escapeHtml(preview) + (content.length > 200 ? '…' : ''); }
+        return matched.map(para => '<p>' + highlightKeywords(para, keywords) + '</p>').join('');
+    }
+    
+    function renderResults() { 
+        const trade = document.getElementById('rule-tradeSelect').value, keywords = getKeywords();
+        if (trade === '' && keywords.length === 0) {
+            document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
+            document.getElementById('rule-resultCount').textContent = '0 项';
+            return;
+        }
+        let filtered = rules; 
+        if (trade !== '') filtered = filtered.filter(r => r.trade === trade);
+        if (keywords.length > 0) {
+            filtered = filtered.filter(r => r.content.toLowerCase().includes(keywords[0].toLowerCase()));
+        }
+        document.getElementById('rule-resultCount').textContent = filtered.length + ' 项';
+        if (filtered.length === 0) { 
+            document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>没有匹配的规章</p></div>'; 
+            return; 
+        }
+        let html = '<div class="result-list">';
+        filtered.forEach(rule => { 
+            html += '<div class="rule-card-item"><div class="rule-title">' + escapeHtml(rule.title) + '</div><span class="rule-trade">' + escapeHtml(rule.trade) + '</span><div class="rule-snippet">' + getSnippet(rule.content, keywords) + '</div></div>'; 
+        });
+        html += '</div>';
+        document.getElementById('rule-resultsList').innerHTML = html;
+    }
+    
+    function getKeywords() { 
+        const keywords = []; 
+        for (let i = 1; i <= keywordCount; i++) { 
+            const kw = document.getElementById('rule-input_' + i)?.value.trim(); 
+            if (kw) keywords.push(kw); 
+        } 
+        return keywords; 
+    }
+    
+    function addKeywordInput() { 
+        if (keywordCount >= MAX_KEYWORDS) return; 
+        keywordCount++; 
+        const container = document.getElementById('rule-keywordContainer');
+        const div = document.createElement('div');
+        div.className = 'keyword-row';
+        div.id = 'rule-kw_' + keywordCount;
+        div.innerHTML = '<label>关键词' + keywordCount + '</label><input type="text" id="rule-input_' + keywordCount + '" placeholder="输入关键词' + keywordCount + '">' + (keywordCount > 1 ? '<button class="btn-remove" onclick="removeRuleKeyword(' + keywordCount + ')">×</button>' : '');
+        container.appendChild(div);
+        setTimeout(() => document.getElementById('rule-input_' + keywordCount).focus(), 100);
+        updateAddBtn();
+    }
+    
+    window.removeRuleKeyword = function(n) {
+        const el = document.getElementById('rule-kw_' + n);
+        if (el) el.remove();
+        const items = document.querySelectorAll('#rule-keywordContainer .keyword-row');
+        keywordCount = 0;
+        items.forEach((item) => {
+            keywordCount++;
+            item.id = 'rule-kw_' + keywordCount;
+            item.querySelector('label').textContent = '关键词' + keywordCount;
+            const input = item.querySelector('input');
+            input.id = 'rule-input_' + keywordCount;
+            input.placeholder = '输入关键词' + keywordCount;
+            const btn = item.querySelector('.btn-remove');
+            if (btn) {
+                if (keywordCount === 1) btn.remove();
+                else btn.setAttribute('onclick', 'removeRuleKeyword(' + keywordCount + ')');
+            }
+        });
+        updateAddBtn();
+    };
+    
+    function updateAddBtn() {
+        const btn = document.getElementById('rule-btnAdd');
+        if (keywordCount >= MAX_KEYWORDS) { btn.disabled = true; btn.textContent = '已达到最大关键词数量(4个)'; }
+        else { btn.disabled = false; btn.textContent = '+ 添加关键词 (还可添加' + (MAX_KEYWORDS - keywordCount) + '个)'; }
+    }
+    
+    function clearSearch() {
+        document.getElementById('rule-keywordContainer').innerHTML = '';
+        keywordCount = 0;
+        addKeywordInput();
+        document.getElementById('rule-tradeSelect').value = '';
+        renderResults();
+    }
+    
+    function findDuplicate(title) { return rules.findIndex(r => r.title.toLowerCase().trim() === title.toLowerCase().trim()); }
+    
+    window.pendingImportFiles = [];
+    window.pendingImportTrade = '';
+    
+    function handleImportClick() {
+        if (isProcessing) { alert('正在处理中'); return; }
+        const input = document.getElementById('rule-fileInput');
+        input.onchange = (e) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            window.pendingImportFiles = Array.from(files);
+            openModal('rule-importModal');
+            e.target.value = '';
+        };
+        input.click();
+    }
+    
+    window.closeImportModal = function() { closeModal('rule-importModal'); window.pendingImportFiles = []; }
+    
+    window.confirmImportTrade = async function() {
+        let trade = document.getElementById('rule-importTrade').value;
+        const newTrade = document.getElementById('rule-importNewTrade').value.trim();
+        if (newTrade) trade = newTrade;
+        if (!trade) { alert('请选择或输入专业'); return; }
+        window.pendingImportTrade = trade;
+        closeModal('rule-importModal');
+        await processFiles(window.pendingImportFiles, trade);
+    }
+    
+    async function processFiles(files, trade) {
+        isProcessing = true;
+        const btn = document.getElementById('rule-importBtn');
+        let successCount = 0, skipCount = 0;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const ext = file.name.split('.').pop().toLowerCase();
+            btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></span> ' + (i + 1) + '/' + files.length;
+            
+            try {
+                let text = '';
+                if (ext === 'pdf') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    for (let p = 1; p <= pdf.numPages; p++) {
+                        const page = await pdf.getPage(p);
+                        const content = await page.getTextContent();
+                        text += content.items.map(item => item.str).join(' ') + '\n';
+                    }
+                } else if (ext === 'docx' || ext === 'doc') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.extractRawText({ arrayBuffer });
+                    text = result.value;
+                } else if (ext === 'json') {
+                    const textContent = await file.text();
+                    const data = JSON.parse(textContent);
+                    if (Array.isArray(data)) {
+                        data.forEach(item => {
+                            if (item.title && item.content) {
+                                const dupIdx = findDuplicate(item.title);
+                                if (dupIdx !== -1) rules[dupIdx] = { trade: item.trade || trade, title: item.title, content: item.content };
+                                else rules.push({ trade: item.trade || trade, title: item.title, content: item.content });
+                                successCount++;
+                            }
+                        });
+                        continue;
+                    }
+                } else {
+                    skipCount++; continue;
+                }
+                
+                if (!text.trim()) { skipCount++; continue; }
+                const title = file.name.replace(/\.[^/.]+$/, '');
+                const dupIdx = findDuplicate(title);
+                if (dupIdx !== -1) rules[dupIdx] = { trade, title, content: text };
+                else rules.push({ trade, title, content: text });
+                successCount++;
+            } catch (err) {
+                console.error('导入失败:', err);
+                skipCount++;
+            }
+        }
+        
+        saveToStorage();
+        refreshTradeSelect();
+        updateTotalBadge();
+        renderResults();
+        btn.innerHTML = '📥 导入';
+        isProcessing = false;
+        alert('导入完成：成功 ' + successCount + ' 个，跳过 ' + skipCount + ' 个');
+    }
+    
+    window.doExport = function() {
+        const selectedTrade = document.getElementById('rule-exportTrade').value;
+        let exportRules = rules;
+        if (selectedTrade !== '') exportRules = rules.filter(r => r.trade === selectedTrade);
+        if (exportRules.length === 0) { alert('所选专业暂无规章'); return; }
+        const dataStr = JSON.stringify(exportRules, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = selectedTrade ? '铁路规章_' + selectedTrade + '_' + new Date().toISOString().slice(0, 10) + '.json' : '铁路规章_全部_' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        closeModal('rule-exportModal');
+    }
+    
+    window.showCatalog = function() {
+        renderCatalog();
+        openModal('rule-catalogModal');
+    };
+    
+    function renderCatalog() {
+        const filterText = document.getElementById('rule-catalogFilter').value.toLowerCase();
+        const filterTrade = document.getElementById('rule-catalogTradeFilter').value;
+        let filtered = rules;
+        if (filterText) filtered = filtered.filter(r => r.title.toLowerCase().includes(filterText));
+        if (filterTrade) filtered = filtered.filter(r => r.trade === filterTrade);
+        
+        document.getElementById('rule-catalogStats').textContent = '共 ' + filtered.length + ' 条 / 总计 ' + rules.length + ' 条';
+        
+        if (filtered.length === 0) { document.getElementById('rule-catalogList').innerHTML = '<div class="empty-state">暂无规章</div>'; return; }
+        
+        let html = '';
+        filtered.forEach((rule, idx) => {
+            const originalIdx = rules.indexOf(rule);
+            html += '<div class="catalog-item"><div class="catalog-info"><div class="catalog-title" title="' + escapeHtml(rule.title) + '">' + escapeHtml(rule.title) + '</div><div class="catalog-meta"><span class="catalog-trade">' + escapeHtml(rule.trade) + '</span><span>' + rule.content.length + '字</span></div></div><div class="catalog-actions"><button class="btn btn-info btn-small" onclick="viewRule(' + originalIdx + ')">查看</button><button class="btn btn-success btn-small" onclick="editRule(' + originalIdx + ')">编辑</button><button class="btn btn-danger btn-small" onclick="deleteRule(' + originalIdx + ')">删除</button></div></div>';
+        });
+        document.getElementById('rule-catalogList').innerHTML = html;
+    }
+    
+    window.viewRule = function(idx) {
+        const rule = rules[idx];
+        document.getElementById('rule-viewTitle').textContent = rule.title;
+        document.getElementById('rule-viewTrade').textContent = rule.trade;
+        document.getElementById('rule-viewContent').value = rule.content;
+        openModal('rule-viewModal');
+    };
+    
+    window.editRule = function(idx) {
+        const rule = rules[idx];
+        currentEditIndex = idx;
+        document.getElementById('rule-editTitle').value = rule.title;
+        const editSelect = document.getElementById('rule-editTrade');
+        editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
+        const tradesSet = new Set(); rules.forEach(r => tradesSet.add(r.trade));
+        Array.from(tradesSet).sort((a, b) => a.localeCompare(b, 'zh')).forEach(trade => {
+            const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option);
+        });
+        if (tradesSet.has(rule.trade)) editSelect.value = rule.trade; else editSelect.value = '';
+        document.getElementById('rule-editNewTrade').value = '';
+        openModal('rule-editModal');
+    };
+    
+    window.saveRuleEdit = function() {
+        const title = document.getElementById('rule-editTitle').value.trim();
+        let trade = document.getElementById('rule-editTrade').value;
+        const newTrade = document.getElementById('rule-editNewTrade').value.trim();
+        if (newTrade) trade = newTrade;
+        if (!title) { alert('请输入规章标题'); return; }
+        if (!trade) { alert('请选择或输入专业'); return; }
+        const dupIdx = rules.findIndex((r, i) => r.title.toLowerCase().trim() === title.toLowerCase() && i !== currentEditIndex);
+        if (dupIdx !== -1) { alert('已存在相同标题的规章'); return; }
+        rules[currentEditIndex].title = title;
+        rules[currentEditIndex].trade = trade;
+        saveToStorage();
+        refreshTradeSelect();
+        updateTotalBadge();
+        renderCatalog();
+        renderResults();
+        closeModal('rule-editModal');
+        alert('修改保存成功！');
+    };
+    
+    window.deleteRule = function(idx) {
+        const rule = rules[idx];
+        if (confirm('确定要删除规章"' + rule.title + '"吗？')) {
+            rules.splice(idx, 1);
+            saveToStorage();
+            refreshTradeSelect();
+            updateTotalBadge();
+            renderCatalog();
+            renderResults();
+        }
+    };
+    
+    window.clearAllRules = function() {
+        if (confirm('确定要清空所有规章吗？此操作不可恢复！')) {
+            rules = [];
+            saveToStorage();
+            refreshTradeSelect();
+            updateTotalBadge();
+            renderResults();
+            closeModal('rule-catalogModal');
+        }
+    };
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const stored = loadFromStorage();
+        if (stored) rules = stored;
+        else { rules = sampleRules.map(r => ({ ...r })); saveToStorage(); }
+        
+        refreshTradeSelect();
+        updateTotalBadge();
+        updateStorageInfo();
+        document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
+        addKeywordInput();
+        
+        document.getElementById('rule-searchBtn').addEventListener('click', renderResults);
+        document.getElementById('rule-clearSearchBtn').addEventListener('click', clearSearch);
+        document.getElementById('rule-btnAdd').addEventListener('click', addKeywordInput);
+        document.getElementById('rule-importBtn').addEventListener('click', handleImportClick);
+        document.getElementById('rule-exportBtn').addEventListener('click', () => openModal('rule-exportModal'));
+        document.getElementById('rule-catalogBtn').addEventListener('click', showCatalog);
+        document.getElementById('rule-clearBtn').addEventListener('click', () => {
+            if (confirm('确定要清空所有规章吗？\n\n点击"确定"：清空\n点击"取消"：恢复示例')) {
+                rules = []; saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+            } else {
+                rules = sampleRules.map(r => ({ ...r })); saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+            }
+        });
+        document.getElementById('rule-totalBadge').addEventListener('click', showCatalog);
+        document.getElementById('rule-tradeSelect').addEventListener('change', renderResults);
+        document.getElementById('rule-catalogFilter').addEventListener('input', renderCatalog);
+        document.getElementById('rule-catalogTradeFilter').addEventListener('change', renderCatalog);
+    });
+})();
+
+// ========== Work Diary System (移除序号版) ==========
+(function() {
+    const STORAGE_KEY = 'railway_work_diary_v2';
+    let diaries = [];
+    let issueCount = 0;
+    const MAX_ISSUES = 20;
+
+    function renderIssueFields(issues = []) {
+        const container = document.getElementById('diary-issues-container');
+        container.innerHTML = '';
+        issueCount = issues.length || 1;
+        for (let i = 0; i < issueCount; i++) {
+            addIssueFieldToDOM(issues[i] || '', i);
+        }
+        updateAddIssueButton();
+    }
+
+    function addIssueFieldToDOM(value = '', index) {
+        const container = document.getElementById('diary-issues-container');
+        const div = document.createElement('div');
+        div.className = 'diary-issue-row';
+        div.id = `diary-issue-row-${index}`;
+        div.innerHTML = `
+            <textarea class="diary-issue-input" id="diary-issue-${index}" placeholder="问题 ${index + 1}" oninput="autoResize(this)">${escapeHtml(value)}</textarea>
+            ${index > 0 ? '<button class="btn-remove-issue" onclick="removeIssueField(' + index + ')">×</button>' : ''}
+        `;
+        container.appendChild(div);
+        const textarea = document.getElementById(`diary-issue-${index}`);
+        requestAnimationFrame(() => autoResize(textarea));
+    }
+
+    window.addIssueField = function() {
+        if (issueCount >= MAX_ISSUES) {
+            alert(`最多添加 ${MAX_ISSUES} 个问题`);
+            return;
+        }
+        addIssueFieldToDOM('', issueCount);
+        issueCount++;
+        updateAddIssueButton();
+    };
+
+    window.removeIssueField = function(index) {
+        const row = document.getElementById(`diary-issue-row-${index}`);
+        if (row) row.remove();
+        const rows = document.querySelectorAll('#diary-issues-container .diary-issue-row');
+        issueCount = rows.length;
+        rows.forEach((row, idx) => {
+            row.id = `diary-issue-row-${idx}`;
+            const textarea = row.querySelector('textarea');
+            textarea.id = `diary-issue-${idx}`;
+            textarea.placeholder = `问题 ${idx + 1}`;
+            textarea.setAttribute('oninput', 'autoResize(this)');
+            const removeBtn = row.querySelector('.btn-remove-issue');
+            if (removeBtn) {
+                removeBtn.setAttribute('onclick', `removeIssueField(${idx})`);
+            }
+            requestAnimationFrame(() => autoResize(textarea));
+        });
+        updateAddIssueButton();
+    };
+
+    function updateAddIssueButton() {
+        const btn = document.getElementById('btn-add-issue');
+        if (issueCount >= MAX_ISSUES) {
+            btn.disabled = true;
+            btn.textContent = `已达到最大问题数量(${MAX_ISSUES}个)`;
+        } else {
+            btn.disabled = false;
+            btn.textContent = `+ 添加问题 (还可添加 ${MAX_ISSUES - issueCount} 个)`;
+        }
+    }
+
+    function collectIssues() {
+        const issues = [];
+        for (let i = 0; i < issueCount; i++) {
+            const textarea = document.getElementById(`diary-issue-${i}`);
+            if (textarea) {
+                const val = textarea.value.trim();
+                if (val) issues.push(val);
+            }
+        }
+        return issues;
+    }
+
+    function loadDiaries() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) diaries = JSON.parse(data);
+        } catch (e) { diaries = []; }
+    }
+
+    function saveDiaries() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(diaries)); } catch (e) { alert('保存失败：' + e.message); }
+    }
+
+    window.saveDiary = function() {
+        const date = document.getElementById('diary-date').value;
+        const work = document.getElementById('diary-work').value.trim();
+        if (!date) { alert('请选择日期'); return; }
+        if (!work) { alert('请输入工作内容'); return; }
+        
+        const issues = collectIssues();
+        
+        const existingIdx = diaries.findIndex(d => d.date === date);
+        if (existingIdx !== -1) {
+            if (!confirm('该日期已有记录，是否覆盖？')) return;
+            diaries[existingIdx] = { date, work, issues };
+        } else {
+            diaries.push({ date, work, issues });
+        }
+        
+        diaries.sort((a, b) => new Date(b.date) - new Date(a.date));
+        saveDiaries();
+        renderDiaryList();
+        alert('保存成功！');
+    };
+
+    window.clearDiaryForm = function() {
+        document.getElementById('diary-date').value = '';
+        document.getElementById('diary-work').value = '';
+        autoResize(document.getElementById('diary-work'));
+        renderIssueFields([]);
+    };
+
+    window.editDiary = function(date) {
+        const diary = diaries.find(d => d.date === date);
+        if (!diary) return;
+        document.getElementById('diary-date').value = diary.date;
+        document.getElementById('diary-work').value = diary.work;
+        autoResize(document.getElementById('diary-work'));
+        renderIssueFields(diary.issues || []);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteDiary = function(date) {
+        if (!confirm('确定要删除该日期的记录吗？')) return;
+        diaries = diaries.filter(d => d.date !== date);
+        saveDiaries();
+        renderDiaryList();
+    };
+
+    window.copyWork = function(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('工作内容已复制');
+        }).catch(() => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('工作内容已复制');
+        });
+    };
+
+    window.copyIssue = function(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('问题已复制');
+        }).catch(() => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('问题已复制');
+        });
+    };
+
+    window.deleteIssue = function(date, issueIndex) {
+        const diary = diaries.find(d => d.date === date);
+        if (!diary) return;
+        if (!confirm('确定要删除该问题吗？')) return;
+        diary.issues.splice(issueIndex, 1);
+        saveDiaries();
+        renderDiaryList();
+    };
+
+    window.editIssue = function(date, issueIndex) {
+        const diary = diaries.find(d => d.date === date);
+        if (!diary) return;
+        document.getElementById('diary-date').value = diary.date;
+        document.getElementById('diary-work').value = diary.work;
+        autoResize(document.getElementById('diary-work'));
+        renderIssueFields(diary.issues);
+        document.querySelector('.diary-form').scrollIntoView({ behavior: 'smooth' });
+        const targetInput = document.getElementById(`diary-issue-${issueIndex}`);
+        if (targetInput) {
+            targetInput.focus();
+            targetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
+    function renderDiaryList() {
+        const container = document.getElementById('diary-list');
+        document.getElementById('diary-count').textContent = diaries.length + ' 条';
+        
+        if (diaries.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>暂无工作记录</p></div>';
+            return;
+        }
+        
+        let html = '';
+        diaries.forEach(diary => {
+            const dateObj = new Date(diary.date);
+            const dateStr = dateObj.getFullYear() + '年' + (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日';
+            const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
+            
+            html += '<div class="diary-card">';
+            html += '<div class="diary-card-header">';
+            html += '<div class="diary-card-date">' + dateStr + ' ' + weekDay + '</div>';
+            html += '<div class="diary-card-actions">';
+            html += '<button class="btn btn-info btn-small" onclick="editDiary(\'' + diary.date + '\')">编辑</button>';
+            html += '<button class="btn btn-danger btn-small" onclick="deleteDiary(\'' + diary.date + '\')">删除</button>';
+            html += '</div></div>';
+            
+            html += '<div class="diary-work-block">';
+            html += '<div class="diary-work-header">';
+            html += '<span class="diary-work-title">📋 工作内容</span>';
+            html += '<div><button class="btn btn-small btn-secondary" onclick="copyWork(\'' + diary.work.replace(/'/g, "\\'") + '\')">复制</button></div>';
+            html += '</div>';
+            html += '<div class="diary-work-content">' + escapeHtml(diary.work) + '</div>';
+            html += '</div>';
+            
+            if (diary.issues && diary.issues.length > 0) {
+                html += '<div class="diary-issues-block">';
+                html += '<div class="diary-issues-header">';
+                html += '<span class="diary-issues-title">⚠️ 发现问题 (' + diary.issues.length + '条)</span>';
+                html += '</div>';
+                diary.issues.forEach((issue, idx) => {
+                    html += '<div class="diary-issue-item">';
+                    html += '<div class="diary-issue-item-num">' + (idx + 1) + '</div>';
+                    html += '<div class="diary-issue-item-content">' + escapeHtml(issue) + '</div>';
+                    html += '<div class="diary-issue-item-actions">';
+                    html += '<button class="btn btn-small btn-info" onclick="editIssue(\'' + diary.date + '\', ' + idx + ')">编辑</button>';
+                    html += '<button class="btn btn-small btn-secondary" onclick="copyIssue(\'' + issue.replace(/'/g, "\\'") + '\')">复制</button>';
+                    html += '<button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button>';
+                    html += '</div></div>';
+                });
+                html += '</div>';
+            }
+            html += '</div>';
+        });
+        container.innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDiaries();
+        renderDiaryList();
+        document.getElementById('diary-date').valueAsDate = new Date();
+        renderIssueFields([]);
+    });
+})();
+
+// ========== Phone Directory System ==========
+(function() {
+    const STORAGE_KEY = 'railway_phone_db_v1';
+    let phoneData = [];
+
+    function loadFromStorage() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                phoneData = JSON.parse(data);
+            } else {
+                phoneData = [];
+            }
+        } catch (e) {
+            phoneData = [];
+        }
+        updateStats();
+        renderEmpty();
+    }
+
+    function saveToStorage() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(phoneData));
+            updateStats();
+        } catch (e) {
+            alert('保存失败：' + e.message);
+        }
+    }
+
+    function updateStats() {
+        const count = phoneData.length;
+        document.getElementById('phone-recordCount').textContent = count + ' 条';
+        
+        let sizeMB = 0;
+        if (count > 0) {
+            const jsonStr = JSON.stringify(phoneData);
+            sizeMB = (new Blob([jsonStr]).size / 1024 / 1024).toFixed(2);
+        }
+        document.getElementById('phone-storageText').textContent = sizeMB + ' MB';
+        const percent = Math.min((sizeMB / 10) * 100, 100);
+        const bar = document.getElementById('phone-storageBar');
+        bar.style.width = percent + '%';
+        if (percent > 80) bar.className = 'storage-fill danger';
+        else if (percent > 60) bar.className = 'storage-fill warning';
+        else bar.className = 'storage-fill';
+    }
+
+    function renderEmpty() {
+        document.getElementById('phone-results').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>暂无电话数据，请导入Excel或加载示例</p></div>';
+        document.getElementById('phone-resultCount').textContent = '0 条';
+    }
+
+    function renderResults() {
+        const keyword = document.getElementById('phone-searchInput').value.trim().toLowerCase();
+        if (phoneData.length === 0) {
+            renderEmpty();
+            return;
+        }
+        let filtered = phoneData;
+        if (keyword) {
+            filtered = phoneData.filter(item => 
+                (item.单位 && item.单位.toLowerCase().includes(keyword)) ||
+                (item.线名 && item.线名.toLowerCase().includes(keyword)) ||
+                (item.站名 && item.站名.toLowerCase().includes(keyword)) ||
+                (item.备注 && item.备注.toLowerCase().includes(keyword))
+            );
+        } else {
+            filtered = phoneData;
+        }
+        document.getElementById('phone-resultCount').textContent = filtered.length + ' 条';
+
+        const container = document.getElementById('phone-results');
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>没有找到匹配的电话</p></div>';
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(item => {
+            const cityPhoneRaw = item.市电 || '';
+            const cityPhoneDigits = cityPhoneRaw.replace(/\D/g, '');
+            const telHref = cityPhoneDigits ? `tel:${cityPhoneDigits}` : '#';
+
+            html += `
+                <div class="result-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3 style="font-size:1.1rem; color:var(--primary);">${escapeHtml(item.站名 || '')}</h3>
+                        <span class="tag tag-category">${escapeHtml(item.单位 || '')}</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:auto 1fr; gap:8px 12px; margin-bottom:8px;">
+                        <span style="color:var(--text-secondary);">线名：</span><span>${escapeHtml(item.线名 || '')}</span>
+                        <span style="color:var(--text-secondary);">路电：</span><span>${escapeHtml(item.路电 || '')}</span>
+                        <span style="color:var(--text-secondary);">市电：</span>
+                        <span>
+                            <a href="${telHref}" class="phone-link" title="点击拨号">${escapeHtml(cityPhoneRaw)}</a>
+                        </span>
+                        ${item.备注 ? `<span style="color:var(--text-secondary);">备注：</span><span>${escapeHtml(item.备注)}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    window.phoneHandleExcel = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+            if (jsonData.length < 2) throw new Error('Excel文件数据不足');
+
+            const headers = jsonData[0].map(h => String(h).trim());
+            const colIndex = {
+                序号: headers.findIndex(h => h.includes('序号') || h.includes('序')),
+                单位: headers.findIndex(h => h.includes('单位')),
+                线名: headers.findIndex(h => h.includes('线名') || h.includes('线')),
+                站名: headers.findIndex(h => h.includes('站名') || h.includes('站')),
+                路电: headers.findIndex(h => h.includes('路电') || h.includes('路电')),
+                市电: headers.findIndex(h => h.includes('市电') || h.includes('市电')),
+                备注: headers.findIndex(h => h.includes('备注'))
+            };
+
+            if (colIndex.单位 === -1 || colIndex.站名 === -1) {
+                throw new Error('Excel中缺少必要的"单位"或"站名"列');
+            }
+
+            const newData = [];
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length === 0) continue;
+
+                const item = {
+                    序号: colIndex.序号 !== -1 ? row[colIndex.序号] : '',
+                    单位: colIndex.单位 !== -1 ? String(row[colIndex.单位] || '').trim() : '',
+                    线名: colIndex.线名 !== -1 ? String(row[colIndex.线名] || '').trim() : '',
+                    站名: colIndex.站名 !== -1 ? String(row[colIndex.站名] || '').trim() : '',
+                    路电: colIndex.路电 !== -1 ? String(row[colIndex.路电] || '').trim() : '',
+                    市电: colIndex.市电 !== -1 ? String(row[colIndex.市电] || '').trim() : '',
+                    备注: colIndex.备注 !== -1 ? String(row[colIndex.备注] || '').trim() : ''
+                };
+                if (item.单位 || item.站名) {
+                    newData.push(item);
+                }
+            }
+
+            if (newData.length === 0) throw new Error('未找到有效数据');
+
+            if (phoneData.length > 0) {
+                const action = confirm(`成功解析 ${newData.length} 条记录。\n当前已有 ${phoneData.length} 条。\n点击"确定"覆盖，点击"取消"追加。`);
+                if (action) {
+                    phoneData = newData;
+                } else {
+                    phoneData = [...phoneData, ...newData];
+                }
+            } else {
+                phoneData = newData;
+            }
+
+            saveToStorage();
+            renderEmpty();
+            alert(`导入成功，当前共 ${phoneData.length} 条记录。点击"搜索"按钮可查看全部。`);
+        } catch (err) {
+            alert('导入失败: ' + err.message);
+        }
+        e.target.value = '';
+    };
+
+    window.phoneExportExcel = function() {
+        if (phoneData.length === 0) { alert('没有数据可导出'); return; }
+        const ws = XLSX.utils.json_to_sheet(phoneData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '电话表');
+        XLSX.writeFile(wb, '车站电话_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    };
+
+    window.phoneDownloadTemplate = function() {
+        const template = [
+            { '序号': 1, '单位': '天水车站', '线名': '徐兰高速', '站名': '东岔站', '路电': '072631455', '市电': '09384931455', '备注': '' },
+            { '序号': 2, '单位': '天水车站', '线名': '徐兰高速', '站名': '天水南站', '路电': '072631456', '市电': '09384931456', '备注': '' }
+        ];
+        const ws = XLSX.utils.json_to_sheet(template);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '模板');
+        XLSX.writeFile(wb, '电话导入模板.xlsx');
+    };
+
+    window.phoneShowClear = function() {
+        if (phoneData.length === 0) { alert('没有数据可清空'); return; }
+        if (confirm('确定清空所有电话数据吗？此操作不可恢复！')) {
+            phoneData = [];
+            saveToStorage();
+            renderEmpty();
+        }
+    };
+
+    window.phoneLoadDemo = function() {
+        const demo = [
+            { '序号': 1, '单位': '天水车站', '线名': '徐兰高速', '站名': '东岔站', '路电': '072631455', '市电': '09384931455', '备注': '' },
+            { '序号': 2, '单位': '天水车站', '线名': '徐兰高速', '站名': '天水南站', '路电': '072631456', '市电': '09384931456', '备注': '' },
+            { '序号': 3, '单位': '天水车站', '线名': '徐兰高速', '站名': '秦安站', '路电': '072631457', '市电': '09384931457', '备注': '' },
+            { '序号': 4, '单位': '陇西车务段', '线名': '徐兰高速', '站名': '榆中', '路电': '072684201', '市电': '09312984201', '备注': '' },
+            { '序号': 5, '单位': '陇西车务段', '线名': '徐兰高速', '站名': '定西北', '路电': '072671505', '市电': '09325971505', '备注': '' },
+            { '序号': 6, '单位': '陇西车务段', '线名': '徐兰高速', '站名': '下小岔', '路电': '072671504', '市电': '09325971504', '备注': '' },
+            { '序号': 7, '单位': '陇西车务段', '线名': '徐兰高速', '站名': '通渭', '路电': '072671503', '市电': '09325971503', '备注': '' }
+        ];
+        phoneData = demo;
+        saveToStorage();
+        renderEmpty();
+        alert('示例数据已加载。点击"搜索"按钮可查看全部。');
+    };
+
+    window.phoneDoSearch = function() {
+        renderResults();
+    };
+
+    window.phoneClearSearch = function() {
+        document.getElementById('phone-searchInput').value = '';
+        renderEmpty();
+    };
+
+    document.getElementById('phone-fileInput').addEventListener('change', phoneHandleExcel);
+
+    loadFromStorage();
+})();
+
+// Service Worker 注册（离线浏览功能需配合 manifest.json 和 sw.js 文件）
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW failed'));
+}
+</script>
+</body>
+</html>
