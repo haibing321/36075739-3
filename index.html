@@ -475,14 +475,15 @@
             margin-bottom: 0;
         }
         .rule-highlight { background: #fef3c7; color: var(--accent); font-weight: 500; padding: 1px 4px; border-radius: 3px; }
+        .rule-context { color: var(--text-secondary); } /* 上下文段落颜色稍淡 */
         .rule-ellipsis { color: var(--text-secondary); font-style: italic; }
         
-        /* ========== 工作写实专用 ========== */
+        /* ========== 工作写实专用（样式已统一） ========== */
         .diary-form {
-            background: linear-gradient(to right, #fffaf0, #f0fff4);
+            background: linear-gradient(to right, #ebf8ff, #f0fff4); /* 与搜索框一致 */
             padding: 20px;
             border-radius: 10px;
-            border: 1px solid #fbd38d;
+            border: 1px solid #bee3f8; /* 与搜索框一致 */
             margin-bottom: 20px;
         }
         .diary-date-row {
@@ -825,21 +826,23 @@
             
             .diary-date-row { flex-direction: column; align-items: stretch; }
             
+            /* 历史卡片按钮组在移动端不再强制占满宽度，改为自动宽度，允许换行 */
             .diary-card-actions {
-                flex-direction: column;
-                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                width: auto;
             }
             .diary-card-actions .btn-small {
-                width: 100%;
-                text-align: center;
-                justify-content: center;
+                width: auto;
+                flex: 0 1 auto;
             }
             .diary-work-header {
                 flex-direction: column;
                 align-items: flex-start;
             }
             .diary-work-header .btn-small {
-                width: 100%;
+                width: auto;
             }
             .diary-issue-item {
                 flex-direction: column;
@@ -850,7 +853,7 @@
                 margin-top: 4px;
             }
             .diary-issue-item-actions .btn-small {
-                flex: 1;
+                flex: 0 1 auto;
                 text-align: center;
             }
         }
@@ -940,7 +943,7 @@
             </div>
         </div>
 
-        <!-- 规章制度（修改后） -->
+        <!-- 规章制度（重写后） -->
         <div id="panel-rule" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1001,7 +1004,7 @@
             </div>
         </div>
 
-        <!-- 工作写实（优化版） -->
+        <!-- 工作写实（样式已统一，并添加今天/全部筛选） -->
         <div id="panel-diary" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1038,6 +1041,10 @@
                     <div class="results-header">
                         <span class="results-title">📚 历史记录</span>
                         <span class="results-count" id="diary-count">0 条</span>
+                        <div class="btn-group" style="margin-left: auto;">
+                            <button class="btn btn-small btn-info" onclick="setDiaryFilter('today')" id="diary-filter-today">今天</button>
+                            <button class="btn btn-small btn-secondary" onclick="setDiaryFilter('all')" id="diary-filter-all">全部</button>
+                        </div>
                     </div>
                     
                     <div id="diary-list" class="diary-list">
@@ -1640,7 +1647,7 @@ window.addEventListener('resize', function() {
         return result;
     }
 
-    // 根据关键词在段落中的位置截取上下文
+    // 获取包含关键词的段落上下文（长段落截取）
     function getContextSnippet(paragraph, keywords) {
         const lowerPara = paragraph.toLowerCase();
         const firstKw = keywords[0].toLowerCase();
@@ -1671,39 +1678,67 @@ window.addEventListener('resize', function() {
         return snippet;
     }
 
+    // 向上收集段落，直到总长度达到targetLen或达到maxCount
+    function collectPrevParagraphs(paragraphs, startIdx, targetLen = 150, maxCount = 6) {
+        let collected = [];
+        let totalLen = 0;
+        let count = 0;
+        for (let i = startIdx - 1; i >= 0 && count < maxCount; i--) {
+            const para = paragraphs[i];
+            if (!para.trim()) continue;
+            collected.unshift(para); // 保持顺序
+            totalLen += para.length;
+            count++;
+            if (totalLen >= targetLen) break;
+        }
+        return collected;
+    }
+
     // 处理单个段落，返回格式化后的HTML
     function processParagraph(paragraph, index, allParagraphs, keywords) {
         const len = paragraph.length;
-        // 情况B：短段落 <40字
-        if (len < 40) {
-            let prevText = index > 0 ? allParagraphs[index-1] : '';
-            let nextText = index < allParagraphs.length-1 ? allParagraphs[index+1] : '';
+        const SHORT_THRESHOLD = 50;      // 短段落阈值
+        const LONG_THRESHOLD = 400;      // 长段落阈值
+        const PREV_TARGET = 150;          // 前文目标长度
+        const NEXT_TARGET = 190;          // 后文目标长度
+        const MAX_PREV_PARAS = 6;          // 最多向前取6段
 
-            // 截取前一段落最多150字
-            let prevPreview = '';
-            if (prevText) {
-                prevPreview = prevText.length > 150 ? prevText.substring(0,150) + '…' : prevText;
-            }
-            // 截取后一段落最多190字
-            let nextPreview = '';
-            if (nextText) {
-                nextPreview = nextText.length > 190 ? nextText.substring(0,190) + '…' : nextText;
-            }
-
-            let html = '';
-            if (prevPreview) html += `<span class="rule-context">${escapeHtml(prevPreview)}</span> `;
-            html += `<span class="rule-matched-paragraph">${highlightKeywords(paragraph, keywords)}</span>`;
-            if (nextPreview) html += ` <span class="rule-context">${escapeHtml(nextPreview)}</span>`;
-            return `<p>${html}</p>`;
-        }
         // 情况A：长段落 >400字
-        else if (len > 400) {
+        if (len > LONG_THRESHOLD) {
             const snippet = getContextSnippet(paragraph, keywords);
             return `<p>${highlightKeywords(snippet, keywords)}</p>`;
         }
-        // 情况C：常规段落 40-400字
-        else {
+        // 情况C：常规段落 50-400字
+        else if (len >= SHORT_THRESHOLD && len <= LONG_THRESHOLD) {
             return `<p>${highlightKeywords(paragraph, keywords)}</p>`;
+        }
+        // 情况B：短段落 <50字
+        else {
+            // 收集上文段落
+            const prevParas = collectPrevParagraphs(allParagraphs, index, PREV_TARGET, MAX_PREV_PARAS);
+            // 取下一段落（最多NEXT_TARGET字）
+            let nextPara = '';
+            if (index < allParagraphs.length - 1) {
+                const next = allParagraphs[index + 1];
+                if (next.length > NEXT_TARGET) {
+                    nextPara = next.substring(0, NEXT_TARGET) + '…';
+                } else {
+                    nextPara = next;
+                }
+            }
+
+            let html = '';
+            // 添加上文
+            prevParas.forEach(p => {
+                html += `<span class="rule-context">${escapeHtml(p)}</span> `;
+            });
+            // 添加当前段落（高亮）
+            html += `<span class="rule-matched-paragraph">${highlightKeywords(paragraph, keywords)}</span>`;
+            // 添加下文
+            if (nextPara) {
+                html += ` <span class="rule-context">${escapeHtml(nextPara)}</span>`;
+            }
+            return `<p>${html}</p>`;
         }
     }
 
@@ -1745,7 +1780,6 @@ window.addEventListener('resize', function() {
         let filtered = rules;
         if (trade !== '') filtered = filtered.filter(r => r.trade === trade);
 
-        // 如果没有关键词，则显示全部（但规则是至少一个关键词才搜索？需求是关键词为空时不搜索，但这里已判断为空时显示空状态）
         // 如果有关键词，则进一步筛选出有匹配段落的规章
         let results = [];
         if (keywords.length > 0) {
@@ -1757,9 +1791,7 @@ window.addEventListener('resize', function() {
             });
         } else {
             // 没有关键词，但选择了专业，则显示该专业所有规章（不截取，只显示简要？这里保持原样，显示全部内容但无高亮）
-            // 为了统一，我们仍然使用generateRuleSnippet但关键词为空，此时应显示全部段落
             filtered.forEach(rule => {
-                // 临时定义空关键词时显示完整内容
                 const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
                 let fullHtml = '';
                 paragraphs.forEach(para => {
@@ -2076,12 +2108,13 @@ window.addEventListener('resize', function() {
     });
 })();
 
-// ========== Work Diary System (移除序号版) ==========
+// ========== Work Diary System (添加筛选功能) ==========
 (function() {
     const STORAGE_KEY = 'railway_work_diary_v2';
     let diaries = [];
     let issueCount = 0;
     const MAX_ISSUES = 20;
+    let diaryFilterMode = 'today'; // 'today' 或 'all'
 
     function renderIssueFields(issues = []) {
         const container = document.getElementById('diary-issues-container');
@@ -2269,17 +2302,44 @@ window.addEventListener('resize', function() {
         }
     };
 
+    // 设置筛选模式并重新渲染
+    window.setDiaryFilter = function(mode) {
+        diaryFilterMode = mode;
+        // 更新按钮样式
+        const todayBtn = document.getElementById('diary-filter-today');
+        const allBtn = document.getElementById('diary-filter-all');
+        if (todayBtn && allBtn) {
+            if (mode === 'today') {
+                todayBtn.classList.remove('btn-secondary');
+                todayBtn.classList.add('btn-info');
+                allBtn.classList.remove('btn-info');
+                allBtn.classList.add('btn-secondary');
+            } else {
+                allBtn.classList.remove('btn-secondary');
+                allBtn.classList.add('btn-info');
+                todayBtn.classList.remove('btn-info');
+                todayBtn.classList.add('btn-secondary');
+            }
+        }
+        renderDiaryList();
+    };
+
     function renderDiaryList() {
         const container = document.getElementById('diary-list');
-        document.getElementById('diary-count').textContent = diaries.length + ' 条';
+        let filteredDiaries = diaries;
+        if (diaryFilterMode === 'today') {
+            const today = new Date().toISOString().slice(0,10);
+            filteredDiaries = diaries.filter(d => d.date === today);
+        }
+        document.getElementById('diary-count').textContent = filteredDiaries.length + ' 条';
         
-        if (diaries.length === 0) {
+        if (filteredDiaries.length === 0) {
             container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>暂无工作记录</p></div>';
             return;
         }
         
         let html = '';
-        diaries.forEach(diary => {
+        filteredDiaries.forEach(diary => {
             const dateObj = new Date(diary.date);
             const dateStr = dateObj.getFullYear() + '年' + (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日';
             const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
@@ -2331,6 +2391,8 @@ window.addEventListener('resize', function() {
         renderDiaryList();
         document.getElementById('diary-date').valueAsDate = new Date();
         renderIssueFields([]);
+        // 初始化筛选按钮样式
+        setDiaryFilter('today');
     });
 })();
 
