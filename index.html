@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -468,7 +468,14 @@
             color: var(--text);
             border-left: 3px solid var(--info);
         }
+        .rule-snippet p {
+            margin-bottom: 0.5em;
+        }
+        .rule-snippet p:last-child {
+            margin-bottom: 0;
+        }
         .rule-highlight { background: #fef3c7; color: var(--accent); font-weight: 500; padding: 1px 4px; border-radius: 3px; }
+        .rule-ellipsis { color: var(--text-secondary); font-style: italic; }
         
         /* ========== 工作写实专用 ========== */
         .diary-form {
@@ -933,7 +940,7 @@
             </div>
         </div>
 
-        <!-- 规章制度 -->
+        <!-- 规章制度（修改后） -->
         <div id="panel-rule" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -941,7 +948,7 @@
                         <div class="card-title-icon">📋</div>
                         规章制度智能查询
                     </div>
-                    <div class="card-subtitle">多专业分类 · PDF/Word导入 · 智能检索</div>
+                    <div class="card-subtitle">多专业分类 · PDF/Word导入 · 智能检索（关键词AND同段落匹配）</div>
                 </div>
                 <div class="card-body">
                     <div class="control-bar stats-bar">
@@ -1566,7 +1573,7 @@ window.addEventListener('resize', function() {
     window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
 })();
 
-// ========== Rule System ==========
+// ========== Rule System (重写，实现新逻辑) ==========
 (function() {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     let rules = []; const STORAGE_KEY = 'railway_rules_v1', MAX_STORAGE_SIZE = 200 * 1024 * 1024;
@@ -1621,45 +1628,162 @@ window.addEventListener('resize', function() {
     function escapeHtml(unsafe) { return unsafe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
     function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
     
-    function highlightKeywords(text, keywords) { 
-        if (keywords.length === 0) return escapeHtml(text); 
-        let result = escapeHtml(text); 
-        keywords.forEach(kw => { 
-            if (!kw.trim()) return; 
-            const regex = new RegExp('(' + escapeRegExp(kw) + ')', 'gi'); 
-            result = result.replace(regex, '<span class="rule-highlight">$1</span>'); 
-        }); 
-        return result; 
+    // 高亮文本中的关键词
+    function highlightKeywords(text, keywords) {
+        if (!keywords || keywords.length === 0) return escapeHtml(text);
+        let result = escapeHtml(text);
+        keywords.forEach(kw => {
+            if (!kw.trim()) return;
+            const regex = new RegExp('(' + escapeRegExp(kw) + ')', 'gi');
+            result = result.replace(regex, '<span class="rule-highlight">$1</span>');
+        });
+        return result;
     }
-    
-    function getSnippet(content, keywords) { 
-        if (keywords.length === 0) { const preview = content.substring(0, 200); return escapeHtml(preview) + (content.length > 200 ? '…' : ''); }
-        const paragraphs = content.split(/\r?\n/).filter(p => p.trim()), lowerKeywords = keywords.map(kw => kw.toLowerCase());
-        const matched = paragraphs.filter(para => lowerKeywords.every(kw => para.toLowerCase().includes(kw)));
-        if (matched.length === 0) { const preview = content.substring(0, 200); return escapeHtml(preview) + (content.length > 200 ? '…' : ''); }
-        return matched.map(para => '<p>' + highlightKeywords(para, keywords) + '</p>').join('');
+
+    // 根据关键词在段落中的位置截取上下文
+    function getContextSnippet(paragraph, keywords) {
+        const lowerPara = paragraph.toLowerCase();
+        const firstKw = keywords[0].toLowerCase();
+        const pos = lowerPara.indexOf(firstKw);
+        if (pos === -1) return paragraph; // 理论上不会发生
+
+        const before = paragraph.substring(0, pos);
+        const kwText = paragraph.substring(pos, pos + keywords[0].length);
+        const after = paragraph.substring(pos + keywords[0].length);
+
+        const beforeLen = before.length;
+        const afterLen = after.length;
+
+        let snippet = '';
+        const ctxLen = 190; // 上下文长度
+
+        if (beforeLen <= ctxLen && afterLen <= ctxLen) {
+            // 前后都不足，显示全部
+            snippet = paragraph;
+        } else {
+            // 截取前后各190字
+            const startIdx = Math.max(0, pos - ctxLen);
+            const endIdx = Math.min(paragraph.length, pos + keywords[0].length + ctxLen);
+            snippet = paragraph.substring(startIdx, endIdx);
+            if (startIdx > 0) snippet = '…' + snippet;
+            if (endIdx < paragraph.length) snippet = snippet + '…';
+        }
+        return snippet;
     }
-    
+
+    // 处理单个段落，返回格式化后的HTML
+    function processParagraph(paragraph, index, allParagraphs, keywords) {
+        const len = paragraph.length;
+        // 情况B：短段落 <40字
+        if (len < 40) {
+            let prevText = index > 0 ? allParagraphs[index-1] : '';
+            let nextText = index < allParagraphs.length-1 ? allParagraphs[index+1] : '';
+
+            // 截取前一段落最多150字
+            let prevPreview = '';
+            if (prevText) {
+                prevPreview = prevText.length > 150 ? prevText.substring(0,150) + '…' : prevText;
+            }
+            // 截取后一段落最多190字
+            let nextPreview = '';
+            if (nextText) {
+                nextPreview = nextText.length > 190 ? nextText.substring(0,190) + '…' : nextText;
+            }
+
+            let html = '';
+            if (prevPreview) html += `<span class="rule-context">${escapeHtml(prevPreview)}</span> `;
+            html += `<span class="rule-matched-paragraph">${highlightKeywords(paragraph, keywords)}</span>`;
+            if (nextPreview) html += ` <span class="rule-context">${escapeHtml(nextPreview)}</span>`;
+            return `<p>${html}</p>`;
+        }
+        // 情况A：长段落 >400字
+        else if (len > 400) {
+            const snippet = getContextSnippet(paragraph, keywords);
+            return `<p>${highlightKeywords(snippet, keywords)}</p>`;
+        }
+        // 情况C：常规段落 40-400字
+        else {
+            return `<p>${highlightKeywords(paragraph, keywords)}</p>`;
+        }
+    }
+
+    // 生成规章摘要HTML
+    function generateRuleSnippet(rule, keywords) {
+        const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
+        if (paragraphs.length === 0) return '';
+
+        // 找出所有同时包含所有关键词的段落
+        const matchedIndices = [];
+        const lowerKeywords = keywords.map(k => k.toLowerCase());
+        paragraphs.forEach((para, idx) => {
+            const lowerPara = para.toLowerCase();
+            const allMatch = lowerKeywords.every(kw => lowerPara.includes(kw));
+            if (allMatch) matchedIndices.push(idx);
+        });
+
+        if (matchedIndices.length === 0) return ''; // 无匹配段落
+
+        // 对每个匹配段落生成HTML
+        let html = '';
+        matchedIndices.forEach(idx => {
+            html += processParagraph(paragraphs[idx], idx, paragraphs, keywords);
+        });
+        return html;
+    }
+
     function renderResults() { 
-        const trade = document.getElementById('rule-tradeSelect').value, keywords = getKeywords();
+        const trade = document.getElementById('rule-tradeSelect').value;
+        const keywords = getKeywords();
+        // 如果专业为空且无关键词，显示空状态
         if (trade === '' && keywords.length === 0) {
             document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
             document.getElementById('rule-resultCount').textContent = '0 项';
             return;
         }
-        let filtered = rules; 
+
+        // 按专业过滤
+        let filtered = rules;
         if (trade !== '') filtered = filtered.filter(r => r.trade === trade);
+
+        // 如果没有关键词，则显示全部（但规则是至少一个关键词才搜索？需求是关键词为空时不搜索，但这里已判断为空时显示空状态）
+        // 如果有关键词，则进一步筛选出有匹配段落的规章
+        let results = [];
         if (keywords.length > 0) {
-            filtered = filtered.filter(r => r.content.toLowerCase().includes(keywords[0].toLowerCase()));
+            filtered.forEach(rule => {
+                const snippetHtml = generateRuleSnippet(rule, keywords);
+                if (snippetHtml) {
+                    results.push({ rule, snippetHtml });
+                }
+            });
+        } else {
+            // 没有关键词，但选择了专业，则显示该专业所有规章（不截取，只显示简要？这里保持原样，显示全部内容但无高亮）
+            // 为了统一，我们仍然使用generateRuleSnippet但关键词为空，此时应显示全部段落
+            filtered.forEach(rule => {
+                // 临时定义空关键词时显示完整内容
+                const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
+                let fullHtml = '';
+                paragraphs.forEach(para => {
+                    fullHtml += `<p>${escapeHtml(para)}</p>`;
+                });
+                results.push({ rule, snippetHtml: fullHtml });
+            });
         }
-        document.getElementById('rule-resultCount').textContent = filtered.length + ' 项';
-        if (filtered.length === 0) { 
-            document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>没有匹配的规章</p></div>'; 
+
+        // 更新计数
+        document.getElementById('rule-resultCount').textContent = results.length + ' 项';
+
+        if (results.length === 0) { 
+            document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>未找到同时包含所有关键词的段落</p></div>'; 
             return; 
         }
+
         let html = '<div class="result-list">';
-        filtered.forEach(rule => { 
-            html += '<div class="rule-card-item"><div class="rule-title">' + escapeHtml(rule.title) + '</div><span class="rule-trade">' + escapeHtml(rule.trade) + '</span><div class="rule-snippet">' + getSnippet(rule.content, keywords) + '</div></div>'; 
+        results.forEach(item => {
+            html += '<div class="rule-card-item">';
+            html += '<div class="rule-title">' + escapeHtml(item.rule.title) + '</div>';
+            html += '<span class="rule-trade">' + escapeHtml(item.rule.trade) + '</span>';
+            html += '<div class="rule-snippet">' + item.snippetHtml + '</div>';
+            html += '</div>';
         });
         html += '</div>';
         document.getElementById('rule-resultsList').innerHTML = html;
