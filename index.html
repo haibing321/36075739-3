@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -583,18 +583,18 @@
         .diary-actions {
             display: flex;
             gap: 12px;
-            justify-content: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        .diary-proofread-actions {
-            display: flex;
-            gap: 10px;
             justify-content: flex-end;
-            margin-bottom: 10px;
+            margin-bottom: 16px; /* 与日期行保持间距 */
             flex-wrap: wrap;
         }
-        .diary-list { display: flex; flex-direction: column; gap: 16px; }
+        .diary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
         .diary-card {
             background: white;
             border-radius: 10px;
@@ -1010,7 +1010,7 @@
             </div>
         </div>
 
-        <!-- 工作写实（添加纠错功能） -->
+        <!-- 工作写实（优化版：按钮移到日期上方，移除纠错/词典管理） -->
         <div id="panel-diary" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1018,10 +1018,16 @@
                         <div class="card-title-icon">📝</div>
                         工作日写实
                     </div>
-                    <div class="card-subtitle">每日工作内容 · 检查问题记录 · 智能纠错</div>
+                    <div class="card-subtitle">每日工作内容 · 检查问题记录 · 一键复制</div>
                 </div>
                 <div class="card-body">
                     <div class="diary-form">
+                        <!-- 按钮栏：保存记录、重置、一键复制（位于日期上方） -->
+                        <div class="diary-actions">
+                            <button class="btn btn-primary" onclick="saveDiary()">💾 保存记录</button>
+                            <button class="btn btn-secondary" onclick="clearDiaryForm()">🔄 重置</button>
+                            <button class="btn btn-info" onclick="copyAllToday()">📋 复制全部</button>
+                        </div>
                         <div class="diary-date-row">
                             <label>📅 日期:</label>
                             <input type="date" id="diary-date">
@@ -1036,16 +1042,6 @@
                             <div class="diary-section-title">⚠️ 检查发现问题</div>
                             <div id="diary-issues-container"></div>
                             <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
-                        </div>
-
-                        <div class="diary-proofread-actions">
-                            <button class="btn btn-info btn-sm" onclick="checkGrammar()">🔍 检查语句</button>
-                            <button class="btn btn-secondary btn-sm" onclick="openDictManager()">📚 词典管理</button>
-                        </div>
-                        
-                        <div class="diary-actions">
-                            <button class="btn btn-primary btn-lg" onclick="saveDiary()">💾 保存记录</button>
-                            <button class="btn btn-secondary btn-lg" onclick="clearDiaryForm()">重置</button>
                         </div>
                     </div>
 
@@ -1129,46 +1125,6 @@
         <div>铁路安监现场检查查询系统 · 开发者：赵海兵</div>
         <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览</div>
     </footer>
-
-    <!-- 纠错词典管理模态框 -->
-    <div id="dictModal" class="modal">
-        <div class="modal-content wide">
-            <div class="modal-header"><div class="modal-title">📚 纠错词典管理</div></div>
-            <div class="modal-body">
-                <div style="margin-bottom:16px; display:flex; gap:10px;">
-                    <button class="btn btn-success btn-small" onclick="exportDict()">📤 导出词典</button>
-                    <button class="btn btn-info btn-small" onclick="document.getElementById('dictFileInput').click()">📥 导入词典</button>
-                    <input type="file" id="dictFileInput" accept=".json" style="display:none;" onchange="importDict(event)">
-                </div>
-                <div style="margin-bottom:16px; display:flex; gap:8px;">
-                    <input type="text" id="newWrongWord" placeholder="错误词" style="flex:1; padding:8px; border:1px solid var(--border); border-radius:4px;">
-                    <input type="text" id="newCorrectWord" placeholder="正确词" style="flex:1; padding:8px; border:1px solid var(--border); border-radius:4px;">
-                    <button class="btn btn-primary btn-small" onclick="addDictEntry()">添加</button>
-                </div>
-                <table style="width:100%; border-collapse: collapse; border:1px solid var(--border);">
-                    <thead style="background:var(--bg);"><tr><th style="padding:8px;">错误词</th><th style="padding:8px;">正确词</th><th style="padding:8px;">操作</th></tr></thead>
-                    <tbody id="dictTableBody"></tbody>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('dictModal')">关闭</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 纠错结果模态框 -->
-    <div id="proofreadResultModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header"><div class="modal-title">🔍 纠错建议</div></div>
-            <div class="modal-body" id="proofreadResultBody">
-                <!-- 动态填充 -->
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" onclick="applyProofread()">应用修改</button>
-                <button class="btn btn-secondary" onclick="closeModal('proofreadResultModal')">关闭</button>
-            </div>
-        </div>
-    </div>
 
     <!-- 问题库模态框 -->
     <div id="issue-clearModal" class="modal">
@@ -1320,7 +1276,7 @@ window.addEventListener('resize', function() {
     }, 100);
 });
 
-// ========== Issue System ==========
+// ========== Issue System (完整保留) ==========
 (function() {
     const DB_NAME = 'RailwayIssueDB_v2', STORE_NAME = 'issues', DB_VERSION = 1;
     let db = null, dataCache = [], keywordNum = 0, MAX_KEYWORDS = 4;
@@ -1632,7 +1588,7 @@ window.addEventListener('resize', function() {
     window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
 })();
 
-// ========== Rule System (添加元素存在性检查) ==========
+// ========== Rule System (完整保留) ==========
 (function() {
     try {
         if (typeof pdfjsLib !== 'undefined') {
@@ -2232,187 +2188,27 @@ window.addEventListener('resize', function() {
     });
 })();
 
-// ========== Work Diary System (添加纠错功能) ==========
+// ========== Work Diary System (优化版，移除纠错/词典管理) ==========
 (function() {
     const STORAGE_KEY = 'railway_work_diary_v2';
-    const DICT_STORAGE_KEY = 'proofread_dict';
     let diaries = [];
     let issueCount = 0;
     const MAX_ISSUES = 20;
     let diaryFilterMode = 'today';
 
-    let proofreadDict = {};
-
-    function loadProofreadDict() {
+    // 加载日记
+    function loadDiaries() {
         try {
-            const data = localStorage.getItem(DICT_STORAGE_KEY);
-            if (data) {
-                proofreadDict = JSON.parse(data);
-            } else {
-                proofreadDict = {
-                    '按装': '安装',
-                    '部份': '部分',
-                    '联接': '连接',
-                    '垫目': '垫木',
-                    '防户': '防护',
-                    '维户': '维护',
-                    '试工': '施工',
-                    '记碌': '记录',
-                    '规订': '规定',
-                    '不符和': '不符合',
-                    '没采取': '未采取',
-                    '没设置': '未设置',
-                    '没填写': '未填写',
-                    '做业': '作业',
-                    '寻检': '巡检',
-                    '发见': '发现',
-                    '问提': '问题',
-                    '稳患': '隐患',
-                    '正改': '整改'
-                };
-                saveProofreadDict();
-            }
-        } catch (e) {
-            proofreadDict = {};
-        }
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) diaries = JSON.parse(data);
+        } catch (e) { diaries = []; }
     }
 
-    function saveProofreadDict() {
-        try {
-            localStorage.setItem(DICT_STORAGE_KEY, JSON.stringify(proofreadDict));
-        } catch (e) {
-            alert('保存词典失败：' + e.message);
-        }
+    function saveDiaries() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(diaries)); } catch (e) { alert('保存失败：' + e.message); }
     }
 
-    window.addDictEntry = function() {
-        const wrong = document.getElementById('newWrongWord')?.value.trim();
-        const correct = document.getElementById('newCorrectWord')?.value.trim();
-        if (!wrong || !correct) { alert('请填写错误词和正确词'); return; }
-        proofreadDict[wrong] = correct;
-        saveProofreadDict();
-        renderDictTable();
-        document.getElementById('newWrongWord').value = '';
-        document.getElementById('newCorrectWord').value = '';
-    };
-
-    window.removeDictEntry = function(wrong) {
-        delete proofreadDict[wrong];
-        saveProofreadDict();
-        renderDictTable();
-    };
-
-    function renderDictTable() {
-        const tbody = document.getElementById('dictTableBody');
-        if (!tbody) return;
-        let html = '';
-        for (let wrong in proofreadDict) {
-            html += `<tr><td>${escapeHtml(wrong)}</td><td>${escapeHtml(proofreadDict[wrong])}</td><td><button class="btn btn-danger btn-tiny" onclick="removeDictEntry('${wrong}')">删除</button></td></tr>`;
-        }
-        tbody.innerHTML = html;
-    }
-
-    window.openDictManager = function() {
-        renderDictTable();
-        openModal('dictModal');
-    };
-
-    window.exportDict = function() {
-        const dataStr = JSON.stringify(proofreadDict, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'proofread_dict.json';
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    window.importDict = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            try {
-                const imported = JSON.parse(ev.target.result);
-                Object.assign(proofreadDict, imported);
-                saveProofreadDict();
-                renderDictTable();
-                alert('导入成功');
-            } catch (err) {
-                alert('导入失败：' + err.message);
-            }
-        };
-        reader.readAsText(file);
-        e.target.value = '';
-    };
-
-    function escapeHtml(text) {
-        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    function escapeRegExp(string) {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    window.checkGrammar = function() {
-        const workText = document.getElementById('diary-work').value;
-        const issues = [];
-        for (let i = 0; i < issueCount; i++) {
-            const ta = document.getElementById(`diary-issue-${i}`);
-            if (ta && ta.value.trim()) {
-                issues.push(ta.value.trim());
-            }
-        }
-        const allText = workText + '\n' + issues.join('\n');
-        const errors = [];
-        for (let wrong in proofreadDict) {
-            const regex = new RegExp(escapeRegExp(wrong), 'g');
-            let match;
-            while ((match = regex.exec(allText)) !== null) {
-                errors.push({
-                    wrong: wrong,
-                    correct: proofreadDict[wrong],
-                    index: match.index
-                });
-            }
-        }
-        if (errors.length === 0) {
-            document.getElementById('proofreadResultBody').innerHTML = '<p>未发现明显错误。</p>';
-        } else {
-            let html = '<p>发现以下可能错误：</p><ul>';
-            errors.forEach(err => {
-                html += `<li>“${err.wrong}” 建议改为 “${err.correct}”</li>`;
-            });
-            html += '</ul>';
-            document.getElementById('proofreadResultBody').innerHTML = html;
-        }
-        openModal('proofreadResultModal');
-    };
-
-    window.applyProofread = function() {
-        let workText = document.getElementById('diary-work').value;
-        for (let wrong in proofreadDict) {
-            const regex = new RegExp(escapeRegExp(wrong), 'g');
-            workText = workText.replace(regex, proofreadDict[wrong]);
-        }
-        document.getElementById('diary-work').value = workText;
-        autoResize(document.getElementById('diary-work'));
-        for (let i = 0; i < issueCount; i++) {
-            const ta = document.getElementById(`diary-issue-${i}`);
-            if (ta) {
-                let val = ta.value;
-                for (let wrong in proofreadDict) {
-                    const regex = new RegExp(escapeRegExp(wrong), 'g');
-                    val = val.replace(regex, proofreadDict[wrong]);
-                }
-                ta.value = val;
-                autoResize(ta);
-            }
-        }
-        closeModal('proofreadResultModal');
-    };
-
+    // 渲染问题输入框
     function renderIssueFields(issues = []) {
         const container = document.getElementById('diary-issues-container');
         container.innerHTML = '';
@@ -2490,17 +2286,7 @@ window.addEventListener('resize', function() {
         return issues;
     }
 
-    function loadDiaries() {
-        try {
-            const data = localStorage.getItem(STORAGE_KEY);
-            if (data) diaries = JSON.parse(data);
-        } catch (e) { diaries = []; }
-    }
-
-    function saveDiaries() {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(diaries)); } catch (e) { alert('保存失败：' + e.message); }
-    }
-
+    // 保存记录
     window.saveDiary = function() {
         const date = document.getElementById('diary-date').value;
         const work = document.getElementById('diary-work').value.trim();
@@ -2523,6 +2309,7 @@ window.addEventListener('resize', function() {
         alert('保存成功！');
     };
 
+    // 清空表单
     window.clearDiaryForm = function() {
         document.getElementById('diary-date').value = '';
         document.getElementById('diary-work').value = '';
@@ -2530,6 +2317,7 @@ window.addEventListener('resize', function() {
         renderIssueFields([]);
     };
 
+    // 编辑日记（加载到表单）
     window.editDiary = function(date) {
         const diary = diaries.find(d => d.date === date);
         if (!diary) return;
@@ -2540,6 +2328,7 @@ window.addEventListener('resize', function() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    // 删除日记
     window.deleteDiary = function(date) {
         if (!confirm('确定要删除该日期的记录吗？')) return;
         diaries = diaries.filter(d => d.date !== date);
@@ -2547,6 +2336,7 @@ window.addEventListener('resize', function() {
         renderDiaryList();
     };
 
+    // 复制工作内容
     window.copyWork = function(text) {
         navigator.clipboard.writeText(text).then(() => {
             alert('工作内容已复制');
@@ -2561,6 +2351,7 @@ window.addEventListener('resize', function() {
         });
     };
 
+    // 复制单个问题
     window.copyIssue = function(text) {
         navigator.clipboard.writeText(text).then(() => {
             alert('问题已复制');
@@ -2575,6 +2366,33 @@ window.addEventListener('resize', function() {
         });
     };
 
+    // 一键复制当日所有内容（工作内容 + 所有问题）
+    window.copyAllToday = function() {
+        const work = document.getElementById('diary-work').value.trim();
+        const issues = collectIssues();
+        if (!work && issues.length === 0) {
+            alert('没有可复制的内容');
+            return;
+        }
+        let text = '';
+        if (work) text += `【工作内容】\n${work}\n`;
+        issues.forEach((issue, idx) => {
+            text += `【问题${idx+1}】\n${issue}\n`;
+        });
+        navigator.clipboard.writeText(text).then(() => {
+            alert('当日全部内容已复制');
+        }).catch(() => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('当日全部内容已复制');
+        });
+    };
+
+    // 删除问题（从已保存的记录中删除指定问题）
     window.deleteIssue = function(date, issueIndex) {
         const diary = diaries.find(d => d.date === date);
         if (!diary) return;
@@ -2584,21 +2402,7 @@ window.addEventListener('resize', function() {
         renderDiaryList();
     };
 
-    window.editIssue = function(date, issueIndex) {
-        const diary = diaries.find(d => d.date === date);
-        if (!diary) return;
-        document.getElementById('diary-date').value = diary.date;
-        document.getElementById('diary-work').value = diary.work;
-        autoResize(document.getElementById('diary-work'));
-        renderIssueFields(diary.issues);
-        document.querySelector('.diary-form').scrollIntoView({ behavior: 'smooth' });
-        const targetInput = document.getElementById(`diary-issue-${issueIndex}`);
-        if (targetInput) {
-            targetInput.focus();
-            targetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    };
-
+    // 过滤器
     window.setDiaryFilter = function(mode) {
         diaryFilterMode = mode;
         const todayBtn = document.getElementById('diary-filter-today');
@@ -2619,6 +2423,12 @@ window.addEventListener('resize', function() {
         renderDiaryList();
     };
 
+    // 转义HTML
+    function escapeHtml(text) {
+        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // 渲染历史记录列表
     function renderDiaryList() {
         const container = document.getElementById('diary-list');
         let filteredDiaries = diaries;
@@ -2647,6 +2457,7 @@ window.addEventListener('resize', function() {
             html += '<button class="btn btn-danger btn-small" onclick="deleteDiary(\'' + diary.date + '\')">删除</button>';
             html += '</div></div>';
             
+            // 工作内容块
             html += '<div class="diary-work-block">';
             html += '<div class="diary-work-header">';
             html += '<span class="diary-work-title">📋 工作内容</span>';
@@ -2655,6 +2466,7 @@ window.addEventListener('resize', function() {
             html += '<div class="diary-work-content">' + escapeHtml(diary.work) + '</div>';
             html += '</div>';
             
+            // 问题列表
             if (diary.issues && diary.issues.length > 0) {
                 html += '<div class="diary-issues-block">';
                 html += '<div class="diary-issues-header">';
@@ -2665,7 +2477,7 @@ window.addEventListener('resize', function() {
                     html += '<div class="diary-issue-item-num">' + (idx + 1) + '</div>';
                     html += '<div class="diary-issue-item-content">' + escapeHtml(issue) + '</div>';
                     html += '<div class="diary-issue-item-actions">';
-                    html += '<button class="btn btn-small btn-info" onclick="editIssue(\'' + diary.date + '\', ' + idx + ')">编辑</button>';
+                    // 只保留复制和删除，移除编辑按钮
                     html += '<button class="btn btn-small btn-secondary" onclick="copyIssue(\'' + issue.replace(/'/g, "\\'") + '\')">复制</button>';
                     html += '<button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button>';
                     html += '</div></div>';
@@ -2677,9 +2489,9 @@ window.addEventListener('resize', function() {
         container.innerHTML = html;
     }
 
-    loadProofreadDict();
+    // 初始化
+    loadDiaries();
     document.addEventListener('DOMContentLoaded', () => {
-        loadDiaries();
         renderDiaryList();
         document.getElementById('diary-date').valueAsDate = new Date();
         renderIssueFields([]);
@@ -2687,7 +2499,7 @@ window.addEventListener('resize', function() {
     });
 })();
 
-// ========== Phone Directory System ==========
+// ========== Phone Directory System (完整保留) ==========
 (function() {
     const STORAGE_KEY = 'railway_phone_db_v1';
     let phoneData = [];
