@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -234,6 +234,7 @@
         .btn-info { background: linear-gradient(135deg, var(--info), #4299e1); color: white; }
         
         .btn-small { padding: 6px 12px; font-size: 0.75rem; border-radius: 6px; }
+        .btn-tiny { padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; }
         
         /* ========== 搜索框区域 ========== */
         .search-box {
@@ -475,15 +476,15 @@
             margin-bottom: 0;
         }
         .rule-highlight { background: #fef3c7; color: var(--accent); font-weight: 500; padding: 1px 4px; border-radius: 3px; }
-        .rule-context { color: var(--text-secondary); } /* 上下文段落颜色稍淡 */
+        .rule-context { color: var(--text-secondary); }
         .rule-ellipsis { color: var(--text-secondary); font-style: italic; }
         
-        /* ========== 工作写实专用（样式已统一） ========== */
+        /* ========== 工作写实专用 ========== */
         .diary-form {
-            background: linear-gradient(to right, #ebf8ff, #f0fff4); /* 与搜索框一致 */
+            background: linear-gradient(to right, #ebf8ff, #f0fff4);
             padding: 20px;
             border-radius: 10px;
-            border: 1px solid #bee3f8; /* 与搜索框一致 */
+            border: 1px solid #bee3f8;
             margin-bottom: 20px;
         }
         .diary-date-row {
@@ -584,6 +585,13 @@
             gap: 12px;
             justify-content: center;
             margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .diary-proofread-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-bottom: 10px;
             flex-wrap: wrap;
         }
         .diary-list { display: flex; flex-direction: column; gap: 16px; }
@@ -725,13 +733,13 @@
             justify-content: flex-end;
             flex-shrink: 0;
         }
-        /* 规章详情文本域 - 调大默认高度 */
+        /* 规章详情文本域 */
         #rule-viewContent {
             resize: vertical;
             min-height: 300px;
             width: 100%;
         }
-        /* 编辑规章标题输入框 - 调大 */
+        /* 编辑规章标题输入框 */
         #rule-editTitle {
             font-size: 1rem;
             padding: 12px 16px;
@@ -825,8 +833,6 @@
             .phone-search-bar button { width: 100%; }
             
             .diary-date-row { flex-direction: column; align-items: stretch; }
-            
-            /* 历史卡片按钮组在移动端不再强制占满宽度，改为自动宽度，允许换行 */
             .diary-card-actions {
                 flex-direction: row;
                 flex-wrap: wrap;
@@ -943,7 +949,7 @@
             </div>
         </div>
 
-        <!-- 规章制度（重写后） -->
+        <!-- 规章制度 -->
         <div id="panel-rule" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1004,7 +1010,7 @@
             </div>
         </div>
 
-        <!-- 工作写实（样式已统一，并添加今天/全部筛选） -->
+        <!-- 工作写实（添加纠错功能） -->
         <div id="panel-diary" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1012,7 +1018,7 @@
                         <div class="card-title-icon">📝</div>
                         工作日写实
                     </div>
-                    <div class="card-subtitle">每日工作内容 · 检查问题记录</div>
+                    <div class="card-subtitle">每日工作内容 · 检查问题记录 · 智能纠错</div>
                 </div>
                 <div class="card-body">
                     <div class="diary-form">
@@ -1030,6 +1036,11 @@
                             <div class="diary-section-title">⚠️ 检查发现问题</div>
                             <div id="diary-issues-container"></div>
                             <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
+                        </div>
+
+                        <div class="diary-proofread-actions">
+                            <button class="btn btn-info btn-sm" onclick="checkGrammar()">🔍 检查语句</button>
+                            <button class="btn btn-secondary btn-sm" onclick="openDictManager()">📚 词典管理</button>
                         </div>
                         
                         <div class="diary-actions">
@@ -1119,7 +1130,47 @@
         <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览</div>
     </footer>
 
-    <!-- Modals -->
+    <!-- 纠错词典管理模态框 -->
+    <div id="dictModal" class="modal">
+        <div class="modal-content wide">
+            <div class="modal-header"><div class="modal-title">📚 纠错词典管理</div></div>
+            <div class="modal-body">
+                <div style="margin-bottom:16px; display:flex; gap:10px;">
+                    <button class="btn btn-success btn-small" onclick="exportDict()">📤 导出词典</button>
+                    <button class="btn btn-info btn-small" onclick="document.getElementById('dictFileInput').click()">📥 导入词典</button>
+                    <input type="file" id="dictFileInput" accept=".json" style="display:none;" onchange="importDict(event)">
+                </div>
+                <div style="margin-bottom:16px; display:flex; gap:8px;">
+                    <input type="text" id="newWrongWord" placeholder="错误词" style="flex:1; padding:8px; border:1px solid var(--border); border-radius:4px;">
+                    <input type="text" id="newCorrectWord" placeholder="正确词" style="flex:1; padding:8px; border:1px solid var(--border); border-radius:4px;">
+                    <button class="btn btn-primary btn-small" onclick="addDictEntry()">添加</button>
+                </div>
+                <table style="width:100%; border-collapse: collapse; border:1px solid var(--border);">
+                    <thead style="background:var(--bg);"><tr><th style="padding:8px;">错误词</th><th style="padding:8px;">正确词</th><th style="padding:8px;">操作</th></tr></thead>
+                    <tbody id="dictTableBody"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('dictModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 纠错结果模态框 -->
+    <div id="proofreadResultModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><div class="modal-title">🔍 纠错建议</div></div>
+            <div class="modal-body" id="proofreadResultBody">
+                <!-- 动态填充 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="applyProofread()">应用修改</button>
+                <button class="btn btn-secondary" onclick="closeModal('proofreadResultModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 问题库模态框 -->
     <div id="issue-clearModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><div class="modal-title">⚠️ 确认清空数据</div></div>
@@ -1144,6 +1195,7 @@
         </div>
     </div>
 
+    <!-- 规章制度模态框 -->
     <div id="rule-importModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><div class="modal-title" id="rule-importTitle">📥 导入规章</div></div>
@@ -1580,10 +1632,18 @@ window.addEventListener('resize', function() {
     window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
 })();
 
-// ========== Rule System (重写，实现新逻辑) ==========
+// ========== Rule System (添加元素存在性检查) ==========
 (function() {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-    let rules = []; const STORAGE_KEY = 'railway_rules_v1', MAX_STORAGE_SIZE = 200 * 1024 * 1024;
+    try {
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        }
+    } catch (e) {
+        console.warn('pdf.js 初始化失败，PDF导入功能可能不可用', e);
+    }
+
+    let rules = []; 
+    const STORAGE_KEY = 'railway_rules_v1', MAX_STORAGE_SIZE = 200 * 1024 * 1024;
     const sampleRules = [{ trade: '车务', title: '接发列车作业标准', content: '接发列车时，必须办理行车凭证。\n列车进站应确认信号开放。\n接发列车人员应严格执行眼看、手指、口述制度。' }, { trade: '车务', title: '调车作业细则', content: '调车作业前必须排风摘管，核对计划。\n驼峰调车严格控制推送速度。\n铁鞋制动时，严禁使用不符合标准的铁鞋。' }, { trade: '机务', title: '机车牵引操作规', content: '机车起动前确认制动缸压力，鸣笛动车。\n牵引运行中注意接触网电压，通过分相区断电降弓。' }, { trade: '工务', title: '线路维修安全规则', content: '天窗点内方可上道作业。\n作业前后清点工机具。\n无缝线路作业必须测量轨温，防止胀轨跑道。' }, { trade: '电务', title: '信号设备检修规程', content: '信号机显示距离应符合标准。\n轨道电路电压调整在规定范围。\n电缆绝缘测试每月一次。' }, { trade: '供电', title: '接触网安全工作规程', content: 'V停作业必须穿戴绝缘靴手套。\n地线接设位置正确，验电接地。\n作业车平台升降严禁侵入邻线。' }];
     let keywordCount = 0, MAX_KEYWORDS = 4, pendingFiles = [], isProcessing = false, currentEditIndex = null;
 
@@ -1598,17 +1658,31 @@ window.addEventListener('resize', function() {
     function updateStorageInfo() { 
         try { 
             const data = localStorage.getItem(STORAGE_KEY) || '', size = new Blob([data]).size, percent = Math.min(100, (size / MAX_STORAGE_SIZE) * 100); 
-            document.getElementById('rule-storageBar').style.width = percent + '%'; 
-            document.getElementById('rule-storageText').textContent = (size / 1024 / 1024).toFixed(2) + '/200MB'; 
-            const bar = document.getElementById('rule-storageBar'); 
-            bar.classList.remove('warning', 'danger'); 
-            if (percent > 80) bar.classList.add('danger'); else if (percent > 60) bar.classList.add('warning'); 
-        } catch (e) { document.getElementById('rule-storageText').textContent = '未知'; } 
+            const bar = document.getElementById('rule-storageBar');
+            if (bar) bar.style.width = percent + '%'; 
+            const text = document.getElementById('rule-storageText');
+            if (text) text.textContent = (size / 1024 / 1024).toFixed(2) + '/200MB'; 
+            if (bar) {
+                bar.classList.remove('warning', 'danger'); 
+                if (percent > 80) bar.classList.add('danger'); 
+                else if (percent > 60) bar.classList.add('warning'); 
+            }
+        } catch (e) { 
+            const text = document.getElementById('rule-storageText');
+            if (text) text.textContent = '未知'; 
+        } 
     }
-    function updateTotalBadge() { document.getElementById('rule-totalBadge').textContent = rules.length + ' 条'; document.getElementById('rule-resultCount').textContent = rules.length + ' 项'; }
+    function updateTotalBadge() { 
+        const badge = document.getElementById('rule-totalBadge');
+        if (badge) badge.textContent = rules.length + ' 条'; 
+        const count = document.getElementById('rule-resultCount');
+        if (count) count.textContent = rules.length + ' 项'; 
+    }
     
     function refreshTradeSelect() { 
-        const select = document.getElementById('rule-tradeSelect'), currentValue = select.value;
+        const select = document.getElementById('rule-tradeSelect');
+        if (!select) return;
+        const currentValue = select.value;
         const tradesSet = new Set(); rules.forEach(rule => tradesSet.add(rule.trade));
         const sortedTrades = Array.from(tradesSet).sort((a, b) => a.localeCompare(b, 'zh'));
         select.innerHTML = '<option value="">全部专业</option>';
@@ -1616,26 +1690,33 @@ window.addEventListener('resize', function() {
         if (currentValue && sortedTrades.includes(currentValue)) select.value = currentValue; else select.value = '';
         
         const importSelect = document.getElementById('rule-importTrade');
-        importSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
-        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; importSelect.appendChild(option); });
+        if (importSelect) {
+            importSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
+            sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; importSelect.appendChild(option); });
+        }
         
         const exportSelect = document.getElementById('rule-exportTrade');
-        exportSelect.innerHTML = '<option value="">所有专业 (全部导出)</option>';
-        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; exportSelect.appendChild(option); });
+        if (exportSelect) {
+            exportSelect.innerHTML = '<option value="">所有专业 (全部导出)</option>';
+            sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; exportSelect.appendChild(option); });
+        }
         
         const editSelect = document.getElementById('rule-editTrade');
-        editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
-        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option); });
+        if (editSelect) {
+            editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
+            sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option); });
+        }
         
         const catalogFilter = document.getElementById('rule-catalogTradeFilter');
-        catalogFilter.innerHTML = '<option value="">全部专业</option>';
-        sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; catalogFilter.appendChild(option); });
+        if (catalogFilter) {
+            catalogFilter.innerHTML = '<option value="">全部专业</option>';
+            sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; catalogFilter.appendChild(option); });
+        }
     }
     
     function escapeHtml(unsafe) { return unsafe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
     function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
     
-    // 高亮文本中的关键词
     function highlightKeywords(text, keywords) {
         if (!keywords || keywords.length === 0) return escapeHtml(text);
         let result = escapeHtml(text);
@@ -1647,38 +1728,70 @@ window.addEventListener('resize', function() {
         return result;
     }
 
-    // 获取包含关键词的段落上下文（长段落截取）
-    function getContextSnippet(paragraph, keywords) {
+    // 长段落最小窗口算法
+    function splitLongParagraphWithAllKeywords(paragraph, keywords, maxLen = 380) {
         const lowerPara = paragraph.toLowerCase();
-        const firstKw = keywords[0].toLowerCase();
-        const pos = lowerPara.indexOf(firstKw);
-        if (pos === -1) return paragraph; // 理论上不会发生
+        const positions = [];
+        keywords.forEach(kw => {
+            const lowerKw = kw.toLowerCase();
+            let pos = -1;
+            while ((pos = lowerPara.indexOf(lowerKw, pos + 1)) !== -1) {
+                positions.push({ kw, start: pos, end: pos + kw.length });
+            }
+        });
+        if (positions.length === 0) return [{ text: paragraph, start: 0, end: paragraph.length }];
+        positions.sort((a, b) => a.start - b.start);
 
-        const before = paragraph.substring(0, pos);
-        const kwText = paragraph.substring(pos, pos + keywords[0].length);
-        const after = paragraph.substring(pos + keywords[0].length);
+        let minStart = positions[0].start;
+        let maxEnd = positions[positions.length - 1].end;
+        const windowLen = maxEnd - minStart;
 
-        const beforeLen = before.length;
-        const afterLen = after.length;
-
-        let snippet = '';
-        const ctxLen = 190; // 上下文长度
-
-        if (beforeLen <= ctxLen && afterLen <= ctxLen) {
-            // 前后都不足，显示全部
-            snippet = paragraph;
+        if (windowLen <= maxLen) {
+            const extra = maxLen - windowLen;
+            let left = Math.max(0, minStart - Math.floor(extra / 2));
+            let right = Math.min(paragraph.length, maxEnd + Math.ceil(extra / 2));
+            if (right - left < maxLen) {
+                if (left === 0) right = Math.min(paragraph.length, left + maxLen);
+                else left = Math.max(0, right - maxLen);
+            }
+            let snippet = paragraph.substring(left, right);
+            if (left > 0) snippet = '…' + snippet;
+            if (right < paragraph.length) snippet = snippet + '…';
+            return [{ text: snippet, start: left, end: right }];
         } else {
-            // 截取前后各190字
-            const startIdx = Math.max(0, pos - ctxLen);
-            const endIdx = Math.min(paragraph.length, pos + keywords[0].length + ctxLen);
-            snippet = paragraph.substring(startIdx, endIdx);
-            if (startIdx > 0) snippet = '…' + snippet;
-            if (endIdx < paragraph.length) snippet = snippet + '…';
+            const fragments = [];
+            let i = 0;
+            while (i < positions.length) {
+                let start = positions[i].start;
+                let end = positions[i].end;
+                let j = i + 1;
+                while (j < positions.length) {
+                    const newEnd = positions[j].end;
+                    if (newEnd - start <= maxLen) {
+                        end = newEnd;
+                        j++;
+                    } else {
+                        break;
+                    }
+                }
+                const extra = maxLen - (end - start);
+                let left = Math.max(0, start - Math.floor(extra / 2));
+                let right = Math.min(paragraph.length, end + Math.ceil(extra / 2));
+                if (right - left < maxLen) {
+                    if (left === 0) right = Math.min(paragraph.length, left + maxLen);
+                    else left = Math.max(0, right - maxLen);
+                }
+                fragments.push({
+                    text: paragraph.substring(left, right),
+                    start: left,
+                    end: right
+                });
+                i = j;
+            }
+            return fragments;
         }
-        return snippet;
     }
 
-    // 向上收集段落，直到总长度达到targetLen或达到maxCount
     function collectPrevParagraphs(paragraphs, startIdx, targetLen = 150, maxCount = 6) {
         let collected = [];
         let totalLen = 0;
@@ -1686,7 +1799,7 @@ window.addEventListener('resize', function() {
         for (let i = startIdx - 1; i >= 0 && count < maxCount; i--) {
             const para = paragraphs[i];
             if (!para.trim()) continue;
-            collected.unshift(para); // 保持顺序
+            collected.unshift(para);
             totalLen += para.length;
             count++;
             if (totalLen >= targetLen) break;
@@ -1694,71 +1807,52 @@ window.addEventListener('resize', function() {
         return collected;
     }
 
-    // 处理单个段落，返回格式化后的HTML
     function processParagraph(paragraph, index, allParagraphs, keywords) {
         const len = paragraph.length;
-        const SHORT_THRESHOLD = 50;      // 短段落阈值
-        const LONG_THRESHOLD = 400;      // 长段落阈值
-        const PREV_TARGET = 150;          // 前文目标长度
-        const NEXT_TARGET = 190;          // 后文目标长度
-        const MAX_PREV_PARAS = 6;          // 最多向前取6段
+        const SHORT_THRESHOLD = 50;
+        const LONG_THRESHOLD = 400;
+        const PREV_TARGET = 150;
+        const NEXT_TARGET = 190;
+        const MAX_PREV_PARAS = 6;
 
-        // 情况A：长段落 >400字
         if (len > LONG_THRESHOLD) {
-            const snippet = getContextSnippet(paragraph, keywords);
-            return `<p>${highlightKeywords(snippet, keywords)}</p>`;
-        }
-        // 情况C：常规段落 50-400字
-        else if (len >= SHORT_THRESHOLD && len <= LONG_THRESHOLD) {
+            const fragments = splitLongParagraphWithAllKeywords(paragraph, keywords);
+            let html = '';
+            fragments.forEach(f => {
+                let text = f.text;
+                if (f.start > 0) text = '…' + text;
+                if (f.end < paragraph.length) text = text + '…';
+                html += `<p>${highlightKeywords(text, keywords)}</p>`;
+            });
+            return html;
+        } else if (len >= SHORT_THRESHOLD && len <= LONG_THRESHOLD) {
             return `<p>${highlightKeywords(paragraph, keywords)}</p>`;
-        }
-        // 情况B：短段落 <50字
-        else {
-            // 收集上文段落
+        } else {
             const prevParas = collectPrevParagraphs(allParagraphs, index, PREV_TARGET, MAX_PREV_PARAS);
-            // 取下一段落（最多NEXT_TARGET字）
             let nextPara = '';
             if (index < allParagraphs.length - 1) {
                 const next = allParagraphs[index + 1];
-                if (next.length > NEXT_TARGET) {
-                    nextPara = next.substring(0, NEXT_TARGET) + '…';
-                } else {
-                    nextPara = next;
-                }
+                nextPara = next.length > NEXT_TARGET ? next.substring(0, NEXT_TARGET) + '…' : next;
             }
-
             let html = '';
-            // 添加上文
-            prevParas.forEach(p => {
-                html += `<span class="rule-context">${escapeHtml(p)}</span> `;
-            });
-            // 添加当前段落（高亮）
+            prevParas.forEach(p => html += `<span class="rule-context">${escapeHtml(p)}</span> `);
             html += `<span class="rule-matched-paragraph">${highlightKeywords(paragraph, keywords)}</span>`;
-            // 添加下文
-            if (nextPara) {
-                html += ` <span class="rule-context">${escapeHtml(nextPara)}</span>`;
-            }
+            if (nextPara) html += ` <span class="rule-context">${escapeHtml(nextPara)}</span>`;
             return `<p>${html}</p>`;
         }
     }
 
-    // 生成规章摘要HTML
     function generateRuleSnippet(rule, keywords) {
         const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
         if (paragraphs.length === 0) return '';
-
-        // 找出所有同时包含所有关键词的段落
-        const matchedIndices = [];
         const lowerKeywords = keywords.map(k => k.toLowerCase());
+        const matchedIndices = [];
         paragraphs.forEach((para, idx) => {
             const lowerPara = para.toLowerCase();
             const allMatch = lowerKeywords.every(kw => lowerPara.includes(kw));
             if (allMatch) matchedIndices.push(idx);
         });
-
-        if (matchedIndices.length === 0) return ''; // 无匹配段落
-
-        // 对每个匹配段落生成HTML
+        if (matchedIndices.length === 0) return '';
         let html = '';
         matchedIndices.forEach(idx => {
             html += processParagraph(paragraphs[idx], idx, paragraphs, keywords);
@@ -1767,20 +1861,18 @@ window.addEventListener('resize', function() {
     }
 
     function renderResults() { 
-        const trade = document.getElementById('rule-tradeSelect').value;
+        const trade = document.getElementById('rule-tradeSelect')?.value || '';
         const keywords = getKeywords();
-        // 如果专业为空且无关键词，显示空状态
+        const resultsList = document.getElementById('rule-resultsList');
+        const resultCount = document.getElementById('rule-resultCount');
+        if (!resultsList) return;
         if (trade === '' && keywords.length === 0) {
-            document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
-            document.getElementById('rule-resultCount').textContent = '0 项';
+            resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
+            if (resultCount) resultCount.textContent = '0 项';
             return;
         }
-
-        // 按专业过滤
         let filtered = rules;
         if (trade !== '') filtered = filtered.filter(r => r.trade === trade);
-
-        // 如果有关键词，则进一步筛选出有匹配段落的规章
         let results = [];
         if (keywords.length > 0) {
             filtered.forEach(rule => {
@@ -1790,25 +1882,18 @@ window.addEventListener('resize', function() {
                 }
             });
         } else {
-            // 没有关键词，但选择了专业，则显示该专业所有规章（不截取，只显示简要？这里保持原样，显示全部内容但无高亮）
             filtered.forEach(rule => {
                 const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
                 let fullHtml = '';
-                paragraphs.forEach(para => {
-                    fullHtml += `<p>${escapeHtml(para)}</p>`;
-                });
+                paragraphs.forEach(para => fullHtml += `<p>${escapeHtml(para)}</p>`);
                 results.push({ rule, snippetHtml: fullHtml });
             });
         }
-
-        // 更新计数
-        document.getElementById('rule-resultCount').textContent = results.length + ' 项';
-
+        if (resultCount) resultCount.textContent = results.length + ' 项';
         if (results.length === 0) { 
-            document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>未找到同时包含所有关键词的段落</p></div>'; 
+            resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>未找到同时包含所有关键词的段落</p></div>'; 
             return; 
         }
-
         let html = '<div class="result-list">';
         results.forEach(item => {
             html += '<div class="rule-card-item">';
@@ -1818,7 +1903,7 @@ window.addEventListener('resize', function() {
             html += '</div>';
         });
         html += '</div>';
-        document.getElementById('rule-resultsList').innerHTML = html;
+        resultsList.innerHTML = html;
     }
     
     function getKeywords() { 
@@ -1834,12 +1919,13 @@ window.addEventListener('resize', function() {
         if (keywordCount >= MAX_KEYWORDS) return; 
         keywordCount++; 
         const container = document.getElementById('rule-keywordContainer');
+        if (!container) return;
         const div = document.createElement('div');
         div.className = 'keyword-row';
         div.id = 'rule-kw_' + keywordCount;
         div.innerHTML = '<label>关键词' + keywordCount + '</label><input type="text" id="rule-input_' + keywordCount + '" placeholder="输入关键词' + keywordCount + '">' + (keywordCount > 1 ? '<button class="btn-remove" onclick="removeRuleKeyword(' + keywordCount + ')">×</button>' : '');
         container.appendChild(div);
-        setTimeout(() => document.getElementById('rule-input_' + keywordCount).focus(), 100);
+        setTimeout(() => document.getElementById('rule-input_' + keywordCount)?.focus(), 100);
         updateAddBtn();
     }
     
@@ -1851,10 +1937,13 @@ window.addEventListener('resize', function() {
         items.forEach((item) => {
             keywordCount++;
             item.id = 'rule-kw_' + keywordCount;
-            item.querySelector('label').textContent = '关键词' + keywordCount;
+            const label = item.querySelector('label');
+            if (label) label.textContent = '关键词' + keywordCount;
             const input = item.querySelector('input');
-            input.id = 'rule-input_' + keywordCount;
-            input.placeholder = '输入关键词' + keywordCount;
+            if (input) {
+                input.id = 'rule-input_' + keywordCount;
+                input.placeholder = '输入关键词' + keywordCount;
+            }
             const btn = item.querySelector('.btn-remove');
             if (btn) {
                 if (keywordCount === 1) btn.remove();
@@ -1866,15 +1955,18 @@ window.addEventListener('resize', function() {
     
     function updateAddBtn() {
         const btn = document.getElementById('rule-btnAdd');
+        if (!btn) return;
         if (keywordCount >= MAX_KEYWORDS) { btn.disabled = true; btn.textContent = '已达到最大关键词数量(4个)'; }
         else { btn.disabled = false; btn.textContent = '+ 添加关键词 (还可添加' + (MAX_KEYWORDS - keywordCount) + '个)'; }
     }
     
     function clearSearch() {
-        document.getElementById('rule-keywordContainer').innerHTML = '';
+        const container = document.getElementById('rule-keywordContainer');
+        if (container) container.innerHTML = '';
         keywordCount = 0;
         addKeywordInput();
-        document.getElementById('rule-tradeSelect').value = '';
+        const tradeSelect = document.getElementById('rule-tradeSelect');
+        if (tradeSelect) tradeSelect.value = '';
         renderResults();
     }
     
@@ -1886,6 +1978,7 @@ window.addEventListener('resize', function() {
     function handleImportClick() {
         if (isProcessing) { alert('正在处理中'); return; }
         const input = document.getElementById('rule-fileInput');
+        if (!input) return;
         input.onchange = (e) => {
             const files = e.target.files;
             if (!files || files.length === 0) return;
@@ -1899,8 +1992,8 @@ window.addEventListener('resize', function() {
     window.closeImportModal = function() { closeModal('rule-importModal'); window.pendingImportFiles = []; }
     
     window.confirmImportTrade = async function() {
-        let trade = document.getElementById('rule-importTrade').value;
-        const newTrade = document.getElementById('rule-importNewTrade').value.trim();
+        let trade = document.getElementById('rule-importTrade')?.value;
+        const newTrade = document.getElementById('rule-importNewTrade')?.value.trim();
         if (newTrade) trade = newTrade;
         if (!trade) { alert('请选择或输入专业'); return; }
         window.pendingImportTrade = trade;
@@ -1916,11 +2009,14 @@ window.addEventListener('resize', function() {
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const ext = file.name.split('.').pop().toLowerCase();
-            btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></span> ' + (i + 1) + '/' + files.length;
+            if (btn) btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></span> ' + (i + 1) + '/' + files.length;
             
             try {
                 let text = '';
                 if (ext === 'pdf') {
+                    if (typeof pdfjsLib === 'undefined') {
+                        throw new Error('pdf.js 库未加载，无法解析PDF');
+                    }
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                     for (let p = 1; p <= pdf.numPages; p++) {
@@ -1929,6 +2025,9 @@ window.addEventListener('resize', function() {
                         text += content.items.map(item => item.str).join(' ') + '\n';
                     }
                 } else if (ext === 'docx' || ext === 'doc') {
+                    if (typeof mammoth === 'undefined') {
+                        throw new Error('mammoth 库未加载，无法解析Word');
+                    }
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.extractRawText({ arrayBuffer });
                     text = result.value;
@@ -1958,6 +2057,7 @@ window.addEventListener('resize', function() {
                 successCount++;
             } catch (err) {
                 console.error('导入失败:', err);
+                alert(`文件 ${file.name} 导入失败：${err.message}`);
                 skipCount++;
             }
         }
@@ -1966,15 +2066,15 @@ window.addEventListener('resize', function() {
         refreshTradeSelect();
         updateTotalBadge();
         renderResults();
-        btn.innerHTML = '📥 导入';
+        if (btn) btn.innerHTML = '📥 导入';
         isProcessing = false;
         alert('导入完成：成功 ' + successCount + ' 个，跳过 ' + skipCount + ' 个');
     }
     
     window.doExport = function() {
-        const selectedTrade = document.getElementById('rule-exportTrade').value;
+        const selectedTrade = document.getElementById('rule-exportTrade')?.value;
         let exportRules = rules;
-        if (selectedTrade !== '') exportRules = rules.filter(r => r.trade === selectedTrade);
+        if (selectedTrade && selectedTrade !== '') exportRules = rules.filter(r => r.trade === selectedTrade);
         if (exportRules.length === 0) { alert('所选专业暂无规章'); return; }
         const dataStr = JSON.stringify(exportRules, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1993,51 +2093,61 @@ window.addEventListener('resize', function() {
     };
     
     function renderCatalog() {
-        const filterText = document.getElementById('rule-catalogFilter').value.toLowerCase();
-        const filterTrade = document.getElementById('rule-catalogTradeFilter').value;
+        const filterText = document.getElementById('rule-catalogFilter')?.value.toLowerCase() || '';
+        const filterTrade = document.getElementById('rule-catalogTradeFilter')?.value || '';
         let filtered = rules;
         if (filterText) filtered = filtered.filter(r => r.title.toLowerCase().includes(filterText));
         if (filterTrade) filtered = filtered.filter(r => r.trade === filterTrade);
         
-        document.getElementById('rule-catalogStats').textContent = '共 ' + filtered.length + ' 条 / 总计 ' + rules.length + ' 条';
+        const stats = document.getElementById('rule-catalogStats');
+        if (stats) stats.textContent = '共 ' + filtered.length + ' 条 / 总计 ' + rules.length + ' 条';
         
-        if (filtered.length === 0) { document.getElementById('rule-catalogList').innerHTML = '<div class="empty-state">暂无规章</div>'; return; }
+        const list = document.getElementById('rule-catalogList');
+        if (!list) return;
+        if (filtered.length === 0) { list.innerHTML = '<div class="empty-state">暂无规章</div>'; return; }
         
         let html = '';
         filtered.forEach((rule, idx) => {
             const originalIdx = rules.indexOf(rule);
             html += '<div class="catalog-item"><div class="catalog-info"><div class="catalog-title" title="' + escapeHtml(rule.title) + '">' + escapeHtml(rule.title) + '</div><div class="catalog-meta"><span class="catalog-trade">' + escapeHtml(rule.trade) + '</span><span>' + rule.content.length + '字</span></div></div><div class="catalog-actions"><button class="btn btn-info btn-small" onclick="viewRule(' + originalIdx + ')">查看</button><button class="btn btn-success btn-small" onclick="editRule(' + originalIdx + ')">编辑</button><button class="btn btn-danger btn-small" onclick="deleteRule(' + originalIdx + ')">删除</button></div></div>';
         });
-        document.getElementById('rule-catalogList').innerHTML = html;
+        list.innerHTML = html;
     }
     
     window.viewRule = function(idx) {
         const rule = rules[idx];
-        document.getElementById('rule-viewTitle').textContent = rule.title;
-        document.getElementById('rule-viewTrade').textContent = rule.trade;
-        document.getElementById('rule-viewContent').value = rule.content;
+        const title = document.getElementById('rule-viewTitle');
+        if (title) title.textContent = rule.title;
+        const trade = document.getElementById('rule-viewTrade');
+        if (trade) trade.textContent = rule.trade;
+        const content = document.getElementById('rule-viewContent');
+        if (content) content.value = rule.content;
         openModal('rule-viewModal');
     };
     
     window.editRule = function(idx) {
         const rule = rules[idx];
         currentEditIndex = idx;
-        document.getElementById('rule-editTitle').value = rule.title;
+        const title = document.getElementById('rule-editTitle');
+        if (title) title.value = rule.title;
         const editSelect = document.getElementById('rule-editTrade');
-        editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
-        const tradesSet = new Set(); rules.forEach(r => tradesSet.add(r.trade));
-        Array.from(tradesSet).sort((a, b) => a.localeCompare(b, 'zh')).forEach(trade => {
-            const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option);
-        });
-        if (tradesSet.has(rule.trade)) editSelect.value = rule.trade; else editSelect.value = '';
-        document.getElementById('rule-editNewTrade').value = '';
+        if (editSelect) {
+            editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
+            const tradesSet = new Set(); rules.forEach(r => tradesSet.add(r.trade));
+            Array.from(tradesSet).sort((a, b) => a.localeCompare(b, 'zh')).forEach(trade => {
+                const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option);
+            });
+            if (tradesSet.has(rule.trade)) editSelect.value = rule.trade; else editSelect.value = '';
+        }
+        const newTrade = document.getElementById('rule-editNewTrade');
+        if (newTrade) newTrade.value = '';
         openModal('rule-editModal');
     };
     
     window.saveRuleEdit = function() {
-        const title = document.getElementById('rule-editTitle').value.trim();
-        let trade = document.getElementById('rule-editTrade').value;
-        const newTrade = document.getElementById('rule-editNewTrade').value.trim();
+        const title = document.getElementById('rule-editTitle')?.value.trim();
+        let trade = document.getElementById('rule-editTrade')?.value;
+        const newTrade = document.getElementById('rule-editNewTrade')?.value.trim();
         if (newTrade) trade = newTrade;
         if (!title) { alert('请输入规章标题'); return; }
         if (!trade) { alert('请选择或输入专业'); return; }
@@ -2085,36 +2195,223 @@ window.addEventListener('resize', function() {
         refreshTradeSelect();
         updateTotalBadge();
         updateStorageInfo();
-        document.getElementById('rule-resultsList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
+        const resultsList = document.getElementById('rule-resultsList');
+        if (resultsList) resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
         addKeywordInput();
         
-        document.getElementById('rule-searchBtn').addEventListener('click', renderResults);
-        document.getElementById('rule-clearSearchBtn').addEventListener('click', clearSearch);
-        document.getElementById('rule-btnAdd').addEventListener('click', addKeywordInput);
-        document.getElementById('rule-importBtn').addEventListener('click', handleImportClick);
-        document.getElementById('rule-exportBtn').addEventListener('click', () => openModal('rule-exportModal'));
-        document.getElementById('rule-catalogBtn').addEventListener('click', showCatalog);
-        document.getElementById('rule-clearBtn').addEventListener('click', () => {
-            if (confirm('确定要清空所有规章吗？\n\n点击"确定"：清空\n点击"取消"：恢复示例')) {
-                rules = []; saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
-            } else {
-                rules = sampleRules.map(r => ({ ...r })); saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
-            }
-        });
-        document.getElementById('rule-totalBadge').addEventListener('click', showCatalog);
-        document.getElementById('rule-tradeSelect').addEventListener('change', renderResults);
-        document.getElementById('rule-catalogFilter').addEventListener('input', renderCatalog);
-        document.getElementById('rule-catalogTradeFilter').addEventListener('change', renderCatalog);
+        const searchBtn = document.getElementById('rule-searchBtn');
+        if (searchBtn) searchBtn.addEventListener('click', renderResults);
+        const clearBtn = document.getElementById('rule-clearSearchBtn');
+        if (clearBtn) clearBtn.addEventListener('click', clearSearch);
+        const addBtn = document.getElementById('rule-btnAdd');
+        if (addBtn) addBtn.addEventListener('click', addKeywordInput);
+        const importBtn = document.getElementById('rule-importBtn');
+        if (importBtn) importBtn.addEventListener('click', handleImportClick);
+        const exportBtn = document.getElementById('rule-exportBtn');
+        if (exportBtn) exportBtn.addEventListener('click', () => openModal('rule-exportModal'));
+        const catalogBtn = document.getElementById('rule-catalogBtn');
+        if (catalogBtn) catalogBtn.addEventListener('click', showCatalog);
+        const clearAllBtn = document.getElementById('rule-clearBtn');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', () => {
+                if (confirm('确定要清空所有规章吗？\n\n点击"确定"：清空\n点击"取消"：恢复示例')) {
+                    rules = []; saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+                } else {
+                    rules = sampleRules.map(r => ({ ...r })); saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+                }
+            });
+        }
+        const totalBadge = document.getElementById('rule-totalBadge');
+        if (totalBadge) totalBadge.addEventListener('click', showCatalog);
+        const tradeSelect = document.getElementById('rule-tradeSelect');
+        if (tradeSelect) tradeSelect.addEventListener('change', renderResults);
+        const catalogFilter = document.getElementById('rule-catalogFilter');
+        if (catalogFilter) catalogFilter.addEventListener('input', renderCatalog);
+        const catalogTradeFilter = document.getElementById('rule-catalogTradeFilter');
+        if (catalogTradeFilter) catalogTradeFilter.addEventListener('change', renderCatalog);
     });
 })();
 
-// ========== Work Diary System (添加筛选功能) ==========
+// ========== Work Diary System (添加纠错功能) ==========
 (function() {
     const STORAGE_KEY = 'railway_work_diary_v2';
+    const DICT_STORAGE_KEY = 'proofread_dict';
     let diaries = [];
     let issueCount = 0;
     const MAX_ISSUES = 20;
-    let diaryFilterMode = 'today'; // 'today' 或 'all'
+    let diaryFilterMode = 'today';
+
+    let proofreadDict = {};
+
+    function loadProofreadDict() {
+        try {
+            const data = localStorage.getItem(DICT_STORAGE_KEY);
+            if (data) {
+                proofreadDict = JSON.parse(data);
+            } else {
+                proofreadDict = {
+                    '按装': '安装',
+                    '部份': '部分',
+                    '联接': '连接',
+                    '垫目': '垫木',
+                    '防户': '防护',
+                    '维户': '维护',
+                    '试工': '施工',
+                    '记碌': '记录',
+                    '规订': '规定',
+                    '不符和': '不符合',
+                    '没采取': '未采取',
+                    '没设置': '未设置',
+                    '没填写': '未填写',
+                    '做业': '作业',
+                    '寻检': '巡检',
+                    '发见': '发现',
+                    '问提': '问题',
+                    '稳患': '隐患',
+                    '正改': '整改'
+                };
+                saveProofreadDict();
+            }
+        } catch (e) {
+            proofreadDict = {};
+        }
+    }
+
+    function saveProofreadDict() {
+        try {
+            localStorage.setItem(DICT_STORAGE_KEY, JSON.stringify(proofreadDict));
+        } catch (e) {
+            alert('保存词典失败：' + e.message);
+        }
+    }
+
+    window.addDictEntry = function() {
+        const wrong = document.getElementById('newWrongWord')?.value.trim();
+        const correct = document.getElementById('newCorrectWord')?.value.trim();
+        if (!wrong || !correct) { alert('请填写错误词和正确词'); return; }
+        proofreadDict[wrong] = correct;
+        saveProofreadDict();
+        renderDictTable();
+        document.getElementById('newWrongWord').value = '';
+        document.getElementById('newCorrectWord').value = '';
+    };
+
+    window.removeDictEntry = function(wrong) {
+        delete proofreadDict[wrong];
+        saveProofreadDict();
+        renderDictTable();
+    };
+
+    function renderDictTable() {
+        const tbody = document.getElementById('dictTableBody');
+        if (!tbody) return;
+        let html = '';
+        for (let wrong in proofreadDict) {
+            html += `<tr><td>${escapeHtml(wrong)}</td><td>${escapeHtml(proofreadDict[wrong])}</td><td><button class="btn btn-danger btn-tiny" onclick="removeDictEntry('${wrong}')">删除</button></td></tr>`;
+        }
+        tbody.innerHTML = html;
+    }
+
+    window.openDictManager = function() {
+        renderDictTable();
+        openModal('dictModal');
+    };
+
+    window.exportDict = function() {
+        const dataStr = JSON.stringify(proofreadDict, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'proofread_dict.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    window.importDict = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            try {
+                const imported = JSON.parse(ev.target.result);
+                Object.assign(proofreadDict, imported);
+                saveProofreadDict();
+                renderDictTable();
+                alert('导入成功');
+            } catch (err) {
+                alert('导入失败：' + err.message);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    };
+
+    function escapeHtml(text) {
+        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    window.checkGrammar = function() {
+        const workText = document.getElementById('diary-work').value;
+        const issues = [];
+        for (let i = 0; i < issueCount; i++) {
+            const ta = document.getElementById(`diary-issue-${i}`);
+            if (ta && ta.value.trim()) {
+                issues.push(ta.value.trim());
+            }
+        }
+        const allText = workText + '\n' + issues.join('\n');
+        const errors = [];
+        for (let wrong in proofreadDict) {
+            const regex = new RegExp(escapeRegExp(wrong), 'g');
+            let match;
+            while ((match = regex.exec(allText)) !== null) {
+                errors.push({
+                    wrong: wrong,
+                    correct: proofreadDict[wrong],
+                    index: match.index
+                });
+            }
+        }
+        if (errors.length === 0) {
+            document.getElementById('proofreadResultBody').innerHTML = '<p>未发现明显错误。</p>';
+        } else {
+            let html = '<p>发现以下可能错误：</p><ul>';
+            errors.forEach(err => {
+                html += `<li>“${err.wrong}” 建议改为 “${err.correct}”</li>`;
+            });
+            html += '</ul>';
+            document.getElementById('proofreadResultBody').innerHTML = html;
+        }
+        openModal('proofreadResultModal');
+    };
+
+    window.applyProofread = function() {
+        let workText = document.getElementById('diary-work').value;
+        for (let wrong in proofreadDict) {
+            const regex = new RegExp(escapeRegExp(wrong), 'g');
+            workText = workText.replace(regex, proofreadDict[wrong]);
+        }
+        document.getElementById('diary-work').value = workText;
+        autoResize(document.getElementById('diary-work'));
+        for (let i = 0; i < issueCount; i++) {
+            const ta = document.getElementById(`diary-issue-${i}`);
+            if (ta) {
+                let val = ta.value;
+                for (let wrong in proofreadDict) {
+                    const regex = new RegExp(escapeRegExp(wrong), 'g');
+                    val = val.replace(regex, proofreadDict[wrong]);
+                }
+                ta.value = val;
+                autoResize(ta);
+            }
+        }
+        closeModal('proofreadResultModal');
+    };
 
     function renderIssueFields(issues = []) {
         const container = document.getElementById('diary-issues-container');
@@ -2302,10 +2599,8 @@ window.addEventListener('resize', function() {
         }
     };
 
-    // 设置筛选模式并重新渲染
     window.setDiaryFilter = function(mode) {
         diaryFilterMode = mode;
-        // 更新按钮样式
         const todayBtn = document.getElementById('diary-filter-today');
         const allBtn = document.getElementById('diary-filter-all');
         if (todayBtn && allBtn) {
@@ -2382,16 +2677,12 @@ window.addEventListener('resize', function() {
         container.innerHTML = html;
     }
 
-    function escapeHtml(text) {
-        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
+    loadProofreadDict();
     document.addEventListener('DOMContentLoaded', () => {
         loadDiaries();
         renderDiaryList();
         document.getElementById('diary-date').valueAsDate = new Date();
         renderIssueFields([]);
-        // 初始化筛选按钮样式
         setDiaryFilter('today');
     });
 })();
@@ -2631,7 +2922,7 @@ window.addEventListener('resize', function() {
     loadFromStorage();
 })();
 
-// Service Worker 注册（离线浏览功能需配合 manifest.json 和 sw.js 文件）
+// Service Worker 注册
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW failed'));
 }
