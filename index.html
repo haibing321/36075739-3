@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>铁路安监现场检查查询系统（增强版）</title>
+    <title>铁路安监现场检查查询系统（增强版+豆包助手）</title>
     <!-- 第三方库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -589,7 +589,7 @@
             display: flex;
             gap: 12px;
             justify-content: flex-end;
-            margin-bottom: 16px; /* 与日期行保持间距 */
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
         .diary-list {
@@ -961,12 +961,16 @@
                 <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone">
                     <span>📞</span> 车站电话
                 </button>
+                <!-- 新增豆包助手模块 -->
+                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao">
+                    <span>🤖</span> 豆包助手
+                </button>
             </nav>
         </div>
     </header>
 
     <main class="main">
-        <!-- 检查问题库 -->
+        <!-- 检查问题库（原index (6).html完整内容） -->
         <div id="panel-issue" class="panel active">
             <div class="card">
                 <div class="card-header">
@@ -1024,7 +1028,7 @@
             </div>
         </div>
 
-        <!-- 规章制度 -->
+        <!-- 规章制度（原完整内容） -->
         <div id="panel-rule" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1087,7 +1091,7 @@
             </div>
         </div>
 
-        <!-- 工作写实（优化版：按钮移到日期上方，移除纠错/词典管理） -->
+        <!-- 工作写实（原完整内容） -->
         <div id="panel-diary" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1141,7 +1145,7 @@
             </div>
         </div>
 
-        <!-- 车站电话查询 -->
+        <!-- 车站电话（原完整内容） -->
         <div id="panel-phone" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1196,11 +1200,41 @@
                 </div>
             </div>
         </div>
+
+        <!-- 新增豆包助手面板 -->
+        <div id="panel-doubao" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">🤖</div>
+                        豆包AI助手
+                    </div>
+                    <div class="card-subtitle">外部智能聊天工具 · 可点击下方按钮在新窗口打开</div>
+                </div>
+                <div class="card-body">
+                    <div style="text-align: center; margin-bottom: 12px;">
+                        <a href="https://www.doubao.com/chat/?channel=baidu_sem&source=dbweb_sem_pinz_pinp_sous_ssqt_ssqt_ocpc_faxx_5&keywordid=1299149977106&ad_platform_id=baidusearch_lead&account_id=62746170&a_planid=1526338037&a_unitid=13127073343&a_keywordid=1299149977106&a_creative=135706752350&a_matchtype=1&a_dongtai=0&a_trig_flag=nm&a_crowdid=0&a_kw_enc_utf8=%E8%B1%86%E5%8C%85%E5%AE%98%E7%BD%91%E7%BD%91%E9%A1%B5%E7%89%88&ug_semver=v2.0.0&bd_vid=17865977111308553445" target="_blank" class="btn btn-primary btn-lg">🌐 在新窗口打开豆包</a>
+                    </div>
+                    <div style="border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #f0f0f0;">
+                        <iframe 
+                            src="https://www.doubao.com/chat/?channel=baidu_sem&source=dbweb_sem_pinz_pinp_sous_ssqt_ssqt_ocpc_faxx_5&keywordid=1299149977106&ad_platform_id=baidusearch_lead&account_id=62746170&a_planid=1526338037&a_unitid=13127073343&a_keywordid=1299149977106&a_creative=135706752350&a_matchtype=1&a_dongtai=0&a_trig_flag=nm&a_crowdid=0&a_kw_enc_utf8=%E8%B1%86%E5%8C%85%E5%AE%98%E7%BD%91%E7%BD%91%E9%A1%B5%E7%89%88&ug_semver=v2.0.0&bd_vid=17865977111308553445"
+                            width="100%" 
+                            height="600" 
+                            style="border:none;" 
+                            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
+                            referrerpolicy="no-referrer-when-downgrade"
+                            title="豆包助手">
+                        </iframe>
+                    </div>
+                    <p style="margin-top:8px; font-size:0.8rem; color:var(--text-secondary);">⚠️ 如果无法显示，请点击上方按钮在新窗口打开。部分浏览器可能限制嵌入。</p>
+                </div>
+            </div>
+        </div>
     </main>
 
     <footer class="footer">
         <div>铁路安监现场检查查询系统 · 开发者：赵海兵</div>
-        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览</div>
+        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览 · 新增豆包助手模块</div>
     </footer>
 
     <!-- 问题库模态框 -->
