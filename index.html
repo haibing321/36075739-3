@@ -1,14 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>铁路安监现场检查查询系统（增强版+豆包助手）</title>
+    <title>铁路安监现场检查查询系统 · 精简交互版</title>
     <!-- 第三方库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
-    <!-- 新增模糊搜索和拼音库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.6.2/fuse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin/2.11.0/pinyin.min.js"></script>
     <link rel="manifest" href="manifest.json">
@@ -16,7 +15,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
-        /* ========== 全局变量 & 基础样式 ========== */
+        /* ========== 全局变量 & 基础样式 (完全保留原样式) ========== */
         :root {
             --primary: #1a365d;
             --primary-light: #2c5282;
@@ -812,74 +811,6 @@
             margin-top: 40px;
         }
         
-        /* ========== 新增样式：搜索选项、分页、建议框 ========== */
-        .search-options {
-            background: #f0f9ff;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 12px 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-        }
-        .search-option-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
-        }
-        .search-option-item select, .search-option-item input[type="number"] {
-            padding: 4px 8px;
-            border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            background: white;
-        }
-        .fuzzy-toggle {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .pagination button {
-            padding: 6px 12px;
-            border: 1px solid #cbd5e0;
-            background: white;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .pagination span {
-            font-size: 0.9rem;
-        }
-        .search-suggestions {
-            position: absolute;
-            background: white;
-            border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 100;
-            width: 100%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .search-suggestions div {
-            padding: 8px 12px;
-            cursor: pointer;
-        }
-        .search-suggestions div:hover {
-            background: #f0f9ff;
-        }
-        
         /* ========== 响应式调整 ========== */
         @media (max-width: 768px) {
             .header-inner { flex-direction: column; padding: 12px 16px; }
@@ -949,28 +880,17 @@
                 </div>
             </div>
             <nav class="nav">
-                <button class="nav-btn active" onclick="switchTab('issue')" id="tab-issue">
-                    <span>🔍</span> 检查信息
-                </button>
-                <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule">
-                    <span>📋</span> 规章制度
-                </button>
-                <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary">
-                    <span>📝</span> 工作写实
-                </button>
-                <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone">
-                    <span>📞</span> 车站电话
-                </button>
-                <!-- 新增豆包助手模块 -->
-                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao">
-                    <span>🤖</span> AI助手
-                </button>
+                <button class="nav-btn active" onclick="switchTab('issue')" id="tab-issue"><span>🔍</span> 检查信息</button>
+                <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule"><span>📋</span> 规章制度</button>
+                <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary"><span>📝</span> 工作写实</button>
+                <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone"><span>📞</span> 车站电话</button>
+                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🤖</span> AI助手</button>
             </nav>
         </div>
     </header>
 
     <main class="main">
-        <!-- 检查信息（原index (6).html完整内容） -->
+        <!-- 检查信息模块 -->
         <div id="panel-issue" class="panel active">
             <div class="card">
                 <div class="card-header">
@@ -1001,13 +921,12 @@
                             <button class="btn btn-secondary" onclick="issueLoadDemo()">📋 示例</button>
                         </div>
                     </div>
-                    <input type="file" id="issue-fileInput" accept=".xlsx,.xls" onchange="issueHandleExcel(event)" style="display:none;">
+                    <input type="file" id="issue-fileInput" accept=".xlsx,.xls" style="display:none;">
                     
                     <div class="search-box">
                         <div id="issue-keywordContainer" class="keyword-list"></div>
                         <button class="btn-add" id="issue-btnAdd" onclick="issueAddKeyword()">+ 添加关键词 (最多4个)</button>
-                        <!-- 新增搜索选项栏 -->
-                        <div id="issue-search-options" class="search-options"></div>
+                        <!-- 搜索选项已移除 -->
                         <div class="search-actions">
                             <button class="btn btn-primary btn-lg" onclick="issueDoSearch()">🔍 智能搜索</button>
                             <button class="btn btn-secondary btn-lg" onclick="issueClearSearch()">重置条件</button>
@@ -1028,7 +947,7 @@
             </div>
         </div>
 
-        <!-- 规章制度（原完整内容） -->
+        <!-- 规章制度模块 (结果默认隐藏) -->
         <div id="panel-rule" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1066,8 +985,7 @@
                     <div class="search-box">
                         <div id="rule-keywordContainer" class="keyword-list"></div>
                         <button class="btn-add" id="rule-btnAdd">+ 添加关键词 (最多4个)</button>
-                        <!-- 新增搜索选项栏 -->
-                        <div id="rule-search-options" class="search-options"></div>
+                        <!-- 搜索选项已移除 -->
                         <div class="search-actions">
                             <button class="btn btn-primary btn-lg" id="rule-searchBtn">🔍 智能搜索</button>
                             <button class="btn btn-secondary btn-lg" id="rule-clearSearchBtn">重置条件</button>
@@ -1076,22 +994,18 @@
 
                     <input type="file" id="rule-fileInput" accept=".pdf,.doc,.docx,.json" style="display:none;" multiple>
 
-                    <div class="results-header">
+                    <!-- 结果区域默认隐藏，搜索后显示 -->
+                    <div class="results-header" style="display: none;">
                         <span class="results-title">📋 查询结果</span>
                         <span class="results-count" id="rule-resultCount">0 项</span>
                     </div>
 
-                    <div id="rule-resultsList">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📋</div>
-                            <p>选择专业或输入关键词开始搜索</p>
-                        </div>
-                    </div>
+                    <div id="rule-resultsList" style="display: none;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 工作写实（原完整内容） -->
+        <!-- 工作写实模块 (按钮下移，列表默认隐藏) -->
         <div id="panel-diary" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1103,12 +1017,6 @@
                 </div>
                 <div class="card-body">
                     <div class="diary-form">
-                        <!-- 按钮栏：保存记录、重置、一键复制（位于日期上方） -->
-                        <div class="diary-actions">
-                            <button class="btn btn-primary" onclick="saveDiary()">💾 保存记录</button>
-                            <button class="btn btn-secondary" onclick="clearDiaryForm()">🔄 重置</button>
-                            <button class="btn btn-info" onclick="copyAllToday()">📋 复制全部</button>
-                        </div>
                         <div class="diary-date-row">
                             <label>📅 日期:</label>
                             <input type="date" id="diary-date">
@@ -1124,28 +1032,29 @@
                             <div id="diary-issues-container"></div>
                             <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
                         </div>
+
+                        <!-- 按钮移至此位置 -->
+                        <div class="diary-actions" style="margin-top:16px;">
+                            <button class="btn btn-primary" onclick="saveDiary()">💾 保存记录</button>
+                            <button class="btn btn-secondary" onclick="clearDiaryForm()">🔄 重置</button>
+                            <button class="btn btn-info" onclick="copyAllToday()">📋 复制全部</button>
+                        </div>
+
+                        <!-- 今天/历史信息按钮 -->
+                        <div style="display: flex; gap: 12px; align-items: center; margin: 20px 0 12px;">
+                            <button class="btn btn-info" id="diary-today-btn">📅 今天信息</button>
+                            <button class="btn btn-secondary" id="diary-history-btn">📚 历史信息</button>
+                            <span>记录数: <span id="diary-count">0</span></span>
+                        </div>
                     </div>
 
-                    <div class="results-header">
-                        <span class="results-title">📚 历史记录</span>
-                        <span class="results-count" id="diary-count">0 条</span>
-                        <div class="btn-group" style="margin-left: auto;">
-                            <button class="btn btn-small btn-info" onclick="setDiaryFilter('today')" id="diary-filter-today">今天</button>
-                            <button class="btn btn-small btn-secondary" onclick="setDiaryFilter('all')" id="diary-filter-all">全部</button>
-                        </div>
-                    </div>
-                    
-                    <div id="diary-list" class="diary-list">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📝</div>
-                            <p>暂无工作记录</p>
-                        </div>
-                    </div>
+                    <!-- 历史记录列表，默认隐藏 -->
+                    <div id="diary-list" class="diary-list" style="display:none;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 车站电话（原完整内容） -->
+        <!-- 车站电话模块 (结果框默认隐藏) -->
         <div id="panel-phone" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1191,17 +1100,13 @@
                         <span class="results-count" id="phone-resultCount">0 条</span>
                     </div>
 
-                    <div id="phone-results" class="result-list">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📞</div>
-                            <p>暂无电话数据，请导入Excel或加载示例</p>
-                        </div>
-                    </div>
+                    <!-- 结果容器默认隐藏，搜索后显示 -->
+                    <div id="phone-results" class="result-list" style="display:none;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 新增豆包助手面板 -->
+        <!-- AI助手模块 -->
         <div id="panel-doubao" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1213,7 +1118,7 @@
                 </div>
                 <div class="card-body">
                     <div style="text-align: center; margin-bottom: 12px;">
-                        <a href="https://www.doubao.com/chat/?channel=baidu_sem&source=dbweb_sem_pinz_pinp_sous_ssqt_ssqt_ocpc_faxx_5&keywordid=1299149977106&ad_platform_id=baidusearch_lead&account_id=62746170&a_planid=1526338037&a_unitid=13127073343&a_keywordid=1299149977106&a_creative=135706752350&a_matchtype=1&a_dongtai=0&a_trig_flag=nm&a_crowdid=0&a_kw_enc_utf8=%E8%B1%86%E5%8C%85%E5%AE%98%E7%BD%91%E7%BD%91%E9%A1%B5%E7%89%88&ug_semver=v2.0.0&bd_vid=17865977111308553445" target="_blank" class="btn btn-primary btn-lg">🌐 在新窗口打开豆包</a>
+                        <a href="https://www.doubao.com/chat/?channel=baidu_sem&source=dbweb_sem_pinz_pinp_sous_ssqt_ssqt_ocpc_faxx_5&keywordid=1299149977106&ad_platform_id=baidusearch_lead&account_id=62746170&a_planid=1526338037&a_unitid=13127073343&a_keywordid=1299149977106&a_creative=135706752350&a_matchtype=1&a_dongtai=0&a_trig_flag=nm&a_crowdid=0&a_kw_enc_utf8=%E8%B1%86%E5%8C%85%E5%AE%98%E7%BD%91%E7%BD%91%E9%A1%B5%E7%89%88&ug_semver=v2.0.0&bd_vid=17865977111308553445" target="_blank" class="btn btn-primary btn-lg">🌐 在新窗口打开AI</a>
                     </div>
                     <div style="border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #f0f0f0;">
                         <iframe 
@@ -1361,7 +1266,7 @@
     </div>
 
     <script>
-        // ========== 全局工具函数 ==========
+        // ========== 全局工具函数 (完全保留原功能) ==========
         window.switchTab = function(tab) {
             document.querySelectorAll('.nav-btn').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -1387,22 +1292,6 @@
             }, 100);
         });
 
-        // 新增工具函数
-        const SEARCH_HISTORY_KEY = 'search_history';
-        function addSearchHistory(module, keywords) {
-            try {
-                let history = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY)) || {};
-                if (!history[module]) history[module] = [];
-                history[module] = [keywords, ...history[module].filter(k => k !== keywords)].slice(0, 10);
-                localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
-            } catch (e) {}
-        }
-        function getSearchHistory(module) {
-            try {
-                let history = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY)) || {};
-                return history[module] || [];
-            } catch (e) { return []; }
-        }
         function pinyinMatch(text, keyword) {
             if (!text || !keyword) return false;
             const lowerText = text.toLowerCase();
@@ -1419,21 +1308,15 @@
             return (str || '').replace(/\D/g, '');
         }
 
-        // ========== Issue System ==========
+        // ========== Issue System (移除搜索选项，固定OR模式+阈值75) ==========
         (function() {
             const DB_NAME = 'RailwayIssueDB_v2', STORE_NAME = 'issues', DB_VERSION = 1;
             let db = null, dataCache = [], keywordNum = 0, MAX_KEYWORDS = 4;
-            let showLowMatch = false, currentResults = [], currentKeywords = [], MATCH_THRESHOLD = 75;
-
-            // 增强变量
-            let searchMode = 'OR';
-            let fuzzyEnabled = false;
-            let searchFields = ['性质', 'category', 'content'];
-            let currentPage = 1;
-            let pageSize = 20;
-            let totalPages = 1;
-            let allFilteredResults = [];
-            let fuseIssueInstance = null;
+            let showLowMatch = false, currentResults = [], currentKeywords = [];
+            const MATCH_THRESHOLD = 75;
+            const searchMode = 'OR';
+            const searchFields = ['性质', 'category', 'content'];
+            let currentPage = 1, pageSize = 20, totalPages = 1, allFilteredResults = [];
 
             async function initDB() {
                 return new Promise((resolve, reject) => {
@@ -1591,66 +1474,6 @@
                 return '空白';
             }
 
-            function renderIssueSearchOptions() {
-                const searchBox = document.querySelector('#panel-issue .search-box');
-                if (!searchBox) return;
-                const container = document.getElementById('issue-search-options');
-                if (!container) return;
-                container.innerHTML = `
-                    <div class="search-option-item">
-                        <label>搜索模式：</label>
-                        <select id="issue-searchMode">
-                            <option value="OR">或(OR) 包含任一关键词</option>
-                            <option value="AND">且(AND) 包含所有关键词</option>
-                        </select>
-                    </div>
-                    <div class="search-option-item">
-                        <label>匹配阈值：</label>
-                        <input type="number" id="issue-threshold" min="0" max="100" value="75" style="width:60px;">%
-                    </div>
-                    <div class="search-option-item fuzzy-toggle">
-                        <label>模糊搜索：</label>
-                        <input type="checkbox" id="issue-fuzzy">
-                    </div>
-                    <div class="search-option-item">
-                        <label>搜索字段：</label>
-                        <select id="issue-fields" multiple size="1" style="height:auto; min-width:150px;">
-                            <option value="性质" selected>性质</option>
-                            <option value="category" selected>类别</option>
-                            <option value="content" selected>内容</option>
-                        </select>
-                        <small>按住Ctrl多选</small>
-                    </div>
-                `;
-                document.getElementById('issue-searchMode').addEventListener('change', function(e) {
-                    searchMode = e.target.value;
-                });
-                document.getElementById('issue-threshold').addEventListener('input', function(e) {
-                    MATCH_THRESHOLD = parseInt(e.target.value) || 75;
-                });
-                document.getElementById('issue-fuzzy').addEventListener('change', function(e) {
-                    fuzzyEnabled = e.target.checked;
-                    if (fuzzyEnabled && dataCache.length > 0) {
-                        fuseIssueInstance = new Fuse(dataCache, {
-                            keys: searchFields,
-                            threshold: 0.4,
-                            includeScore: true
-                        });
-                    }
-                });
-                document.getElementById('issue-fields').addEventListener('change', function(e) {
-                    const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
-                    searchFields = selected.length ? selected : ['性质', 'category', 'content'];
-                    if (fuzzyEnabled && dataCache.length > 0) {
-                        fuseIssueInstance = new Fuse(dataCache, {
-                            keys: searchFields,
-                            threshold: 0.4,
-                            includeScore: true
-                        });
-                    }
-                });
-            }
-
             window.issueDoSearch = async function() {
                 const keywords = [];
                 for (let i = 1; i <= keywordNum; i++) {
@@ -1659,57 +1482,30 @@
                 }
                 if (keywords.length === 0) { alert('请输入至少一个关键词'); return; }
 
-                addSearchHistory('issue', keywords.join(' '));
-
                 document.getElementById('issue-results').innerHTML = '<div class="loading"><div class="spinner"></div><p>正在搜索...</p></div>';
                 const data = dataCache.length > 0 ? dataCache : await loadData();
 
-                if (fuzzyEnabled) {
-                    fuseIssueInstance = new Fuse(data, {
-                        keys: searchFields,
-                        threshold: 0.4,
-                        includeScore: true
-                    });
-                }
-
                 setTimeout(() => {
                     let results = [];
-                    if (fuzzyEnabled) {
-                        const fuseResults = fuseIssueInstance.search(keywords.join(' '));
-                        results = fuseResults.map(r => ({
-                            ...r.item,
-                            matchCount: 1,
-                            totalKw: 1,
-                            matchRate: Math.round((1 - r.score) * 100),
-                            xingzhi: getXingzhi(r.item)
-                        }));
-                    } else {
-                        data.forEach(item => {
-                            const xingzhi = getXingzhi(item);
-                            let text = '';
-                            if (searchFields.includes('性质')) text += xingzhi + ' ';
-                            if (searchFields.includes('category')) text += (item.category || '') + ' ';
-                            if (searchFields.includes('content')) text += (item.content || '') + ' ';
-                            text = text.toLowerCase();
+                    data.forEach(item => {
+                        const xingzhi = getXingzhi(item);
+                        let text = '';
+                        if (searchFields.includes('性质')) text += xingzhi + ' ';
+                        if (searchFields.includes('category')) text += (item.category || '') + ' ';
+                        if (searchFields.includes('content')) text += (item.content || '') + ' ';
+                        text = text.toLowerCase();
 
-                            let match = 0;
-                            keywords.forEach(k => {
-                                if (text.includes(k.toLowerCase())) match++;
-                            });
-
-                            let matched = false;
-                            if (searchMode === 'AND') {
-                                matched = (match === keywords.length);
-                            } else {
-                                matched = (match > 0);
-                            }
-
-                            if (matched) {
-                                const matchRate = Math.round((match / keywords.length) * 100);
-                                results.push({ ...item, matchCount: match, totalKw: keywords.length, matchRate: matchRate, xingzhi: xingzhi });
-                            }
+                        let match = 0;
+                        keywords.forEach(k => {
+                            if (text.includes(k.toLowerCase())) match++;
                         });
-                    }
+
+                        let matched = (searchMode === 'AND') ? (match === keywords.length) : (match > 0);
+                        if (matched) {
+                            const matchRate = Math.round((match / keywords.length) * 100);
+                            results.push({ ...item, matchCount: match, totalKw: keywords.length, matchRate: matchRate, xingzhi: xingzhi });
+                        }
+                    });
 
                     results.sort((a, b) => {
                         if (b.matchRate !== a.matchRate) return b.matchRate - a.matchRate;
@@ -1808,7 +1604,6 @@
             };
 
             window.issueImportExcel = function() { document.getElementById('issue-fileInput').click(); };
-
             window.issueHandleExcel = async function(e) {
                 const file = e.target.files[0]; if (!file) return;
                 openModal('issue-importModal');
@@ -1827,10 +1622,11 @@
                         newData.push({ id: Date.now() + i, '性质': xz, datetime: cols.datetime !== -1 ? formatExcelDate(row[cols.datetime]) : new Date().toLocaleString('zh-CN'), category: cols.category !== -1 ? String(row[cols.category] || '其他').trim() : '其他', content: content });
                     }
                     if (newData.length === 0) throw new Error('未找到有效数据');
-                    const xzStats = {}; newData.forEach(d => { const key = d['性质'] || '空白'; xzStats[key] = (xzStats[key] || 0) + 1; });
-                    const existingCount = dataCache.length; let finalData = newData, msg = '成功解析 ' + newData.length + ' 条记录';
-                    if (Object.keys(xzStats).length > 0) msg += '\n性质分布: ' + Object.entries(xzStats).map(([k, v]) => k + '=' + v + '条').join(', ');
-                    if (existingCount > 0) { const action = confirm(msg + '\n\n当前已有 ' + existingCount + ' 条记录。\n点击"确定"：覆盖现有数据\n点击"取消"：追加合并'); if (!action) finalData = [...dataCache, ...newData]; } else alert(msg);
+                    const existingCount = dataCache.length; let finalData = newData;
+                    if (existingCount > 0) {
+                        const action = confirm('当前已有 ' + existingCount + ' 条记录。\n点击"确定"覆盖，点击"取消"追加');
+                        if (!action) finalData = [...dataCache, ...newData];
+                    }
                     document.getElementById('issue-importStatus').textContent = '正在保存...';
                     await saveData(finalData); await updateStorage(); closeModal('issue-importModal');
                 } catch (err) { closeModal('issue-importModal'); alert('导入失败: ' + err.message); }
@@ -1871,11 +1667,11 @@
             };
 
             window.addEventListener('load', async function() {
-                try { await initDB(); await updateStorage(); issueAddKeyword(); const data = await loadData(); if (data.length === 0) await issueLoadDemoData(); renderIssueSearchOptions(); } catch (e) { alert('初始化失败: ' + e.message); }
+                try { await initDB(); await updateStorage(); issueAddKeyword(); const data = await loadData(); if (data.length === 0) await issueLoadDemoData(); } catch (e) { alert('初始化失败: ' + e.message); }
             });
         })();
 
-        // ========== Rule System 增强 ==========
+        // ========== Rule System (移除搜索选项，固定段落匹配，结果默认隐藏) ==========
         (function() {
             if (typeof pdfjsLib !== 'undefined') {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -1883,16 +1679,17 @@
 
             let rules = [];
             const STORAGE_KEY = 'railway_rules_v1', MAX_STORAGE_SIZE = 200 * 1024 * 1024;
-            const sampleRules = [{ trade: '车务', title: '接发列车作业标准', content: '接发列车时，必须办理行车凭证。\n列车进站应确认信号开放。\n接发列车人员应严格执行眼看、手指、口述制度。' }, { trade: '车务', title: '调车作业细则', content: '调车作业前必须排风摘管，核对计划。\n驼峰调车严格控制推送速度。\n铁鞋制动时，严禁使用不符合标准的铁鞋。' }, { trade: '机务', title: '机车牵引操作规', content: '机车起动前确认制动缸压力，鸣笛动车。\n牵引运行中注意接触网电压，通过分相区断电降弓。' }, { trade: '工务', title: '线路维修安全规则', content: '天窗点内方可上道作业。\n作业前后清点工机具。\n无缝线路作业必须测量轨温，防止胀轨跑道。' }, { trade: '电务', title: '信号设备检修规程', content: '信号机显示距离应符合标准。\n轨道电路电压调整在规定范围。\n电缆绝缘测试每月一次。' }, { trade: '供电', title: '接触网安全工作规程', content: 'V停作业必须穿戴绝缘靴手套。\n地线接设位置正确，验电接地。\n作业车平台升降严禁侵入邻线。' }];
+            const sampleRules = [
+                { trade: '车务', title: '接发列车作业标准', content: '接发列车时，必须办理行车凭证。\n列车进站应确认信号开放。\n接发列车人员应严格执行眼看、手指、口述制度。' },
+                { trade: '车务', title: '调车作业细则', content: '调车作业前必须排风摘管，核对计划。\n驼峰调车严格控制推送速度。\n铁鞋制动时，严禁使用不符合标准的铁鞋。' },
+                { trade: '机务', title: '机车牵引操作规', content: '机车起动前确认制动缸压力，鸣笛动车。\n牵引运行中注意接触网电压，通过分相区断电降弓。' },
+                { trade: '工务', title: '线路维修安全规则', content: '天窗点内方可上道作业。\n作业前后清点工机具。\n无缝线路作业必须测量轨温，防止胀轨跑道。' },
+                { trade: '电务', title: '信号设备检修规程', content: '信号机显示距离应符合标准。\n轨道电路电压调整在规定范围。\n电缆绝缘测试每月一次。' },
+                { trade: '供电', title: '接触网安全工作规程', content: 'V停作业必须穿戴绝缘靴手套。\n地线接设位置正确，验电接地。\n作业车平台升降严禁侵入邻线。' }
+            ];
             let keywordCount = 0, MAX_KEYWORDS = 4, pendingFiles = [], isProcessing = false, currentEditIndex = null;
-
-            // 增强变量
-            let ruleSearchMode = 'paragraph';
-            let ruleSortBy = 'matchCount';
-            let rulePage = 1;
-            let rulePageSize = 10;
-            let ruleTotalPages = 1;
-            let ruleAllResults = [];
+            const ruleSearchMode = 'paragraph'; // 固定段落模式
+            let rulePage = 1, rulePageSize = 10, ruleTotalPages = 1, ruleAllResults = [];
 
             function saveToStorage() {
                 try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rules)); updateStorageInfo(); return true; }
@@ -1940,19 +1737,16 @@
                     importSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
                     sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; importSelect.appendChild(option); });
                 }
-
                 const exportSelect = document.getElementById('rule-exportTrade');
                 if (exportSelect) {
                     exportSelect.innerHTML = '<option value="">所有专业 (全部导出)</option>';
                     sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; exportSelect.appendChild(option); });
                 }
-
                 const editSelect = document.getElementById('rule-editTrade');
                 if (editSelect) {
                     editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
                     sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option); });
                 }
-
                 const catalogFilter = document.getElementById('rule-catalogTradeFilter');
                 if (catalogFilter) {
                     catalogFilter.innerHTML = '<option value="">全部专业</option>';
@@ -1962,7 +1756,6 @@
 
             function escapeHtml(unsafe) { return unsafe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
             function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
             function highlightKeywords(text, keywords) {
                 if (!keywords || keywords.length === 0) return escapeHtml(text);
                 let result = escapeHtml(text);
@@ -1974,7 +1767,6 @@
                 return result;
             }
 
-            // 长段落最小窗口算法
             function splitLongParagraphWithAllKeywords(paragraph, keywords, maxLen = 380) {
                 const lowerPara = paragraph.toLowerCase();
                 const positions = [];
@@ -1987,11 +1779,9 @@
                 });
                 if (positions.length === 0) return [{ text: paragraph, start: 0, end: paragraph.length }];
                 positions.sort((a, b) => a.start - b.start);
-
                 let minStart = positions[0].start;
                 let maxEnd = positions[positions.length - 1].end;
                 const windowLen = maxEnd - minStart;
-
                 if (windowLen <= maxLen) {
                     const extra = maxLen - windowLen;
                     let left = Math.max(0, minStart - Math.floor(extra / 2));
@@ -2039,9 +1829,7 @@
             }
 
             function collectPrevParagraphs(paragraphs, startIdx, targetLen = 150, maxCount = 6) {
-                let collected = [];
-                let totalLen = 0;
-                let count = 0;
+                let collected = []; let totalLen = 0; let count = 0;
                 for (let i = startIdx - 1; i >= 0 && count < maxCount; i--) {
                     const para = paragraphs[i];
                     if (!para.trim()) continue;
@@ -2055,12 +1843,7 @@
 
             function processParagraph(paragraph, index, allParagraphs, keywords) {
                 const len = paragraph.length;
-                const SHORT_THRESHOLD = 50;
-                const LONG_THRESHOLD = 400;
-                const PREV_TARGET = 150;
-                const NEXT_TARGET = 190;
-                const MAX_PREV_PARAS = 6;
-
+                const SHORT_THRESHOLD = 50, LONG_THRESHOLD = 400, PREV_TARGET = 150, NEXT_TARGET = 190, MAX_PREV_PARAS = 6;
                 if (len > LONG_THRESHOLD) {
                     const fragments = splitLongParagraphWithAllKeywords(paragraph, keywords);
                     let html = '';
@@ -2167,13 +1950,9 @@
                 addKeywordInput();
                 const tradeSelect = document.getElementById('rule-tradeSelect');
                 if (tradeSelect) tradeSelect.value = '';
-                renderResults();
+                document.getElementById('rule-resultsList').style.display = 'none';
+                document.querySelector('#panel-rule .results-header').style.display = 'none';
             }
-
-            function findDuplicate(title) { return rules.findIndex(r => r.title.toLowerCase().trim() === title.toLowerCase().trim()); }
-
-            window.pendingImportFiles = [];
-            window.pendingImportTrade = '';
 
             function handleImportClick() {
                 if (isProcessing) { alert('正在处理中'); return; }
@@ -2188,9 +1967,7 @@
                 };
                 input.click();
             }
-
             window.closeImportModal = function() { closeModal('rule-importModal'); window.pendingImportFiles = []; }
-
             window.confirmImportTrade = async function() {
                 let trade = document.getElementById('rule-importTrade')?.value;
                 const newTrade = document.getElementById('rule-importNewTrade')?.value.trim();
@@ -2200,23 +1977,18 @@
                 closeModal('rule-importModal');
                 await processFiles(window.pendingImportFiles, trade);
             }
-
             async function processFiles(files, trade) {
                 isProcessing = true;
                 const btn = document.getElementById('rule-importBtn');
                 let successCount = 0, skipCount = 0;
-
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     const ext = file.name.split('.').pop().toLowerCase();
                     if (btn) btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></span> ' + (i + 1) + '/' + files.length;
-
                     try {
                         let text = '';
                         if (ext === 'pdf') {
-                            if (typeof pdfjsLib === 'undefined') {
-                                throw new Error('pdf.js 库未加载，无法解析PDF');
-                            }
+                            if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js 库未加载');
                             const arrayBuffer = await file.arrayBuffer();
                             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                             for (let p = 1; p <= pdf.numPages; p++) {
@@ -2225,9 +1997,7 @@
                                 text += content.items.map(item => item.str).join(' ') + '\n';
                             }
                         } else if (ext === 'docx' || ext === 'doc') {
-                            if (typeof mammoth === 'undefined') {
-                                throw new Error('mammoth 库未加载，无法解析Word');
-                            }
+                            if (typeof mammoth === 'undefined') throw new Error('mammoth 库未加载');
                             const arrayBuffer = await file.arrayBuffer();
                             const result = await mammoth.extractRawText({ arrayBuffer });
                             text = result.value;
@@ -2237,7 +2007,7 @@
                             if (Array.isArray(data)) {
                                 data.forEach(item => {
                                     if (item.title && item.content) {
-                                        const dupIdx = findDuplicate(item.title);
+                                        const dupIdx = rules.findIndex(r => r.title.toLowerCase().trim() === item.title.toLowerCase().trim());
                                         if (dupIdx !== -1) rules[dupIdx] = { trade: item.trade || trade, title: item.title, content: item.content };
                                         else rules.push({ trade: item.trade || trade, title: item.title, content: item.content });
                                         successCount++;
@@ -2245,32 +2015,20 @@
                                 });
                                 continue;
                             }
-                        } else {
-                            skipCount++; continue;
-                        }
-
+                        } else { skipCount++; continue; }
                         if (!text.trim()) { skipCount++; continue; }
                         const title = file.name.replace(/\.[^/.]+$/, '');
-                        const dupIdx = findDuplicate(title);
+                        const dupIdx = rules.findIndex(r => r.title.toLowerCase().trim() === title.toLowerCase().trim());
                         if (dupIdx !== -1) rules[dupIdx] = { trade, title, content: text };
                         else rules.push({ trade, title, content: text });
                         successCount++;
-                    } catch (err) {
-                        console.error('导入失败:', err);
-                        alert(`文件 ${file.name} 导入失败：${err.message}`);
-                        skipCount++;
-                    }
+                    } catch (err) { console.error(err); skipCount++; }
                 }
-
-                saveToStorage();
-                refreshTradeSelect();
-                updateTotalBadge();
-                renderResults();
+                saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
                 if (btn) btn.innerHTML = '📥 导入';
                 isProcessing = false;
                 alert('导入完成：成功 ' + successCount + ' 个，跳过 ' + skipCount + ' 个');
             }
-
             window.doExport = function() {
                 const selectedTrade = document.getElementById('rule-exportTrade')?.value;
                 let exportRules = rules;
@@ -2286,26 +2044,21 @@
                 URL.revokeObjectURL(url);
                 closeModal('rule-exportModal');
             }
-
             window.showCatalog = function() {
                 renderCatalog();
                 openModal('rule-catalogModal');
             };
-
             function renderCatalog() {
                 const filterText = document.getElementById('rule-catalogFilter')?.value.toLowerCase() || '';
                 const filterTrade = document.getElementById('rule-catalogTradeFilter')?.value || '';
                 let filtered = rules;
                 if (filterText) filtered = filtered.filter(r => r.title.toLowerCase().includes(filterText));
                 if (filterTrade) filtered = filtered.filter(r => r.trade === filterTrade);
-
                 const stats = document.getElementById('rule-catalogStats');
                 if (stats) stats.textContent = '共 ' + filtered.length + ' 条 / 总计 ' + rules.length + ' 条';
-
                 const list = document.getElementById('rule-catalogList');
                 if (!list) return;
                 if (filtered.length === 0) { list.innerHTML = '<div class="empty-state">暂无规章</div>'; return; }
-
                 let html = '';
                 filtered.forEach((rule, idx) => {
                     const originalIdx = rules.indexOf(rule);
@@ -2313,37 +2066,27 @@
                 });
                 list.innerHTML = html;
             }
-
             window.viewRule = function(idx) {
                 const rule = rules[idx];
-                const title = document.getElementById('rule-viewTitle');
-                if (title) title.textContent = rule.title;
-                const trade = document.getElementById('rule-viewTrade');
-                if (trade) trade.textContent = rule.trade;
-                const content = document.getElementById('rule-viewContent');
-                if (content) content.value = rule.content;
+                document.getElementById('rule-viewTitle').textContent = rule.title;
+                document.getElementById('rule-viewTrade').textContent = rule.trade;
+                document.getElementById('rule-viewContent').value = rule.content;
                 openModal('rule-viewModal');
             };
-
             window.editRule = function(idx) {
                 const rule = rules[idx];
                 currentEditIndex = idx;
-                const title = document.getElementById('rule-editTitle');
-                if (title) title.value = rule.title;
+                document.getElementById('rule-editTitle').value = rule.title;
                 const editSelect = document.getElementById('rule-editTrade');
-                if (editSelect) {
-                    editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
-                    const tradesSet = new Set(); rules.forEach(r => tradesSet.add(r.trade));
-                    Array.from(tradesSet).sort((a, b) => a.localeCompare(b, 'zh')).forEach(trade => {
-                        const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option);
-                    });
-                    if (tradesSet.has(rule.trade)) editSelect.value = rule.trade; else editSelect.value = '';
-                }
-                const newTrade = document.getElementById('rule-editNewTrade');
-                if (newTrade) newTrade.value = '';
+                editSelect.innerHTML = '<option value="">-- 选择专业 --</option>';
+                const tradesSet = new Set(); rules.forEach(r => tradesSet.add(r.trade));
+                Array.from(tradesSet).sort((a, b) => a.localeCompare(b, 'zh')).forEach(trade => {
+                    const option = document.createElement('option'); option.value = trade; option.textContent = trade; editSelect.appendChild(option);
+                });
+                if (tradesSet.has(rule.trade)) editSelect.value = rule.trade; else editSelect.value = '';
+                document.getElementById('rule-editNewTrade').value = '';
                 openModal('rule-editModal');
             };
-
             window.saveRuleEdit = function() {
                 const title = document.getElementById('rule-editTitle')?.value.trim();
                 let trade = document.getElementById('rule-editTrade')?.value;
@@ -2355,79 +2098,36 @@
                 if (dupIdx !== -1) { alert('已存在相同标题的规章'); return; }
                 rules[currentEditIndex].title = title;
                 rules[currentEditIndex].trade = trade;
-                saveToStorage();
-                refreshTradeSelect();
-                updateTotalBadge();
-                renderCatalog();
-                renderResults();
-                closeModal('rule-editModal');
-                alert('修改保存成功！');
+                saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderCatalog(); renderResults(); closeModal('rule-editModal'); alert('修改保存成功！');
             };
-
             window.deleteRule = function(idx) {
-                const rule = rules[idx];
-                if (confirm('确定要删除规章"' + rule.title + '"吗？')) {
+                if (confirm('确定要删除规章"' + rules[idx].title + '"吗？')) {
                     rules.splice(idx, 1);
-                    saveToStorage();
-                    refreshTradeSelect();
-                    updateTotalBadge();
-                    renderCatalog();
-                    renderResults();
+                    saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderCatalog(); renderResults();
                 }
             };
-
             window.clearAllRules = function() {
                 if (confirm('确定要清空所有规章吗？此操作不可恢复！')) {
-                    rules = [];
-                    saveToStorage();
-                    refreshTradeSelect();
-                    updateTotalBadge();
-                    renderResults();
-                    closeModal('rule-catalogModal');
+                    rules = []; saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults(); closeModal('rule-catalogModal');
                 }
             };
-
-            function renderRuleSearchOptions() {
-                const container = document.getElementById('rule-search-options');
-                if (!container) return;
-                container.innerHTML = `
-                    <div class="search-option-item">
-                        <label>匹配范围：</label>
-                        <select id="rule-searchMode">
-                            <option value="paragraph">同段落内包含所有关键词</option>
-                            <option value="full">全文包含所有关键词</option>
-                        </select>
-                    </div>
-                    <div class="search-option-item">
-                        <label>排序：</label>
-                        <select id="rule-sortBy">
-                            <option value="matchCount">匹配段落数</option>
-                            <option value="title">标题</option>
-                        </select>
-                    </div>
-                `;
-                document.getElementById('rule-searchMode').addEventListener('change', e => {
-                    ruleSearchMode = e.target.value;
-                    renderResults();
-                });
-                document.getElementById('rule-sortBy').addEventListener('change', e => {
-                    ruleSortBy = e.target.value;
-                    renderResults();
-                });
-            }
 
             window.renderResults = function() {
                 const trade = document.getElementById('rule-tradeSelect')?.value || '';
                 const keywords = getKeywords();
                 const resultsList = document.getElementById('rule-resultsList');
                 const resultCount = document.getElementById('rule-resultCount');
+                const header = document.querySelector('#panel-rule .results-header');
                 if (!resultsList) return;
 
                 if (trade === '' && keywords.length === 0) {
-                    resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
-                    if (resultCount) resultCount.textContent = '0 项';
+                    resultsList.style.display = 'none';
+                    if (header) header.style.display = 'none';
                     return;
                 }
+
+                resultsList.style.display = 'block';
+                if (header) header.style.display = 'flex';
 
                 let filtered = rules;
                 if (trade !== '') filtered = filtered.filter(r => r.trade === trade);
@@ -2460,27 +2160,19 @@
                     });
                 }
 
-                if (ruleSortBy === 'matchCount') {
-                    results.sort((a, b) => b.matchCount - a.matchCount);
-                } else if (ruleSortBy === 'title') {
-                    results.sort((a, b) => a.rule.title.localeCompare(b.rule.title, 'zh'));
-                }
-
+                results.sort((a, b) => b.matchCount - a.matchCount);
                 ruleAllResults = results;
                 ruleTotalPages = Math.ceil(results.length / rulePageSize) || 1;
                 rulePage = 1;
                 displayRulePage();
+                if (resultCount) resultCount.textContent = results.length + ' 项';
             };
 
             function displayRulePage() {
                 const resultsList = document.getElementById('rule-resultsList');
-                const resultCount = document.getElementById('rule-resultCount');
                 if (!resultsList) return;
-
                 const start = (rulePage - 1) * rulePageSize;
                 const pageResults = ruleAllResults.slice(start, start + rulePageSize);
-
-                if (resultCount) resultCount.textContent = ruleAllResults.length + ' 项';
 
                 if (pageResults.length === 0) {
                     resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>未找到匹配结果</p></div>';
@@ -2516,49 +2208,34 @@
                 const stored = loadFromStorage();
                 if (stored) rules = stored;
                 else { rules = sampleRules.map(r => ({ ...r })); saveToStorage(); }
-
                 refreshTradeSelect();
                 updateTotalBadge();
                 updateStorageInfo();
-                const resultsList = document.getElementById('rule-resultsList');
-                if (resultsList) resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>选择专业或输入关键词开始搜索</p></div>';
+                document.getElementById('rule-resultsList').style.display = 'none';
+                document.querySelector('#panel-rule .results-header').style.display = 'none';
                 addKeywordInput();
-                renderRuleSearchOptions();
 
-                const searchBtn = document.getElementById('rule-searchBtn');
-                if (searchBtn) searchBtn.addEventListener('click', renderResults);
-                const clearBtn = document.getElementById('rule-clearSearchBtn');
-                if (clearBtn) clearBtn.addEventListener('click', clearSearch);
-                const addBtn = document.getElementById('rule-btnAdd');
-                if (addBtn) addBtn.addEventListener('click', addKeywordInput);
-                const importBtn = document.getElementById('rule-importBtn');
-                if (importBtn) importBtn.addEventListener('click', handleImportClick);
-                const exportBtn = document.getElementById('rule-exportBtn');
-                if (exportBtn) exportBtn.addEventListener('click', () => openModal('rule-exportModal'));
-                const catalogBtn = document.getElementById('rule-catalogBtn');
-                if (catalogBtn) catalogBtn.addEventListener('click', showCatalog);
-                const clearAllBtn = document.getElementById('rule-clearBtn');
-                if (clearAllBtn) {
-                    clearAllBtn.addEventListener('click', () => {
-                        if (confirm('确定要清空所有规章吗？\n\n点击"确定"：清空\n点击"取消"：恢复示例')) {
-                            rules = []; saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
-                        } else {
-                            rules = sampleRules.map(r => ({ ...r })); saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
-                        }
-                    });
-                }
-                const totalBadge = document.getElementById('rule-totalBadge');
-                if (totalBadge) totalBadge.addEventListener('click', showCatalog);
-                const tradeSelect = document.getElementById('rule-tradeSelect');
-                if (tradeSelect) tradeSelect.addEventListener('change', renderResults);
-                const catalogFilter = document.getElementById('rule-catalogFilter');
-                if (catalogFilter) catalogFilter.addEventListener('input', renderCatalog);
-                const catalogTradeFilter = document.getElementById('rule-catalogTradeFilter');
-                if (catalogTradeFilter) catalogTradeFilter.addEventListener('change', renderCatalog);
+                document.getElementById('rule-searchBtn').addEventListener('click', renderResults);
+                document.getElementById('rule-clearSearchBtn').addEventListener('click', clearSearch);
+                document.getElementById('rule-btnAdd').addEventListener('click', addKeywordInput);
+                document.getElementById('rule-importBtn').addEventListener('click', handleImportClick);
+                document.getElementById('rule-exportBtn').addEventListener('click', () => openModal('rule-exportModal'));
+                document.getElementById('rule-catalogBtn').addEventListener('click', showCatalog);
+                document.getElementById('rule-clearBtn').addEventListener('click', () => {
+                    if (confirm('确定要清空所有规章吗？\n\n点击"确定"：清空\n点击"取消"：恢复示例')) {
+                        rules = []; saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+                    } else {
+                        rules = sampleRules.map(r => ({ ...r })); saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+                    }
+                });
+                document.getElementById('rule-totalBadge').addEventListener('click', showCatalog);
+                document.getElementById('rule-tradeSelect').addEventListener('change', renderResults);
+                document.getElementById('rule-catalogFilter')?.addEventListener('input', renderCatalog);
+                document.getElementById('rule-catalogTradeFilter')?.addEventListener('change', renderCatalog);
             });
         })();
 
-        // ========== Work Diary System (优化版，移除纠错/词典管理) ==========
+        // ========== 工作写实模块 (按钮下移，列表默认隐藏) ==========
         (function() {
             const STORAGE_KEY = 'railway_work_diary_v2';
             let diaries = [];
@@ -2566,19 +2243,9 @@
             const MAX_ISSUES = 20;
             let diaryFilterMode = 'today';
 
-            // 加载日记
-            function loadDiaries() {
-                try {
-                    const data = localStorage.getItem(STORAGE_KEY);
-                    if (data) diaries = JSON.parse(data);
-                } catch (e) { diaries = []; }
-            }
+            function loadDiaries() { try { const data = localStorage.getItem(STORAGE_KEY); if (data) diaries = JSON.parse(data); } catch (e) { diaries = []; } }
+            function saveDiaries() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(diaries)); } catch (e) { alert('保存失败：' + e.message); } }
 
-            function saveDiaries() {
-                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(diaries)); } catch (e) { alert('保存失败：' + e.message); }
-            }
-
-            // 渲染问题输入框
             function renderIssueFields(issues = []) {
                 const container = document.getElementById('diary-issues-container');
                 container.innerHTML = '';
@@ -2588,7 +2255,6 @@
                 }
                 updateAddIssueButton();
             }
-
             function addIssueFieldToDOM(value = '', index) {
                 const container = document.getElementById('diary-issues-container');
                 const div = document.createElement('div');
@@ -2602,17 +2268,12 @@
                 const textarea = document.getElementById(`diary-issue-${index}`);
                 requestAnimationFrame(() => autoResize(textarea));
             }
-
             window.addIssueField = function() {
-                if (issueCount >= MAX_ISSUES) {
-                    alert(`最多添加 ${MAX_ISSUES} 个问题`);
-                    return;
-                }
+                if (issueCount >= MAX_ISSUES) { alert(`最多添加 ${MAX_ISSUES} 个问题`); return; }
                 addIssueFieldToDOM('', issueCount);
                 issueCount++;
                 updateAddIssueButton();
             };
-
             window.removeIssueField = function(index) {
                 const row = document.getElementById(`diary-issue-row-${index}`);
                 if (row) row.remove();
@@ -2623,71 +2284,53 @@
                     const textarea = row.querySelector('textarea');
                     textarea.id = `diary-issue-${idx}`;
                     textarea.placeholder = `问题 ${idx + 1}`;
-                    textarea.setAttribute('oninput', 'autoResize(this)');
                     const removeBtn = row.querySelector('.btn-remove-issue');
-                    if (removeBtn) {
-                        removeBtn.setAttribute('onclick', `removeIssueField(${idx})`);
-                    }
+                    if (removeBtn) removeBtn.setAttribute('onclick', `removeIssueField(${idx})`);
                     requestAnimationFrame(() => autoResize(textarea));
                 });
                 updateAddIssueButton();
             };
-
             function updateAddIssueButton() {
                 const btn = document.getElementById('btn-add-issue');
-                if (issueCount >= MAX_ISSUES) {
-                    btn.disabled = true;
-                    btn.textContent = `已达到最大问题数量(${MAX_ISSUES}个)`;
-                } else {
-                    btn.disabled = false;
-                    btn.textContent = `+ 添加问题 (还可添加 ${MAX_ISSUES - issueCount} 个)`;
-                }
+                if (issueCount >= MAX_ISSUES) { btn.disabled = true; btn.textContent = `已达到最大问题数量(${MAX_ISSUES}个)`; }
+                else { btn.disabled = false; btn.textContent = `+ 添加问题 (还可添加 ${MAX_ISSUES - issueCount} 个)`; }
             }
-
             function collectIssues() {
                 const issues = [];
                 for (let i = 0; i < issueCount; i++) {
                     const textarea = document.getElementById(`diary-issue-${i}`);
-                    if (textarea) {
-                        const val = textarea.value.trim();
-                        if (val) issues.push(val);
-                    }
+                    if (textarea) { const val = textarea.value.trim(); if (val) issues.push(val); }
                 }
                 return issues;
             }
-
-            // 保存记录
             window.saveDiary = function() {
                 const date = document.getElementById('diary-date').value;
                 const work = document.getElementById('diary-work').value.trim();
                 if (!date) { alert('请选择日期'); return; }
                 if (!work) { alert('请输入工作内容'); return; }
-                
                 const issues = collectIssues();
-                
                 const existingIdx = diaries.findIndex(d => d.date === date);
                 if (existingIdx !== -1) {
                     if (!confirm('该日期已有记录，是否覆盖？')) return;
                     diaries[existingIdx] = { date, work, issues };
-                } else {
-                    diaries.push({ date, work, issues });
-                }
-                
+                } else { diaries.push({ date, work, issues }); }
                 diaries.sort((a, b) => new Date(b.date) - new Date(a.date));
                 saveDiaries();
+                diaryFilterMode = 'today';
                 renderDiaryList();
+                document.getElementById('diary-list').style.display = 'block';
+                document.getElementById('diary-today-btn').classList.add('btn-info');
+                document.getElementById('diary-today-btn').classList.remove('btn-secondary');
+                document.getElementById('diary-history-btn').classList.add('btn-secondary');
+                document.getElementById('diary-history-btn').classList.remove('btn-info');
                 alert('保存成功！');
             };
-
-            // 清空表单
             window.clearDiaryForm = function() {
                 document.getElementById('diary-date').value = '';
                 document.getElementById('diary-work').value = '';
                 autoResize(document.getElementById('diary-work'));
                 renderIssueFields([]);
             };
-
-            // 编辑日记（加载到表单）
             window.editDiary = function(date) {
                 const diary = diaries.find(d => d.date === date);
                 if (!diary) return;
@@ -2697,72 +2340,34 @@
                 renderIssueFields(diary.issues || []);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
-
-            // 删除日记
             window.deleteDiary = function(date) {
                 if (!confirm('确定要删除该日期的记录吗？')) return;
                 diaries = diaries.filter(d => d.date !== date);
                 saveDiaries();
                 renderDiaryList();
+                if (diaries.length === 0) document.getElementById('diary-list').style.display = 'none';
             };
-
-            // 复制工作内容
             window.copyWork = function(text) {
-                navigator.clipboard.writeText(text).then(() => {
-                    alert('工作内容已复制');
-                }).catch(() => {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    alert('工作内容已复制');
+                navigator.clipboard.writeText(text).then(() => alert('工作内容已复制')).catch(() => {
+                    const textarea = document.createElement('textarea'); textarea.value = text; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea); alert('工作内容已复制');
                 });
             };
-
-            // 复制单个问题
             window.copyIssue = function(text) {
-                navigator.clipboard.writeText(text).then(() => {
-                    alert('问题已复制');
-                }).catch(() => {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    alert('问题已复制');
+                navigator.clipboard.writeText(text).then(() => alert('问题已复制')).catch(() => {
+                    const textarea = document.createElement('textarea'); textarea.value = text; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea); alert('问题已复制');
                 });
             };
-
-            // 一键复制当日所有内容（工作内容 + 所有问题）
             window.copyAllToday = function() {
                 const work = document.getElementById('diary-work').value.trim();
                 const issues = collectIssues();
-                if (!work && issues.length === 0) {
-                    alert('没有可复制的内容');
-                    return;
-                }
+                if (!work && issues.length === 0) { alert('没有可复制的内容'); return; }
                 let text = '';
                 if (work) text += `【工作内容】\n${work}\n`;
-                issues.forEach((issue, idx) => {
-                    text += `【问题${idx+1}】\n${issue}\n`;
-                });
-                navigator.clipboard.writeText(text).then(() => {
-                    alert('当日全部内容已复制');
-                }).catch(() => {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    alert('当日全部内容已复制');
+                issues.forEach((issue, idx) => { text += `【问题${idx+1}】\n${issue}\n`; });
+                navigator.clipboard.writeText(text).then(() => alert('当日全部内容已复制')).catch(() => {
+                    const textarea = document.createElement('textarea'); textarea.value = text; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea); alert('当日全部内容已复制');
                 });
             };
-
-            // 删除问题（从已保存的记录中删除指定问题）
             window.deleteIssue = function(date, issueIndex) {
                 const diary = diaries.find(d => d.date === date);
                 if (!diary) return;
@@ -2771,34 +2376,7 @@
                 saveDiaries();
                 renderDiaryList();
             };
-
-            // 过滤器
-            window.setDiaryFilter = function(mode) {
-                diaryFilterMode = mode;
-                const todayBtn = document.getElementById('diary-filter-today');
-                const allBtn = document.getElementById('diary-filter-all');
-                if (todayBtn && allBtn) {
-                    if (mode === 'today') {
-                        todayBtn.classList.remove('btn-secondary');
-                        todayBtn.classList.add('btn-info');
-                        allBtn.classList.remove('btn-info');
-                        allBtn.classList.add('btn-secondary');
-                    } else {
-                        allBtn.classList.remove('btn-secondary');
-                        allBtn.classList.add('btn-info');
-                        todayBtn.classList.remove('btn-info');
-                        todayBtn.classList.add('btn-secondary');
-                    }
-                }
-                renderDiaryList();
-            };
-
-            // 转义HTML
-            function escapeHtml(text) {
-                return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            }
-
-            // 渲染历史记录列表
+            function escapeHtml(text) { return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
             function renderDiaryList() {
                 const container = document.getElementById('diary-list');
                 let filteredDiaries = diaries;
@@ -2807,108 +2385,78 @@
                     filteredDiaries = diaries.filter(d => d.date === today);
                 }
                 document.getElementById('diary-count').textContent = filteredDiaries.length + ' 条';
-                
                 if (filteredDiaries.length === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>暂无工作记录</p></div>';
+                    container.style.display = 'block';
                     return;
                 }
-                
                 let html = '';
                 filteredDiaries.forEach(diary => {
                     const dateObj = new Date(diary.date);
                     const dateStr = dateObj.getFullYear() + '年' + (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日';
                     const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
-                    
                     html += '<div class="diary-card">';
-                    html += '<div class="diary-card-header">';
-                    html += '<div class="diary-card-date">' + dateStr + ' ' + weekDay + '</div>';
-                    html += '<div class="diary-card-actions">';
-                    html += '<button class="btn btn-info btn-small" onclick="editDiary(\'' + diary.date + '\')">编辑</button>';
-                    html += '<button class="btn btn-danger btn-small" onclick="deleteDiary(\'' + diary.date + '\')">删除</button>';
-                    html += '</div></div>';
-                    
-                    // 工作内容块
-                    html += '<div class="diary-work-block">';
-                    html += '<div class="diary-work-header">';
-                    html += '<span class="diary-work-title">📋 工作内容</span>';
-                    html += '<div><button class="btn btn-small btn-secondary" onclick="copyWork(\'' + diary.work.replace(/'/g, "\\'") + '\')">复制</button></div>';
-                    html += '</div>';
-                    html += '<div class="diary-work-content">' + escapeHtml(diary.work) + '</div>';
-                    html += '</div>';
-                    
-                    // 问题列表
+                    html += '<div class="diary-card-header"><div class="diary-card-date">' + dateStr + ' ' + weekDay + '</div><div class="diary-card-actions"><button class="btn btn-info btn-small" onclick="editDiary(\'' + diary.date + '\')">编辑</button><button class="btn btn-danger btn-small" onclick="deleteDiary(\'' + diary.date + '\')">删除</button></div></div>';
+                    html += '<div class="diary-work-block"><div class="diary-work-header"><span class="diary-work-title">📋 工作内容</span><div><button class="btn btn-small btn-secondary" onclick="copyWork(\'' + diary.work.replace(/'/g, "\\'") + '\')">复制</button></div></div><div class="diary-work-content">' + escapeHtml(diary.work) + '</div></div>';
                     if (diary.issues && diary.issues.length > 0) {
-                        html += '<div class="diary-issues-block">';
-                        html += '<div class="diary-issues-header">';
-                        html += '<span class="diary-issues-title">⚠️ 发现问题 (' + diary.issues.length + '条)</span>';
-                        html += '</div>';
+                        html += '<div class="diary-issues-block"><div class="diary-issues-header"><span class="diary-issues-title">⚠️ 发现问题 (' + diary.issues.length + '条)</span></div>';
                         diary.issues.forEach((issue, idx) => {
-                            html += '<div class="diary-issue-item">';
-                            html += '<div class="diary-issue-item-num">' + (idx + 1) + '</div>';
-                            html += '<div class="diary-issue-item-content">' + escapeHtml(issue) + '</div>';
-                            html += '<div class="diary-issue-item-actions">';
-                            // 只保留复制和删除，移除编辑按钮
-                            html += '<button class="btn btn-small btn-secondary" onclick="copyIssue(\'' + issue.replace(/'/g, "\\'") + '\')">复制</button>';
-                            html += '<button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button>';
-                            html += '</div></div>';
+                            html += '<div class="diary-issue-item"><div class="diary-issue-item-num">' + (idx + 1) + '</div><div class="diary-issue-item-content">' + escapeHtml(issue) + '</div><div class="diary-issue-item-actions"><button class="btn btn-small btn-secondary" onclick="copyIssue(\'' + issue.replace(/'/g, "\\'") + '\')">复制</button><button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button></div></div>';
                         });
                         html += '</div>';
                     }
                     html += '</div>';
                 });
                 container.innerHTML = html;
+                container.style.display = 'block';
             }
-
-            // 初始化
-            loadDiaries();
-            document.addEventListener('DOMContentLoaded', () => {
+            function showToday() {
+                diaryFilterMode = 'today';
                 renderDiaryList();
+                document.getElementById('diary-today-btn').classList.add('btn-info');
+                document.getElementById('diary-today-btn').classList.remove('btn-secondary');
+                document.getElementById('diary-history-btn').classList.add('btn-secondary');
+                document.getElementById('diary-history-btn').classList.remove('btn-info');
+            }
+            function showHistory() {
+                diaryFilterMode = 'all';
+                renderDiaryList();
+                document.getElementById('diary-history-btn').classList.add('btn-info');
+                document.getElementById('diary-history-btn').classList.remove('btn-secondary');
+                document.getElementById('diary-today-btn').classList.add('btn-secondary');
+                document.getElementById('diary-today-btn').classList.remove('btn-info');
+            }
+            document.addEventListener('DOMContentLoaded', () => {
+                loadDiaries();
                 document.getElementById('diary-date').valueAsDate = new Date();
                 renderIssueFields([]);
-                setDiaryFilter('today');
+                document.getElementById('diary-list').style.display = 'none';
+                document.getElementById('diary-today-btn').addEventListener('click', showToday);
+                document.getElementById('diary-history-btn').addEventListener('click', showHistory);
+                document.getElementById('diary-count').textContent = diaries.length + ' 条';
             });
         })();
 
-        // ========== Phone Directory System 增强 ==========
+        // ========== 电话模块 (结果框默认隐藏，搜索后显示) ==========
         (function() {
             const STORAGE_KEY = 'railway_phone_db_v1';
             let phoneData = [];
             let phoneSuggestions = [];
 
             function loadFromStorage() {
-                try {
-                    const data = localStorage.getItem(STORAGE_KEY);
-                    if (data) {
-                        phoneData = JSON.parse(data);
-                    } else {
-                        phoneData = [];
-                    }
-                } catch (e) {
-                    phoneData = [];
-                }
+                try { const data = localStorage.getItem(STORAGE_KEY); if (data) phoneData = JSON.parse(data); } catch (e) { phoneData = []; }
                 updateStats();
-                renderEmpty();
+                document.getElementById('phone-results').style.display = 'none';
                 updatePhoneSuggestions();
             }
-
             function saveToStorage() {
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(phoneData));
-                    updateStats();
-                    updatePhoneSuggestions();
-                } catch (e) {
-                    alert('保存失败：' + e.message);
-                }
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(phoneData)); updateStats(); updatePhoneSuggestions(); } catch (e) { alert('保存失败：' + e.message); }
             }
-
             function updateStats() {
                 const count = phoneData.length;
                 document.getElementById('phone-recordCount').textContent = count + ' 条';
                 let sizeMB = 0;
-                if (count > 0) {
-                    const jsonStr = JSON.stringify(phoneData);
-                    sizeMB = (new Blob([jsonStr]).size / 1024 / 1024).toFixed(2);
-                }
+                if (count > 0) { const jsonStr = JSON.stringify(phoneData); sizeMB = (new Blob([jsonStr]).size / 1024 / 1024).toFixed(2); }
                 document.getElementById('phone-storageText').textContent = sizeMB + ' MB';
                 const percent = Math.min((sizeMB / 10) * 100, 100);
                 const bar = document.getElementById('phone-storageBar');
@@ -2917,41 +2465,26 @@
                 else if (percent > 60) bar.className = 'storage-fill warning';
                 else bar.className = 'storage-fill';
             }
-
-            function renderEmpty() {
-                document.getElementById('phone-results').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>暂无电话数据，请导入Excel或加载示例</p></div>';
-                document.getElementById('phone-resultCount').textContent = '0 条';
-            }
-
             function updatePhoneSuggestions() {
                 const keywords = new Set();
-                phoneData.forEach(item => {
-                    if (item.站名) keywords.add(item.站名);
-                    if (item.单位) keywords.add(item.单位);
-                    if (item.线名) keywords.add(item.线名);
-                });
+                phoneData.forEach(item => { if (item.站名) keywords.add(item.站名); if (item.单位) keywords.add(item.单位); if (item.线名) keywords.add(item.线名); });
                 phoneSuggestions = Array.from(keywords).slice(0, 20);
             }
 
             function showPhoneSuggestions(input) {
-                const container = document.getElementById('phone-suggestions');
+                let container = document.getElementById('phone-suggestions');
                 if (!container) {
-                    const div = document.createElement('div');
-                    div.id = 'phone-suggestions';
-                    div.className = 'search-suggestions';
-                    input.parentNode.appendChild(div);
+                    container = document.createElement('div');
+                    container.id = 'phone-suggestions';
+                    container.className = 'search-suggestions';
+                    input.parentNode.appendChild(container);
                 }
                 const val = input.value.toLowerCase();
                 const filtered = phoneSuggestions.filter(s => s.toLowerCase().includes(val)).slice(0, 10);
-                const suggDiv = document.getElementById('phone-suggestions');
-                if (filtered.length === 0 || val === '') {
-                    suggDiv.style.display = 'none';
-                    return;
-                }
-                suggDiv.innerHTML = filtered.map(s => `<div onclick="selectPhoneSuggestion('${s}')">${escapeHtml(s)}</div>`).join('');
-                suggDiv.style.display = 'block';
+                if (filtered.length === 0 || val === '') { container.style.display = 'none'; return; }
+                container.innerHTML = filtered.map(s => `<div onclick="selectPhoneSuggestion('${s}')">${escapeHtml(s)}</div>`).join('');
+                container.style.display = 'block';
             }
-
             window.selectPhoneSuggestion = function(s) {
                 document.getElementById('phone-searchInput').value = s;
                 document.getElementById('phone-suggestions').style.display = 'none';
@@ -2960,8 +2493,11 @@
 
             window.phoneDoSearch = function() {
                 const keyword = document.getElementById('phone-searchInput').value.trim();
+                const resultsContainer = document.getElementById('phone-results');
+                resultsContainer.style.display = 'block';
                 if (phoneData.length === 0) {
-                    renderEmpty();
+                    resultsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>暂无电话数据，请导入Excel或加载示例</p></div>';
+                    document.getElementById('phone-resultCount').textContent = '0 条';
                     return;
                 }
                 let filtered = phoneData;
@@ -2979,19 +2515,15 @@
                     });
                 }
                 document.getElementById('phone-resultCount').textContent = filtered.length + ' 条';
-
-                const container = document.getElementById('phone-results');
                 if (filtered.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>没有找到匹配的电话</p></div>';
+                    resultsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>没有找到匹配的电话</p></div>';
                     return;
                 }
-
                 let html = '';
                 filtered.forEach(item => {
                     const cityPhoneRaw = item.市电 || '';
                     const cityPhoneDigits = cityPhoneRaw.replace(/\D/g, '');
                     const telHref = cityPhoneDigits ? `tel:${cityPhoneDigits}` : '#';
-
                     html += `
                         <div class="result-card">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -3002,26 +2534,21 @@
                                 <span style="color:var(--text-secondary);">线名：</span><span>${escapeHtml(item.线名 || '')}</span>
                                 <span style="color:var(--text-secondary);">路电：</span><span>${escapeHtml(item.路电 || '')}</span>
                                 <span style="color:var(--text-secondary);">市电：</span>
-                                <span>
-                                    <a href="${telHref}" class="phone-link" title="点击拨号">${escapeHtml(cityPhoneRaw)}</a>
-                                </span>
+                                <span><a href="${telHref}" class="phone-link" title="点击拨号">${escapeHtml(cityPhoneRaw)}</a></span>
                                 ${item.备注 ? `<span style="color:var(--text-secondary);">备注：</span><span>${escapeHtml(item.备注)}</span>` : ''}
                             </div>
                         </div>
                     `;
                 });
-                container.innerHTML = html;
+                resultsContainer.innerHTML = html;
             };
 
             window.phoneClearSearch = function() {
                 document.getElementById('phone-searchInput').value = '';
-                phoneDoSearch(); // 显示全部
+                phoneDoSearch();
             };
 
-            function escapeHtml(text) {
-                if (!text) return '';
-                return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            }
+            function escapeHtml(text) { if (!text) return ''; return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
             window.phoneHandleExcel = async function(e) {
                 const file = e.target.files[0];
@@ -3038,13 +2565,11 @@
                         单位: headers.findIndex(h => h.includes('单位')),
                         线名: headers.findIndex(h => h.includes('线名') || h.includes('线')),
                         站名: headers.findIndex(h => h.includes('站名') || h.includes('站')),
-                        路电: headers.findIndex(h => h.includes('路电') || h.includes('路电')),
-                        市电: headers.findIndex(h => h.includes('市电') || h.includes('市电')),
+                        路电: headers.findIndex(h => h.includes('路电')),
+                        市电: headers.findIndex(h => h.includes('市电')),
                         备注: headers.findIndex(h => h.includes('备注'))
                     };
-                    if (colIndex.单位 === -1 || colIndex.站名 === -1) {
-                        throw new Error('Excel中缺少必要的"单位"或"站名"列');
-                    }
+                    if (colIndex.单位 === -1 || colIndex.站名 === -1) throw new Error('Excel中缺少必要的"单位"或"站名"列');
                     const newData = [];
                     for (let i = 1; i < jsonData.length; i++) {
                         const row = jsonData[i];
@@ -3058,27 +2583,17 @@
                             市电: colIndex.市电 !== -1 ? String(row[colIndex.市电] || '').trim() : '',
                             备注: colIndex.备注 !== -1 ? String(row[colIndex.备注] || '').trim() : ''
                         };
-                        if (item.单位 || item.站名) {
-                            newData.push(item);
-                        }
+                        if (item.单位 || item.站名) newData.push(item);
                     }
                     if (newData.length === 0) throw new Error('未找到有效数据');
                     if (phoneData.length > 0) {
                         const action = confirm(`成功解析 ${newData.length} 条记录。\n当前已有 ${phoneData.length} 条。\n点击"确定"覆盖，点击"取消"追加。`);
-                        if (action) {
-                            phoneData = newData;
-                        } else {
-                            phoneData = [...phoneData, ...newData];
-                        }
-                    } else {
-                        phoneData = newData;
-                    }
+                        if (action) phoneData = newData;
+                        else phoneData = [...phoneData, ...newData];
+                    } else phoneData = newData;
                     saveToStorage();
-                    renderEmpty();
-                    alert(`导入成功，当前共 ${phoneData.length} 条记录。点击"搜索"按钮可查看全部。`);
-                } catch (err) {
-                    alert('导入失败: ' + err.message);
-                }
+                    phoneDoSearch(); // 自动显示结果
+                } catch (err) { alert('导入失败: ' + err.message); }
                 e.target.value = '';
             };
 
@@ -3089,27 +2604,17 @@
                 XLSX.utils.book_append_sheet(wb, ws, '电话表');
                 XLSX.writeFile(wb, '车站电话_' + new Date().toISOString().slice(0,10) + '.xlsx');
             };
-
             window.phoneDownloadTemplate = function() {
-                const template = [
-                    { '序号': 1, '单位': '天水车站', '线名': '徐兰高速', '站名': '东岔站', '路电': '072631455', '市电': '09384931455', '备注': '' },
-                    { '序号': 2, '单位': '天水车站', '线名': '徐兰高速', '站名': '天水南站', '路电': '072631456', '市电': '09384931456', '备注': '' }
-                ];
+                const template = [ { '序号': 1, '单位': '天水车站', '线名': '徐兰高速', '站名': '东岔站', '路电': '072631455', '市电': '09384931455', '备注': '' }, { '序号': 2, '单位': '天水车站', '线名': '徐兰高速', '站名': '天水南站', '路电': '072631456', '市电': '09384931456', '备注': '' } ];
                 const ws = XLSX.utils.json_to_sheet(template);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, '模板');
                 XLSX.writeFile(wb, '电话导入模板.xlsx');
             };
-
             window.phoneShowClear = function() {
                 if (phoneData.length === 0) { alert('没有数据可清空'); return; }
-                if (confirm('确定清空所有电话数据吗？此操作不可恢复！')) {
-                    phoneData = [];
-                    saveToStorage();
-                    renderEmpty();
-                }
+                if (confirm('确定清空所有电话数据吗？此操作不可恢复！')) { phoneData = []; saveToStorage(); phoneDoSearch(); }
             };
-
             window.phoneLoadDemo = function() {
                 const demo = [
                     { '序号': 1, '单位': '天水车站', '线名': '徐兰高速', '站名': '东岔站', '路电': '072631455', '市电': '09384931455', '备注': '' },
@@ -3122,21 +2627,15 @@
                 ];
                 phoneData = demo;
                 saveToStorage();
-                renderEmpty();
-                alert('示例数据已加载。点击"搜索"按钮可查看全部。');
+                phoneDoSearch();
+                alert('示例数据已加载。');
             };
 
             const input = document.getElementById('phone-searchInput');
             if (input) {
                 input.addEventListener('input', function() { showPhoneSuggestions(this); });
-                input.addEventListener('blur', function() {
-                    setTimeout(() => {
-                        const sugg = document.getElementById('phone-suggestions');
-                        if (sugg) sugg.style.display = 'none';
-                    }, 200);
-                });
+                input.addEventListener('blur', function() { setTimeout(() => { const sugg = document.getElementById('phone-suggestions'); if (sugg) sugg.style.display = 'none'; }, 200); });
             }
-
             document.getElementById('phone-fileInput').addEventListener('change', phoneHandleExcel);
             loadFromStorage();
         })();
@@ -3146,25 +2645,14 @@
             if (e.key === 'Enter') {
                 const activePanel = document.querySelector('.panel.active');
                 if (!activePanel) return;
-                if (activePanel.id === 'panel-issue') {
-                    issueDoSearch();
-                } else if (activePanel.id === 'panel-rule') {
-                    renderResults();
-                } else if (activePanel.id === 'panel-phone') {
-                    phoneDoSearch();
-                }
+                if (activePanel.id === 'panel-issue') issueDoSearch();
+                else if (activePanel.id === 'panel-rule') renderResults();
+                else if (activePanel.id === 'panel-phone') phoneDoSearch();
             }
         });
 
-        // 点击模态框外部关闭
-        window.onclick = function(e) {
-            if (e.target.classList.contains('modal')) e.target.classList.remove('active');
-        };
-
-        // Service Worker 注册
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed'));
-        }
+        window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
     </script>
 </body>
 </html>
