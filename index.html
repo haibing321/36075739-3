@@ -965,7 +965,7 @@
                             <span class="control-divider">|</span>
                             <span class="control-label">💾</span>
                             <div class="storage-bar-mini storage-bar"><div class="storage-fill" id="rule-storageBar" style="width:0%"></div></div>
-                            <span class="control-value-small stat-value" id="rule-storageText">0/200MB</span>
+                            <span class="control-value-small stat-value" id="rule-storageText">0/500MB</span>
                         </div>
                         <div class="control-btns btn-group">
                             <button class="btn btn-import btn-success" id="rule-importBtn">📥 导入</button>
@@ -1118,11 +1118,11 @@
                 </div>
                 <div class="card-body">
                     <div style="text-align: center; margin-bottom: 12px;">
-                        <a href="https://www.doubao.com/chat/?channel=baidu_sem&source=dbweb_sem_pinz_pinp_sous_ssqt_ssqt_ocpc_faxx_5&keywordid=1299149977106&ad_platform_id=baidusearch_lead&account_id=62746170&a_planid=1526338037&a_unitid=13127073343&a_keywordid=1299149977106&a_creative=135706752350&a_matchtype=1&a_dongtai=0&a_trig_flag=nm&a_crowdid=0&a_kw_enc_utf8=%E8%B1%86%E5%8C%85%E5%AE%98%E7%BD%91%E7%BD%91%E9%A1%B5%E7%89%88&ug_semver=v2.0.0&bd_vid=17865977111308553445" target="_blank" class="btn btn-primary btn-lg">🌐 在新窗口打开AI</a>
+                        <a href="www.kimi.com" target="_blank" class="btn btn-primary btn-lg">🌐 在新窗口打开AI</a>
                     </div>
                     <div style="border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #f0f0f0;">
                         <iframe 
-                            src="https://www.doubao.com/chat/?channel=baidu_sem&source=dbweb_sem_pinz_pinp_sous_ssqt_ssqt_ocpc_faxx_5&keywordid=1299149977106&ad_platform_id=baidusearch_lead&account_id=62746170&a_planid=1526338037&a_unitid=13127073343&a_keywordid=1299149977106&a_creative=135706752350&a_matchtype=1&a_dongtai=0&a_trig_flag=nm&a_crowdid=0&a_kw_enc_utf8=%E8%B1%86%E5%8C%85%E5%AE%98%E7%BD%91%E7%BD%91%E9%A1%B5%E7%89%88&ug_semver=v2.0.0&bd_vid=17865977111308553445"
+                            src="www.kimi.com"
                             width="100%" 
                             height="600" 
                             style="border:none;" 
@@ -1671,14 +1671,14 @@
             });
         })();
 
-        // ========== Rule System (移除搜索选项，固定段落匹配，结果默认隐藏) ==========
+        // ========== Rule System (存储升级为IndexedDB，容量500MB，其他功能完全保留) ==========
         (function() {
             if (typeof pdfjsLib !== 'undefined') {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
             }
 
             let rules = [];
-            const STORAGE_KEY = 'railway_rules_v1', MAX_STORAGE_SIZE = 200 * 1024 * 1024;
+            const MAX_STORAGE_SIZE = 500 * 1024 * 1024; // 500MB
             const sampleRules = [
                 { trade: '车务', title: '接发列车作业标准', content: '接发列车时，必须办理行车凭证。\n列车进站应确认信号开放。\n接发列车人员应严格执行眼看、手指、口述制度。' },
                 { trade: '车务', title: '调车作业细则', content: '调车作业前必须排风摘管，核对计划。\n驼峰调车严格控制推送速度。\n铁鞋制动时，严禁使用不符合标准的铁鞋。' },
@@ -1691,20 +1691,83 @@
             const ruleSearchMode = 'paragraph'; // 固定段落模式
             let rulePage = 1, rulePageSize = 10, ruleTotalPages = 1, ruleAllResults = [];
 
-            function saveToStorage() {
-                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rules)); updateStorageInfo(); return true; }
-                catch (e) { if (e.name === 'QuotaExceededError') alert('存储空间不足！'); else alert('保存失败：' + e.message); return false; }
+            // ---------- IndexedDB 封装 ----------
+            const DB_NAME = 'RailwayRuleDB', STORE_NAME = 'ruleCollection', DB_VERSION = 1;
+            let db = null;
+            function initRuleDB() {
+                return new Promise((resolve, reject) => {
+                    if (db) return resolve(db);
+                    const request = indexedDB.open(DB_NAME, DB_VERSION);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => { db = request.result; resolve(db); };
+                    request.onupgradeneeded = (e) => {
+                        const database = e.target.result;
+                        if (!database.objectStoreNames.contains(STORE_NAME)) {
+                            const store = database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                            // 预创建一条固定记录用于存储整个数组
+                            store.put({ id: 1, data: [] });
+                        }
+                    };
+                });
             }
-            function loadFromStorage() {
-                try { const data = localStorage.getItem(STORAGE_KEY); if (data) { const parsed = JSON.parse(data); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } } catch (e) {} return null;
+            async function loadRulesFromDB() {
+                try {
+                    await initRuleDB();
+                    return new Promise((resolve, reject) => {
+                        const transaction = db.transaction([STORE_NAME], 'readonly');
+                        const store = transaction.objectStore(STORE_NAME);
+                        const request = store.get(1);
+                        request.onsuccess = () => {
+                            const result = request.result;
+                            if (result && Array.isArray(result.data)) {
+                                rules = result.data;
+                            } else {
+                                rules = sampleRules.map(r => ({ ...r }));
+                            }
+                            resolve(rules);
+                        };
+                        request.onerror = () => reject(request.error);
+                    });
+                } catch (e) {
+                    console.warn('IndexedDB加载失败，使用示例数据', e);
+                    rules = sampleRules.map(r => ({ ...r }));
+                    return rules;
+                }
+            }
+            async function saveRulesToDB(rulesArray) {
+                try {
+                    await initRuleDB();
+                    return new Promise((resolve, reject) => {
+                        const transaction = db.transaction([STORE_NAME], 'readwrite');
+                        const store = transaction.objectStore(STORE_NAME);
+                        const request = store.put({ id: 1, data: rulesArray });
+                        request.onsuccess = () => resolve();
+                        request.onerror = () => reject(request.error);
+                    });
+                } catch (e) {
+                    console.error('IndexedDB保存失败', e);
+                }
+            }
+            // 修改原存储函数
+            async function saveToStorage() {
+                try {
+                    await saveRulesToDB(rules);
+                    updateStorageInfo();
+                    return true;
+                } catch (e) {
+                    alert('保存失败：' + e.message);
+                    return false;
+                }
             }
             function updateStorageInfo() {
                 try {
-                    const data = localStorage.getItem(STORAGE_KEY) || '', size = new Blob([data]).size, percent = Math.min(100, (size / MAX_STORAGE_SIZE) * 100);
+                    const jsonStr = JSON.stringify(rules);
+                    const size = new Blob([jsonStr]).size;
+                    const percent = Math.min(100, (size / MAX_STORAGE_SIZE) * 100);
                     const bar = document.getElementById('rule-storageBar');
                     if (bar) bar.style.width = percent + '%';
                     const text = document.getElementById('rule-storageText');
-                    if (text) text.textContent = (size / 1024 / 1024).toFixed(2) + '/200MB';
+                    if (text) text.textContent = (size / 1024 / 1024).toFixed(2) + '/500MB';
                     if (bar) {
                         bar.classList.remove('warning', 'danger');
                         if (percent > 80) bar.classList.add('danger');
@@ -2024,7 +2087,7 @@
                         successCount++;
                     } catch (err) { console.error(err); skipCount++; }
                 }
-                saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+                await saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
                 if (btn) btn.innerHTML = '📥 导入';
                 isProcessing = false;
                 alert('导入完成：成功 ' + successCount + ' 个，跳过 ' + skipCount + ' 个');
@@ -2087,7 +2150,7 @@
                 document.getElementById('rule-editNewTrade').value = '';
                 openModal('rule-editModal');
             };
-            window.saveRuleEdit = function() {
+            window.saveRuleEdit = async function() {
                 const title = document.getElementById('rule-editTitle')?.value.trim();
                 let trade = document.getElementById('rule-editTrade')?.value;
                 const newTrade = document.getElementById('rule-editNewTrade')?.value.trim();
@@ -2098,17 +2161,17 @@
                 if (dupIdx !== -1) { alert('已存在相同标题的规章'); return; }
                 rules[currentEditIndex].title = title;
                 rules[currentEditIndex].trade = trade;
-                saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderCatalog(); renderResults(); closeModal('rule-editModal'); alert('修改保存成功！');
+                await saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderCatalog(); renderResults(); closeModal('rule-editModal'); alert('修改保存成功！');
             };
-            window.deleteRule = function(idx) {
+            window.deleteRule = async function(idx) {
                 if (confirm('确定要删除规章"' + rules[idx].title + '"吗？')) {
                     rules.splice(idx, 1);
-                    saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderCatalog(); renderResults();
+                    await saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderCatalog(); renderResults();
                 }
             };
-            window.clearAllRules = function() {
+            window.clearAllRules = async function() {
                 if (confirm('确定要清空所有规章吗？此操作不可恢复！')) {
-                    rules = []; saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults(); closeModal('rule-catalogModal');
+                    rules = []; await saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults(); closeModal('rule-catalogModal');
                 }
             };
 
@@ -2204,10 +2267,9 @@
                 displayRulePage();
             };
 
-            document.addEventListener('DOMContentLoaded', () => {
-                const stored = loadFromStorage();
-                if (stored) rules = stored;
-                else { rules = sampleRules.map(r => ({ ...r })); saveToStorage(); }
+            // 初始化：改为异步从IndexedDB加载
+            document.addEventListener('DOMContentLoaded', async function() {
+                await loadRulesFromDB(); // rules 已填充
                 refreshTradeSelect();
                 updateTotalBadge();
                 updateStorageInfo();
@@ -2221,11 +2283,19 @@
                 document.getElementById('rule-importBtn').addEventListener('click', handleImportClick);
                 document.getElementById('rule-exportBtn').addEventListener('click', () => openModal('rule-exportModal'));
                 document.getElementById('rule-catalogBtn').addEventListener('click', showCatalog);
-                document.getElementById('rule-clearBtn').addEventListener('click', () => {
+                document.getElementById('rule-clearBtn').addEventListener('click', async () => {
                     if (confirm('确定要清空所有规章吗？\n\n点击"确定"：清空\n点击"取消"：恢复示例')) {
-                        rules = []; saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+                        rules = [];
+                        await saveToStorage();
+                        refreshTradeSelect();
+                        updateTotalBadge();
+                        renderResults();
                     } else {
-                        rules = sampleRules.map(r => ({ ...r })); saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderResults();
+                        rules = sampleRules.map(r => ({ ...r }));
+                        await saveToStorage();
+                        refreshTradeSelect();
+                        updateTotalBadge();
+                        renderResults();
                     }
                 });
                 document.getElementById('rule-totalBadge').addEventListener('click', showCatalog);
