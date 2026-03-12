@@ -1667,7 +1667,17 @@
             };
 
             window.addEventListener('load', async function() {
-                try { await initDB(); await updateStorage(); issueAddKeyword(); const data = await loadData(); if (data.length === 0) await issueLoadDemoData(); } catch (e) { alert('初始化失败: ' + e.message); }
+    try {
+        await initDB();
+        await updateStorage();
+        issueAddKeyword();
+        const data = await loadData();
+        if (data.length === 0) await issueLoadDemoData();
+
+        // 👇 添加这一行，绑定 change 事件
+        document.getElementById('issue-fileInput').addEventListener('change', issueHandleExcel);
+    } catch (e) {
+        alert('初始化失败: ' + e.message);}
             });
         })();
 
