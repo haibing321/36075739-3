@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>铁路安监现场检查查询系统 · 精简交互版</title>
-    <!-- 第三方库 -->
+    <title>铁路安监现场检查查询系统 · 完整六模块版</title>
+    <!-- 第三方库 (不变) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
@@ -811,11 +811,53 @@
             margin-top: 40px;
         }
         
-        /* ========== 响应式调整 ========== */
+        /* ========== 检查手册模块专用样式（已统一为卡片，仅保留必要布局） ========== */
+        .selector-panel {
+            background: #f8fafc; border-radius: 12px; padding: 24px; border: 1px solid var(--border); margin-bottom: 24px;
+        }
+        .selector-row {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 20px;
+        }
+        .selector-item {
+            flex: 1 1 200px; min-width: 200px;
+        }
+        .selector-item label {
+            display: block; font-weight: 600; color: var(--primary); margin-bottom: 6px; font-size: 0.9rem;
+        }
+        .selector-item select {
+            width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px;
+            background: white; font-size: 0.95rem; cursor: pointer;
+        }
+        .selector-item select:disabled {
+            background: #edf2f7; cursor: not-allowed; color: #718096;
+        }
+
+        .content-card {
+            background: white; border-radius: 12px; padding: 24px; box-shadow: var(--shadow);
+            border-left: 6px solid var(--info); margin-top: 20px;
+        }
+        .content-header {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .content-chapter {
+            background: #ebf8ff; color: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
+        }
+        .content-section {
+            background: #e6fffa; color: #234e52; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
+        }
+        .content-item {
+            background: #fef3c7; color: #744210; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
+        }
+        .content-body {
+            background: #f7fafc; padding: 20px; border-radius: 8px; font-size: 0.95rem; line-height: 1.8;
+            white-space: pre-wrap; border-left: 4px solid var(--info);
+        }
+
+        /* 响应式调整 */
         @media (max-width: 768px) {
             .header-inner { flex-direction: column; padding: 12px 16px; }
             .logo { padding: 8px 0; }
-            .nav { width: 100%; justify-content: center; }
+            .nav { width: 100%; justify-content: center; flex-wrap: wrap; }
             .nav-btn { padding: 10px 16px; font-size: 0.85rem; border-radius: 6px; }
             .nav-btn.active::after { display: none; }
             
@@ -880,7 +922,9 @@
                 </div>
             </div>
             <nav class="nav">
-                <button class="nav-btn active" onclick="switchTab('issue')" id="tab-issue"><span>🔍</span> 检查信息</button>
+                <!-- 检查手册移到最前面 -->
+                <button class="nav-btn active" onclick="switchTab('handbook')" id="tab-handbook"><span>📖</span> 检查手册</button>
+                <button class="nav-btn" onclick="switchTab('issue')" id="tab-issue"><span>🔍</span> 检查信息</button>
                 <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule"><span>📋</span> 规章制度</button>
                 <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary"><span>📝</span> 工作写实</button>
                 <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone"><span>📞</span> 车站电话</button>
@@ -890,8 +934,73 @@
     </header>
 
     <main class="main">
-        <!-- 检查信息模块 -->
-        <div id="panel-issue" class="panel active">
+        <!-- 检查手册模块 (移最前，使用标准卡片样式) -->
+        <div id="panel-handbook" class="panel active">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">📖</div>
+                        安全检查手册
+                    </div>
+                    <div class="card-subtitle">依次选择【章】→【节】→【检查项目】，查看详细内容</div>
+                </div>
+                <div class="card-body">
+                    <div class="stats-bar">
+                        <div class="stats-left">
+                            <div class="stat-item"><span class="stat-label">📚 条目总数</span><span class="stat-value" id="handbook-total">0</span></div>
+                            <div class="stat-item"><span class="stat-label">💾 存储</span><span class="stat-value" id="handbook-size">0 KB</span><div class="storage-bar"><div class="storage-fill" id="handbook-storageBar" style="width:0%"></div></div></div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-success" id="handbook-importBtn">📥 导入JSON</button>
+                            <!-- 新增导出按钮 -->
+                            <button class="btn btn-primary" onclick="exportHandbook()">📤 导出JSON</button>
+                            <button class="btn btn-warning" onclick="clearHandbookData()">🗑️ 清空</button>
+                        </div>
+                    </div>
+
+                    <div class="selector-panel">
+                        <div class="selector-row">
+                            <div class="selector-item">
+                                <label>第一章 选择章</label>
+                                <select id="chapterSelect" onchange="onChapterChange()">
+                                    <option value="">-- 请选择章 --</option>
+                                </select>
+                            </div>
+                            <div class="selector-item">
+                                <label>第二章 选择节</label>
+                                <select id="sectionSelect" onchange="onSectionChange()" disabled>
+                                    <option value="">-- 请先选择章 --</option>
+                                </select>
+                            </div>
+                            <div class="selector-item">
+                                <label>第三章 选择检查项目</label>
+                                <select id="itemSelect" onchange="onItemChange()" disabled>
+                                    <option value="">-- 请先选择节 --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="contentDisplay" class="content-card" style="display: none;">
+                        <div class="content-header">
+                            <span class="content-chapter" id="displayChapter"></span>
+                            <span class="content-section" id="displaySection"></span>
+                            <span class="content-item" id="displayItem"></span>
+                        </div>
+                        <div class="content-body" id="displayContent"></div>
+                    </div>
+                    <div id="emptyPlaceholder" class="empty-state">
+                        <div class="empty-state-icon">📘</div>
+                        <p>请在左侧选择章、节、检查项目</p>
+                    </div>
+
+                    <input type="file" id="handbook-jsonFile" accept=".json" style="display:none;">
+                </div>
+            </div>
+        </div>
+
+        <!-- 检查信息模块 (原第一，现第二) -->
+        <div id="panel-issue" class="panel">
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">
@@ -918,7 +1027,6 @@
                             <button class="btn btn-primary" onclick="issueExportExcel()">📤 导出Excel</button>
                             <button class="btn btn-info" onclick="issueDownloadTemplate()">📄 模板</button>
                             <button class="btn btn-warning" onclick="issueShowClear()">🗑️ 清空</button>
-                            <button class="btn btn-secondary" onclick="issueLoadDemo()">📋 示例</button>
                         </div>
                     </div>
                     <input type="file" id="issue-fileInput" accept=".xlsx,.xls" style="display:none;">
@@ -926,7 +1034,6 @@
                     <div class="search-box">
                         <div id="issue-keywordContainer" class="keyword-list"></div>
                         <button class="btn-add" id="issue-btnAdd" onclick="issueAddKeyword()">+ 添加关键词 (最多4个)</button>
-                        <!-- 搜索选项已移除 -->
                         <div class="search-actions">
                             <button class="btn btn-primary btn-lg" onclick="issueDoSearch()">🔍 智能搜索</button>
                             <button class="btn btn-secondary btn-lg" onclick="issueClearSearch()">重置条件</button>
@@ -947,7 +1054,7 @@
             </div>
         </div>
 
-        <!-- 规章制度模块 (结果默认隐藏) -->
+        <!-- 规章制度模块 (不变) -->
         <div id="panel-rule" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -985,7 +1092,6 @@
                     <div class="search-box">
                         <div id="rule-keywordContainer" class="keyword-list"></div>
                         <button class="btn-add" id="rule-btnAdd">+ 添加关键词 (最多4个)</button>
-                        <!-- 搜索选项已移除 -->
                         <div class="search-actions">
                             <button class="btn btn-primary btn-lg" id="rule-searchBtn">🔍 智能搜索</button>
                             <button class="btn btn-secondary btn-lg" id="rule-clearSearchBtn">重置条件</button>
@@ -994,7 +1100,6 @@
 
                     <input type="file" id="rule-fileInput" accept=".pdf,.doc,.docx,.json" style="display:none;" multiple>
 
-                    <!-- 结果区域默认隐藏，搜索后显示 -->
                     <div class="results-header" style="display: none;">
                         <span class="results-title">📋 查询结果</span>
                         <span class="results-count" id="rule-resultCount">0 项</span>
@@ -1005,7 +1110,7 @@
             </div>
         </div>
 
-        <!-- 工作写实模块 (按钮下移，列表默认隐藏) -->
+        <!-- 工作写实模块 (不变) -->
         <div id="panel-diary" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1033,14 +1138,12 @@
                             <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
                         </div>
 
-                        <!-- 按钮移至此位置 -->
                         <div class="diary-actions" style="margin-top:16px;">
                             <button class="btn btn-primary" onclick="saveDiary()">💾 保存记录</button>
                             <button class="btn btn-secondary" onclick="clearDiaryForm()">🔄 重置</button>
                             <button class="btn btn-info" onclick="copyAllToday()">📋 复制全部</button>
                         </div>
 
-                        <!-- 今天/历史信息按钮 -->
                         <div style="display: flex; gap: 12px; align-items: center; margin: 20px 0 12px;">
                             <button class="btn btn-info" id="diary-today-btn">📅 今天信息</button>
                             <button class="btn btn-secondary" id="diary-history-btn">📚 历史信息</button>
@@ -1048,13 +1151,12 @@
                         </div>
                     </div>
 
-                    <!-- 历史记录列表，默认隐藏 -->
                     <div id="diary-list" class="diary-list" style="display:none;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 车站电话模块 (结果框默认隐藏) -->
+        <!-- 车站电话模块 (不变) -->
         <div id="panel-phone" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1082,7 +1184,6 @@
                             <button class="btn btn-primary" onclick="phoneExportExcel()">📤 导出Excel</button>
                             <button class="btn btn-info" onclick="phoneDownloadTemplate()">📄 模板</button>
                             <button class="btn btn-warning" onclick="phoneShowClear()">🗑️ 清空</button>
-                            <button class="btn btn-secondary" onclick="phoneLoadDemo()">📋 示例</button>
                         </div>
                     </div>
                     <input type="file" id="phone-fileInput" accept=".xlsx,.xls" style="display:none;">
@@ -1100,13 +1201,12 @@
                         <span class="results-count" id="phone-resultCount">0 条</span>
                     </div>
 
-                    <!-- 结果容器默认隐藏，搜索后显示 -->
                     <div id="phone-results" class="result-list" style="display:none;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- AI助手模块 -->
+        <!-- AI助手模块 (不变) -->
         <div id="panel-doubao" class="panel">
             <div class="card">
                 <div class="card-header">
@@ -1139,10 +1239,10 @@
 
     <footer class="footer">
         <div>铁路安监现场检查查询系统 · 开发者：赵海兵</div>
-        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览 · 新增豆包助手模块</div>
+        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览 · 新增检查手册模块</div>
     </footer>
 
-    <!-- 问题库模态框 -->
+    <!-- 原有模态框 (规章制度相关需完整保留) -->
     <div id="issue-clearModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><div class="modal-title">⚠️ 确认清空数据</div></div>
@@ -1156,7 +1256,6 @@
             </div>
         </div>
     </div>
-
     <div id="issue-importModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><div class="modal-title">📥 正在导入数据</div></div>
@@ -1167,7 +1266,7 @@
         </div>
     </div>
 
-    <!-- 规章制度模态框 -->
+    <!-- 规章制度模态框组 (必须完整) -->
     <div id="rule-importModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><div class="modal-title" id="rule-importTitle">📥 导入规章</div></div>
@@ -1265,8 +1364,20 @@
         </div>
     </div>
 
+    <!-- 新增手册模块的导入确认模态框 -->
+    <div class="modal" id="handbook-importModal">
+        <div class="modal-content">
+            <div class="modal-header"><div class="modal-title">确认导入</div></div>
+            <div class="modal-body" id="handbook-importMessage">正在处理...</div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('handbook-importModal')">取消</button>
+                <button class="btn btn-primary" id="handbook-confirmImport">确认覆盖</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ========== 全局工具函数 (完全保留原功能) ==========
+        // ========== 全局工具函数 ==========
         window.switchTab = function(tab) {
             document.querySelectorAll('.nav-btn').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -1308,7 +1419,7 @@
             return (str || '').replace(/\D/g, '');
         }
 
-        // ========== Issue System (移除搜索选项，固定OR模式+阈值75) ==========
+        // ========== Issue System ==========
         (function() {
             const DB_NAME = 'RailwayIssueDB_v2', STORE_NAME = 'issues', DB_VERSION = 1;
             let db = null, dataCache = [], keywordNum = 0, MAX_KEYWORDS = 4;
@@ -1548,10 +1659,10 @@
                     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>未找到高匹配度结果（≥' + MATCH_THRESHOLD + '%）</p></div>';
                 } else {
                     let html = '<div class="result-list">' + paginatedHigh.map(item => issueCreateResultCard(item, keywords)).join('') + '</div>';
-                    html += `<div class="pagination">
-                        <button ${currentPage === 1 ? 'disabled' : ''} onclick="changeIssuePage(${currentPage - 1})">上一页</button>
+                    html += `<div class="pagination" style="margin-top:16px; display:flex; gap:12px; justify-content:center; align-items:center;">
+                        <button class="btn btn-secondary" ${currentPage === 1 ? 'disabled' : ''} onclick="changeIssuePage(${currentPage - 1})">上一页</button>
                         <span>第 ${currentPage} 页 / 共 ${totalPages} 页</span>
-                        <button ${currentPage === totalPages ? 'disabled' : ''} onclick="changeIssuePage(${currentPage + 1})">下一页</button>
+                        <button class="btn btn-secondary" ${currentPage === totalPages ? 'disabled' : ''} onclick="changeIssuePage(${currentPage + 1})">下一页</button>
                     </div>`;
                     container.innerHTML = html;
                 }
@@ -1654,10 +1765,9 @@
                 XLSX.writeFile(wb, '问题库导入模板.xlsx');
             };
 
-            window.issueLoadDemo = async function() { if (confirm('确定加载示例数据吗？将覆盖现有数据')) await issueLoadDemoData(); };
             async function issueLoadDemoData() {
                 const demo = [{ id: 1, '性质': 'A类', datetime: '2025-12-29 17:09', category: '消防安全', content: '兰州高铁基础设施段动车所信号工区遗漏机械室门口的七氟丙烷消防柜柜门无法打开。' }, { id: 2, '性质': 'B类', datetime: '2025-12-29 16:32', category: '规章制度', content: '检查兰州高铁基础设施段注浆施工，4号道口南侧汽车吊吊装作业时支腿下未放垫木。' }, { id: 3, '性质': 'C类', datetime: '2025-12-29 10:00', category: '设备管理', content: '检查发现设备标识不清，台账记录不完整。' }, { id: 4, '性质': '红线', datetime: '2025-12-29 09:00', category: '安全红线', content: '触碰安全红线：未设置防护上道作业。' }, { id: 5, '性质': '空白', datetime: '2025-12-29 08:00', category: '待分类', content: '问题描述暂未完成性质判定。' }];
-                await saveData(demo); await updateStorage(); alert('示例数据已加载');
+                await saveData(demo); await updateStorage();
             }
 
             window.issueShowClear = function() { document.getElementById('issue-clearCount').textContent = dataCache.length; openModal('issue-clearModal'); };
@@ -1667,21 +1777,18 @@
             };
 
             window.addEventListener('load', async function() {
-    try {
-        await initDB();
-        await updateStorage();
-        issueAddKeyword();
-        const data = await loadData();
-        if (data.length === 0) await issueLoadDemoData();
-
-        // 👇 添加这一行，绑定 change 事件
-        document.getElementById('issue-fileInput').addEventListener('change', issueHandleExcel);
-    } catch (e) {
-        alert('初始化失败: ' + e.message);}
+                try {
+                    await initDB();
+                    await updateStorage();
+                    issueAddKeyword();
+                    const data = await loadData();
+                    if (data.length === 0) await issueLoadDemoData();
+                    document.getElementById('issue-fileInput').addEventListener('change', issueHandleExcel);
+                } catch (e) { alert('初始化失败: ' + e.message);}
             });
         })();
 
-        // ========== Rule System (存储升级为IndexedDB，容量500MB，其他功能完全保留) ==========
+        // ========== Rule System (完整保留) ==========
         (function() {
             if (typeof pdfjsLib !== 'undefined') {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -1701,7 +1808,7 @@
             const ruleSearchMode = 'paragraph'; // 固定段落模式
             let rulePage = 1, rulePageSize = 10, ruleTotalPages = 1, ruleAllResults = [];
 
-            // ---------- IndexedDB 封装 ----------
+            // IndexedDB 封装
             const DB_NAME = 'RailwayRuleDB', STORE_NAME = 'ruleCollection', DB_VERSION = 1;
             let db = null;
             function initRuleDB() {
@@ -1714,7 +1821,6 @@
                         const database = e.target.result;
                         if (!database.objectStoreNames.contains(STORE_NAME)) {
                             const store = database.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                            // 预创建一条固定记录用于存储整个数组
                             store.put({ id: 1, data: [] });
                         }
                     };
@@ -1758,7 +1864,6 @@
                     console.error('IndexedDB保存失败', e);
                 }
             }
-            // 修改原存储函数
             async function saveToStorage() {
                 try {
                     await saveRulesToDB(rules);
@@ -2262,10 +2367,10 @@
                 });
                 html += '</div>';
 
-                html += `<div class="pagination">
-                    <button ${rulePage === 1 ? 'disabled' : ''} onclick="changeRulePage(${rulePage - 1})">上一页</button>
+                html += `<div class="pagination" style="margin-top:16px; display:flex; gap:12px; justify-content:center; align-items:center;">
+                    <button class="btn btn-secondary" ${rulePage === 1 ? 'disabled' : ''} onclick="changeRulePage(${rulePage - 1})">上一页</button>
                     <span>第 ${rulePage} 页 / 共 ${ruleTotalPages} 页</span>
-                    <button ${rulePage === ruleTotalPages ? 'disabled' : ''} onclick="changeRulePage(${rulePage + 1})">下一页</button>
+                    <button class="btn btn-secondary" ${rulePage === ruleTotalPages ? 'disabled' : ''} onclick="changeRulePage(${rulePage + 1})">下一页</button>
                 </div>`;
 
                 resultsList.innerHTML = html;
@@ -2277,9 +2382,8 @@
                 displayRulePage();
             };
 
-            // 初始化：改为异步从IndexedDB加载
             document.addEventListener('DOMContentLoaded', async function() {
-                await loadRulesFromDB(); // rules 已填充
+                await loadRulesFromDB();
                 refreshTradeSelect();
                 updateTotalBadge();
                 updateStorageInfo();
@@ -2315,7 +2419,7 @@
             });
         })();
 
-        // ========== 工作写实模块 (按钮下移，列表默认隐藏) ==========
+        // ========== 工作写实模块 ==========
         (function() {
             const STORAGE_KEY = 'railway_work_diary_v2';
             let diaries = [];
@@ -2517,7 +2621,7 @@
             });
         })();
 
-        // ========== 电话模块 (结果框默认隐藏，搜索后显示) ==========
+        // ========== 电话模块 ==========
         (function() {
             const STORAGE_KEY = 'railway_phone_db_v1';
             let phoneData = [];
@@ -2576,7 +2680,7 @@
                 const resultsContainer = document.getElementById('phone-results');
                 resultsContainer.style.display = 'block';
                 if (phoneData.length === 0) {
-                    resultsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>暂无电话数据，请导入Excel或加载示例</p></div>';
+                    resultsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>暂无电话数据，请导入Excel</p></div>';
                     document.getElementById('phone-resultCount').textContent = '0 条';
                     return;
                 }
@@ -2672,7 +2776,7 @@
                         else phoneData = [...phoneData, ...newData];
                     } else phoneData = newData;
                     saveToStorage();
-                    phoneDoSearch(); // 自动显示结果
+                    phoneDoSearch();
                 } catch (err) { alert('导入失败: ' + err.message); }
                 e.target.value = '';
             };
@@ -2695,21 +2799,6 @@
                 if (phoneData.length === 0) { alert('没有数据可清空'); return; }
                 if (confirm('确定清空所有电话数据吗？此操作不可恢复！')) { phoneData = []; saveToStorage(); phoneDoSearch(); }
             };
-            window.phoneLoadDemo = function() {
-                const demo = [
-                    { '序号': 1, '单位': '天水车站', '线名': '徐兰高速', '站名': '东岔站', '路电': '072631455', '市电': '09384931455', '备注': '' },
-                    { '序号': 2, '单位': '天水车站', '线名': '徐兰高速', '站名': '天水南站', '路电': '072631456', '市电': '09384931456', '备注': '' },
-                    { '序号': 3, '单位': '天水车站', '线名': '徐兰高速', '站名': '秦安站', '路电': '072631457', '市电': '09384931457', '备注': '' },
-                    { '序号': 4, '单位': '陇西车务段', '线名': '徐兰高速', '站名': '榆中', '路电': '072684201', '市电': '09312984201', '备注': '' },
-                    { '序号': 5, '单位': '陇西车务段', '线名': '徐兰高速', '站名': '定西北', '路电': '072671505', '市电': '09325971505', '备注': '' },
-                    { '序号': 6, '单位': '陇西车务段', '线名': '徐兰高速', '站名': '下小岔', '路电': '072671504', '市电': '09325971504', '备注': '' },
-                    { '序号': 7, '单位': '陇西车务段', '线名': '徐兰高速', '站名': '通渭', '路电': '072671503', '市电': '09325971503', '备注': '' }
-                ];
-                phoneData = demo;
-                saveToStorage();
-                phoneDoSearch();
-                alert('示例数据已加载。');
-            };
 
             const input = document.getElementById('phone-searchInput');
             if (input) {
@@ -2717,6 +2806,268 @@
                 input.addEventListener('blur', function() { setTimeout(() => { const sugg = document.getElementById('phone-suggestions'); if (sugg) sugg.style.display = 'none'; }, 200); });
             }
             document.getElementById('phone-fileInput').addEventListener('change', phoneHandleExcel);
+            loadFromStorage();
+        })();
+
+        // ========== 第六模块：检查手册 (三级目录) 新增导出函数 ==========
+        (function() {
+            let handbookData = [];
+            let chapters = [];
+            let sectionsMap = {};
+            let itemsMap = {};
+            let contentMap = {};
+
+            const chapterSelect = document.getElementById('chapterSelect');
+            const sectionSelect = document.getElementById('sectionSelect');
+            const itemSelect = document.getElementById('itemSelect');
+            const contentDisplay = document.getElementById('contentDisplay');
+            const emptyPlaceholder = document.getElementById('emptyPlaceholder');
+            const displayChapter = document.getElementById('displayChapter');
+            const displaySection = document.getElementById('displaySection');
+            const displayItem = document.getElementById('displayItem');
+            const displayContent = document.getElementById('displayContent');
+            const totalSpan = document.getElementById('handbook-total');
+            const sizeSpan = document.getElementById('handbook-size');
+            const storageBar = document.getElementById('handbook-storageBar');
+
+            const chineseNumMap = { '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,
+                '十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,'十八':18,'十九':19,'二十':20 };
+
+            function getChapterOrder(chapterStr) {
+                const match = chapterStr.match(/第([一二三四五六七八九十]+)章/);
+                if (match) return chineseNumMap[match[1]] || 999;
+                return 999;
+            }
+            function getSectionOrder(sectionStr) {
+                let match = sectionStr.match(/第([一二三四五六七八九十]+)节/);
+                if (match) return chineseNumMap[match[1]] || 999;
+                match = sectionStr.match(/^(\d+)\./);
+                if (match) return parseInt(match[1], 10);
+                return 999;
+            }
+            function getItemOrder(itemStr) {
+                const match = itemStr.match(/^(\d+)\./);
+                if (match) return parseInt(match[1], 10);
+                return 999;
+            }
+            function compareByChapter(a, b) { return getChapterOrder(a) - getChapterOrder(b); }
+            function compareBySection(a, b) { return getSectionOrder(a) - getSectionOrder(b); }
+            function compareByItem(a, b) { return getItemOrder(a) - getItemOrder(b); }
+
+            function rebuildMaps() {
+                const chapterSet = new Set();
+                const sectionSetByChapter = {};
+                const itemSetByChapterSection = {};
+                const contentByKey = {};
+
+                handbookData.forEach(entry => {
+                    const chap = entry.chapter || '';
+                    const sect = entry.section || '';
+                    const it = entry.item || '';
+                    const cont = entry.content || '';
+
+                    if (chap) chapterSet.add(chap);
+                    if (chap && sect) {
+                        if (!sectionSetByChapter[chap]) sectionSetByChapter[chap] = new Set();
+                        sectionSetByChapter[chap].add(sect);
+                    }
+                    if (chap && sect && it) {
+                        const key = chap + '||' + sect + '||' + it;
+                        contentByKey[key] = cont;
+                        if (!itemSetByChapterSection[chap + '||' + sect]) {
+                            itemSetByChapterSection[chap + '||' + sect] = new Set();
+                        }
+                        itemSetByChapterSection[chap + '||' + sect].add(it);
+                    }
+                });
+
+                chapters = Array.from(chapterSet).sort(compareByChapter);
+                sectionsMap = {};
+                chapters.forEach(chap => {
+                    const sectSet = sectionSetByChapter[chap] || new Set();
+                    sectionsMap[chap] = Array.from(sectSet).sort(compareBySection);
+                });
+                itemsMap = {};
+                Object.keys(itemSetByChapterSection).forEach(key => {
+                    itemsMap[key] = Array.from(itemSetByChapterSection[key]).sort(compareByItem);
+                });
+                contentMap = contentByKey;
+                updateStats();
+            }
+
+            function updateStats() {
+                const count = handbookData.length;
+                totalSpan.textContent = count;
+                const jsonStr = JSON.stringify(handbookData);
+                const sizeKB = (new Blob([jsonStr]).size / 1024).toFixed(2);
+                sizeSpan.textContent = sizeKB + ' KB';
+                const percent = Math.min((sizeKB / 5120) * 100, 100);
+                storageBar.style.width = percent + '%';
+            }
+
+            function renderChapterSelect() {
+                chapterSelect.innerHTML = '<option value="">-- 请选择章 --</option>';
+                chapters.forEach(chap => {
+                    const option = document.createElement('option');
+                    option.value = chap;
+                    option.textContent = chap;
+                    chapterSelect.appendChild(option);
+                });
+                sectionSelect.innerHTML = '<option value="">-- 请先选择章 --</option>';
+                sectionSelect.disabled = true;
+                itemSelect.innerHTML = '<option value="">-- 请先选择节 --</option>';
+                itemSelect.disabled = true;
+                contentDisplay.style.display = 'none';
+                emptyPlaceholder.style.display = 'block';
+            }
+
+            window.onChapterChange = function() {
+                const selectedChap = chapterSelect.value;
+                if (!selectedChap) {
+                    sectionSelect.innerHTML = '<option value="">-- 请先选择章 --</option>';
+                    sectionSelect.disabled = true;
+                    itemSelect.innerHTML = '<option value="">-- 请先选择节 --</option>';
+                    itemSelect.disabled = true;
+                    contentDisplay.style.display = 'none';
+                    emptyPlaceholder.style.display = 'block';
+                    return;
+                }
+                const sections = sectionsMap[selectedChap] || [];
+                sectionSelect.innerHTML = '<option value="">-- 请选择节 --</option>';
+                sections.forEach(sec => {
+                    const option = document.createElement('option');
+                    option.value = sec;
+                    option.textContent = sec;
+                    sectionSelect.appendChild(option);
+                });
+                sectionSelect.disabled = false;
+                itemSelect.innerHTML = '<option value="">-- 请先选择节 --</option>';
+                itemSelect.disabled = true;
+                contentDisplay.style.display = 'none';
+                emptyPlaceholder.style.display = 'block';
+            };
+
+            window.onSectionChange = function() {
+                const selectedChap = chapterSelect.value;
+                const selectedSec = sectionSelect.value;
+                if (!selectedChap || !selectedSec) {
+                    itemSelect.innerHTML = '<option value="">-- 请先选择节 --</option>';
+                    itemSelect.disabled = true;
+                    contentDisplay.style.display = 'none';
+                    emptyPlaceholder.style.display = 'block';
+                    return;
+                }
+                const key = selectedChap + '||' + selectedSec;
+                const items = itemsMap[key] || [];
+                itemSelect.innerHTML = '<option value="">-- 请选择检查项目 --</option>';
+                items.forEach(it => {
+                    const option = document.createElement('option');
+                    option.value = it;
+                    option.textContent = it;
+                    itemSelect.appendChild(option);
+                });
+                itemSelect.disabled = false;
+                contentDisplay.style.display = 'none';
+                emptyPlaceholder.style.display = 'block';
+            };
+
+            window.onItemChange = function() {
+                const selectedChap = chapterSelect.value;
+                const selectedSec = sectionSelect.value;
+                const selectedItem = itemSelect.value;
+                if (!selectedChap || !selectedSec || !selectedItem) {
+                    contentDisplay.style.display = 'none';
+                    emptyPlaceholder.style.display = 'block';
+                    return;
+                }
+                const key = selectedChap + '||' + selectedSec + '||' + selectedItem;
+                const content = contentMap[key] || '暂无内容';
+                displayChapter.textContent = selectedChap;
+                displaySection.textContent = selectedSec;
+                displayItem.textContent = selectedItem;
+                displayContent.innerHTML = content.replace(/\n/g, '<br>');
+                contentDisplay.style.display = 'block';
+                emptyPlaceholder.style.display = 'none';
+            };
+
+            function loadSampleData() {
+                const sample = [
+                    { chapter: "第一章 通用及专项部分", section: "第一节 安全基础管理", item: "1. “四会”制度建立落实情况", content: "（1）检查会议记录是否齐全、规范；检查安委会会议纪要、安委会部署重点工作任务清单、安全分析例会情况通报；检查是否分析突出问题，并制定了相应的整改措施；检查站段月度各车间挂网重点信息追踪覆盖情况；检查薄弱车间的确定及帮促。\n（2）检查对1号文件等重点工作是否列出责任清单推进落实并督办；检查阶段性重点安全工作是否安排，车间是否上报落实情况；检查安全生产费隐患治理项目落实情况；检查每月十专项工作安排部署及落实情况。\n（3）检查事故、故障分析（一事一档），安全信息闭环整改情况；检查安全监察指令书、通知书、意见书等指出问题是否件件专题分析整改及考核追责；检查上级检查指出典型问题是否分析整改。" },
+                    { chapter: "第一章 通用及专项部分", section: "第一节 安全基础管理", item: "2. 安全双重预防机制落实", content: "（1）检查年初安全风险库建立，站段是否召开安全风险研判专题会议；检查站段风险库是否承接集团公司、专业部门风险库；检查安全风险是否分级管控、安全风险库是否以文件公布。\n（2）检查安全风险公告、每季安全风险管控效果自评情况；检查安全风险动态研判、专项辨识开展情况；检查安全风险预警落实，是否对车间精准预警。\n（3）检查隐患库建立、常态化隐患排查开展、重大安全隐患专题立案管理情况，安全隐患是否有效整治。" },
+                    { chapter: "第二章 车务系统检查清单", section: "第一节 接发列车", item: "1. 车站值班员", content: "（1）岗位人员精神状态是否良好、是否按规定着装、佩戴臂章。岗位责任制是否按规定揭挂。\n（2）行车岗位有关簿册是否规范填记：《一班工作日志及交接班簿》交接内容是否清楚；《行车设备检查登记簿》、《行车设备施工登记簿》是否按填记样板的格式要求进行填记；日班计划、阶段计划、调度命令接收及时，认真核对、签收、转交及存档；《行车日志》需人工输入的内容是否规范填记。\n（3）非正常情况下是否执行接发列车作业标准，盯控干部是否到岗盯控，有关行车凭证是否规范填记及确认、核对、转交、联控。\n（4）是否熟知站内线路限制、清楚掌握接发超长、各级超限列车的线路。\n（5）涉及设备管理单位站内、区间人员上道作业，是否按规定与司机及相关人员提示、联控。" }
+                ];
+                handbookData = sample;
+                rebuildMaps();
+                renderChapterSelect();
+                saveToStorage();
+            }
+
+            function saveToStorage() {
+                try { localStorage.setItem('handbook_threelevel_v2', JSON.stringify(handbookData)); } catch (e) {}
+            }
+            function loadFromStorage() {
+                try {
+                    const stored = localStorage.getItem('handbook_threelevel_v2');
+                    if (stored) { handbookData = JSON.parse(stored); }
+                    else { loadSampleData(); return; }
+                } catch (e) { loadSampleData(); return; }
+                rebuildMaps();
+                renderChapterSelect();
+            }
+
+            window.clearHandbookData = function() {
+                if (confirm('确定清空所有手册数据吗？')) {
+                    handbookData = [];
+                    rebuildMaps();
+                    renderChapterSelect();
+                    saveToStorage();
+                }
+            };
+
+            // 新增导出函数
+            window.exportHandbook = function() {
+                if (handbookData.length === 0) { alert('没有数据可导出'); return; }
+                const dataStr = JSON.stringify(handbookData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '安全检查手册_' + new Date().toISOString().slice(0,10) + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            document.getElementById('handbook-importBtn').addEventListener('click', function() {
+                document.getElementById('handbook-jsonFile').click();
+            });
+
+            document.getElementById('handbook-jsonFile').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        const imported = JSON.parse(ev.target.result);
+                        if (!Array.isArray(imported)) throw new Error('数据必须是数组');
+                        if (imported.length > 0 && (!imported[0].chapter || !imported[0].section || !imported[0].item)) {
+                            throw new Error('缺少必要字段 chapter/section/item');
+                        }
+                        const modal = document.getElementById('handbook-importModal');
+                        document.getElementById('handbook-importMessage').innerText = `将导入 ${imported.length} 条记录，确定覆盖现有数据吗？`;
+                        modal.classList.add('active');
+                        document.getElementById('handbook-confirmImport').onclick = () => {
+                            handbookData = imported;
+                            rebuildMaps();
+                            renderChapterSelect();
+                            saveToStorage();
+                            closeModal('handbook-importModal');
+                        };
+                    } catch (err) { alert('解析失败：' + err.message); }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+            });
+
             loadFromStorage();
         })();
 
