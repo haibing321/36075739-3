@@ -82,6 +82,46 @@
         .logo-title { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
         .logo-subtitle { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
         
+        /* 汉堡菜单按钮 (仅移动端显示) */
+        .nav-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            gap: 5px;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .nav-toggle:hover { background: rgba(255,255,255,0.25); }
+        .nav-toggle span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .nav-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        /* 当前激活tab标签（移动端顶部显示） */
+        .nav-current-label {
+            display: none;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+        }
+
         .nav { display: flex; gap: 8px; }
         .nav-btn {
             padding: 12px 24px;
@@ -853,13 +893,155 @@
             white-space: pre-wrap; border-left: 4px solid var(--info);
         }
 
+        /* 规章全文模态框内容区域 */
+        #rule-fullContentBody {
+            white-space: pre-wrap;
+            line-height: 1.9;
+            font-size: 0.95rem;
+            color: var(--text);
+            word-break: break-word;
+        }
+        #rule-fullContentBody .rule-highlight {
+            background: #fef3c7;
+            color: var(--accent);
+            font-weight: 600;
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        /* 规章全文模态框 — 响应式宽度 */
+        #rule-fullViewModal .modal-content {
+            max-width: min(92vw, 860px);
+            width: 100%;
+            max-height: 94vh;
+        }
+        /* 全文高亮mark（黄色背景+橙色文字） */
+        mark.rule-fv-hl {
+            background: #fef3c7 !important;
+            color: #c05621 !important;
+            font-weight: 600 !important;
+            padding: 1px 3px !important;
+            border-radius: 3px !important;
+            border: 1px solid #f6e05e !important;
+        }
+        /* 当前聚焦高亮 */
+        mark.rule-fv-hl.fv-active {
+            background: #f6ad55 !important;
+            color: #7b341e !important;
+            outline: 2px solid #c05621 !important;
+            outline-offset: 2px !important;
+        }
+        /* 顶部提示栏 */
+        #rule-fullViewHlBar {
+            display: none;
+            background: #fef9e7;
+            border: 1px solid #f6e05e;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            font-size: 0.85rem;
+            color: #744210;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .fv-hl-bar-info {
+            flex: 1;
+            min-width: 160px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .fv-hl-total {
+            font-weight: 700;
+            color: #c05621;
+            font-size: 1rem;
+        }
+        .fv-hl-nav {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .fv-hl-nav button {
+            background: var(--info);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: background 0.2s;
+        }
+        .fv-hl-nav button:hover { background: var(--primary); }
+        /* 关键词标签颜色列表 */
+        .fv-kw-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin: 1px 2px;
+        }
+        @media (max-width: 600px) {
+            #rule-fullViewModal .modal-content {
+                max-width: 100vw;
+                border-radius: 16px 16px 0 0;
+                margin: auto 0 0 0;
+                max-height: 96vh;
+            }
+            #rule-fullViewModal.active {
+                align-items: flex-end;
+            }
+            #rule-fullContentBody {
+                max-height: 52vh !important;
+            }
+        }
+
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .header-inner { flex-direction: column; padding: 12px 16px; }
-            .logo { padding: 8px 0; }
-            .nav { width: 100%; justify-content: center; flex-wrap: wrap; }
-            .nav-btn { padding: 10px 16px; font-size: 0.85rem; border-radius: 6px; }
+            .header-inner {
+                flex-direction: row;
+                padding: 10px 16px;
+                flex-wrap: wrap;
+                position: relative;
+                align-items: center;
+                gap: 8px;
+            }
+            .logo { padding: 6px 0; flex: 1; min-width: 0; }
+            .logo-title { font-size: 1.1rem; }
+            .logo-subtitle { display: none; }
+            .nav-toggle { display: flex; }
+            .nav-current-label { display: block; }
+
+            /* 导航折叠容器 */
+            .nav {
+                width: 100%;
+                flex-direction: column;
+                gap: 0;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s;
+                background: rgba(0,0,0,0.15);
+                border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+                padding: 0 8px;
+                order: 3;
+            }
+            .nav.nav-open {
+                max-height: 400px;
+                padding: 8px;
+            }
+            .nav-btn {
+                padding: 12px 16px;
+                font-size: 0.9rem;
+                border-radius: 8px;
+                width: 100%;
+                justify-content: flex-start;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+            }
+            .nav-btn:last-child { border-bottom: none; }
             .nav-btn.active::after { display: none; }
+            .nav-btn.active { background: rgba(255,255,255,0.25); border-radius: 8px; }
             
             .main { padding: 16px; }
             .card-header, .card-body { padding: 16px; }
@@ -921,7 +1103,12 @@
                     <div class="logo-subtitle">SAFETY INSPECTION QUERY SYSTEM</div>
                 </div>
             </div>
-            <nav class="nav">
+            <!-- 移动端：当前tab名称 + 汉堡按钮 -->
+            <span class="nav-current-label" id="navCurrentLabel">📖 检查手册</span>
+            <button class="nav-toggle" id="navToggle" onclick="toggleNav()" aria-label="展开导航菜单">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="nav" id="mainNav">
                 <!-- 检查手册移到最前面 -->
                 <button class="nav-btn active" onclick="switchTab('handbook')" id="tab-handbook"><span>📖</span> 检查手册</button>
                 <button class="nav-btn" onclick="switchTab('issue')" id="tab-issue"><span>🔍</span> 检查信息</button>
@@ -1139,9 +1326,9 @@
                         </div>
 
                         <div class="diary-actions" style="margin-top:16px;">
-                            <button class="btn btn-primary" onclick="saveDiary()">💾 保存记录</button>
+                            <button class="btn btn-primary" onclick="saveDiary(this)">💾 保存记录</button>
                             <button class="btn btn-secondary" onclick="clearDiaryForm()">🔄 重置</button>
-                            <button class="btn btn-info" onclick="copyAllToday()">📋 复制全部</button>
+                            <button class="btn btn-info" onclick="copyAllToday(this)">📋 复制全部</button>
                         </div>
 
                         <div style="display: flex; gap: 12px; align-items: center; margin: 20px 0 12px;">
@@ -1364,6 +1551,43 @@
         </div>
     </div>
 
+    <!-- 规章全文查看模态框（带关键词高亮 · 响应式宽度） -->
+    <div id="rule-fullViewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <div class="modal-title" id="rule-fullViewTitle" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">规章全文</div>
+                <button onclick="closeModal('rule-fullViewModal')" style="background:rgba(255,255,255,0.2);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+            </div>
+            <div class="modal-body" style="padding:20px;">
+                <!-- 规章信息行 -->
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+                    <span class="rule-trade" id="rule-fullViewTrade"></span>
+                    <span style="font-size:0.8rem;color:var(--text-secondary);" id="rule-fullViewLength"></span>
+                </div>
+                <!-- 顶部关键词命中提示栏 -->
+                <div id="rule-fullViewHlBar">
+                    <div class="fv-hl-bar-info">
+                        <span>🔍</span>
+                        <span id="rule-fullViewHlBarText">已找到</span>
+                        <span class="fv-hl-total" id="rule-fullViewHlTotal">0</span>
+                        <span>处命中，关键词：</span>
+                        <span id="rule-fullViewHlKwTags"></span>
+                        <span id="rule-fullViewHlPosText" style="font-size:0.8rem;color:#a05000;margin-left:4px;"></span>
+                    </div>
+                    <div class="fv-hl-nav">
+                        <button onclick="ruleFvPrevHl()">↑ 上一处</button>
+                        <button onclick="ruleFvNextHl()">↓ 下一处</button>
+                    </div>
+                </div>
+                <!-- 全文内容区 -->
+                <div id="rule-fullContentBody" style="background:#f7fafc;padding:20px;border-radius:10px;border-left:4px solid var(--info);max-height:58vh;overflow-y:auto;font-size:0.95rem;line-height:1.9;color:var(--text);word-break:break-word;white-space:pre-wrap;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rule-fullViewModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 新增手册模块的导入确认模态框 -->
     <div class="modal" id="handbook-importModal">
         <div class="modal-content">
@@ -1378,11 +1602,47 @@
 
     <script>
         // ========== 全局工具函数 ==========
+        // 导航栏 Tab 名称映射
+        const TAB_LABELS = {
+            handbook: '📖 检查手册',
+            issue: '🔍 检查信息',
+            rule: '📋 规章制度',
+            diary: '📝 工作写实',
+            phone: '📞 车站电话',
+            doubao: '🤖 AI助手'
+        };
+
+        window.toggleNav = function() {
+            const nav = document.getElementById('mainNav');
+            const toggle = document.getElementById('navToggle');
+            const isOpen = nav.classList.contains('nav-open');
+            if (isOpen) {
+                nav.classList.remove('nav-open');
+                toggle.classList.remove('open');
+                toggle.setAttribute('aria-label', '展开导航菜单');
+            } else {
+                nav.classList.add('nav-open');
+                toggle.classList.add('open');
+                toggle.setAttribute('aria-label', '收起导航菜单');
+            }
+        };
+
         window.switchTab = function(tab) {
             document.querySelectorAll('.nav-btn').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             document.getElementById('panel-' + tab).classList.add('active');
+            // 更新移动端当前Tab标签
+            const labelEl = document.getElementById('navCurrentLabel');
+            if (labelEl) labelEl.textContent = TAB_LABELS[tab] || '';
+            // 切换后自动收起导航菜单（移动端）
+            const nav = document.getElementById('mainNav');
+            const toggle = document.getElementById('navToggle');
+            if (nav && nav.classList.contains('nav-open')) {
+                nav.classList.remove('nav-open');
+                toggle.classList.remove('open');
+                toggle.setAttribute('aria-label', '展开导航菜单');
+            }
         };
 
         window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
@@ -2185,9 +2445,10 @@
                             if (Array.isArray(data)) {
                                 data.forEach(item => {
                                     if (item.title && item.content) {
-                                        const dupIdx = rules.findIndex(r => r.title.toLowerCase().trim() === item.title.toLowerCase().trim());
-                                        if (dupIdx !== -1) rules[dupIdx] = { trade: item.trade || trade, title: item.title, content: item.content };
-                                        else rules.push({ trade: item.trade || trade, title: item.title, content: item.content });
+                                        const itemTrade = item.trade || trade;
+                                        const dupIdx = rules.findIndex(r => r.title.toLowerCase().trim() === item.title.toLowerCase().trim() && r.trade === itemTrade);
+                                        if (dupIdx !== -1) rules[dupIdx] = { trade: itemTrade, title: item.title, content: item.content };
+                                        else rules.push({ trade: itemTrade, title: item.title, content: item.content });
                                         successCount++;
                                     }
                                 });
@@ -2357,10 +2618,24 @@
                     return;
                 }
 
+
                 let html = '<div class="result-list">';
                 pageResults.forEach(item => {
+                    const ruleIdx = ruleAllResults.indexOf(item);
+                    const absIdx = rules.indexOf(item.rule);
+                    // 计算首个命中段落，供全文定位使用
+                    const firstParaText = _getRuleFirstMatchPara(item.rule);
+                    if (firstParaText !== null) {
+                        _ruleFirstMatchPara[absIdx] = firstParaText;
+                    } else {
+                        delete _ruleFirstMatchPara[absIdx];
+                    }
                     html += '<div class="rule-card-item">';
-                    html += '<div class="rule-title">' + escapeHtml(item.rule.title) + '</div>';
+                    // 文件名改为可点击链接
+                    html += '<div class="rule-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;" onclick="ruleViewFullText(' + absIdx + ')">';
+                    html += '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--info);text-decoration:underline;text-underline-offset:3px;">' + escapeHtml(item.rule.title) + '</span>';
+                    html += '<button class="btn btn-info btn-small" style="flex-shrink:0;" onclick="event.stopPropagation();ruleViewFullText(' + absIdx + ')">📄 查看全文</button>';
+                    html += '</div>';
                     html += '<span class="rule-trade">' + escapeHtml(item.rule.trade) + '</span>';
                     html += '<div class="rule-snippet">' + item.snippetHtml + '</div>';
                     html += '</div>';
@@ -2381,6 +2656,169 @@
                 rulePage = page;
                 displayRulePage();
             };
+
+            // 存储每条搜索结果对应的首个命中段落文本（key: rule绝对索引）
+            const _ruleFirstMatchPara = {};
+
+            // 根据当前关键词，找规章中第一个所有关键词同时命中的段落原文
+            function _getRuleFirstMatchPara(rule) {
+                const keywords = getKeywords().filter(k => k.trim() !== '');
+                if (keywords.length === 0) return null;
+                const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
+                const lowerKws = keywords.map(k => k.toLowerCase());
+                for (let i = 0; i < paragraphs.length; i++) {
+                    const lp = paragraphs[i].toLowerCase();
+                    if (lowerKws.every(kw => lp.includes(kw))) return paragraphs[i];
+                }
+                return null;
+            }
+
+            // ===== 规章全文查看（带关键词高亮 & 上下跳转） =====
+            let _fvHighlights = []; // 所有高亮 mark 元素
+            let _fvCurHl = -1;      // 当前聚焦索引
+
+            // 关键词颜色组（背景/文字），用于顶部标签
+            const KW_COLORS = [
+                { bg: '#fef3c7', text: '#c05621', border: '#f6e05e' },
+                { bg: '#e6f6ff', text: '#1a6eb5', border: '#90cdf4' },
+                { bg: '#f0fff4', text: '#276749', border: '#9ae6b4' },
+                { bg: '#fde8f8', text: '#805ad5', border: '#d6bcfa' }
+            ];
+
+            window.ruleViewFullText = function(idx) {
+                const rule = rules[idx];
+                if (!rule) return;
+                const keywords = getKeywords().filter(k => k.trim() !== '');
+
+                // 填入标题与专业
+                document.getElementById('rule-fullViewTitle').textContent = rule.title;
+                document.getElementById('rule-fullViewTrade').textContent = rule.trade;
+                document.getElementById('rule-fullViewLength').textContent = rule.content.length + ' 字';
+
+                const bodyEl = document.getElementById('rule-fullContentBody');
+                _fvHighlights = [];
+                _fvCurHl = -1;
+
+                if (keywords.length > 0) {
+                    // ---------- 构建带高亮的全文HTML ----------
+                    // 1. 按行拆分，同时记录每行在全文中的"行号"（含空行用于位置对应）
+                    const lines = rule.content.split(/\n/);
+
+                    // 2. 对每行进行 HTML 转义后多关键词高亮（每个kw用独立data-kw-idx）
+                    //    每行用 <span data-line="N"> 包裹，供后续定位使用
+                    const hlParts = lines.map((line, lineIdx) => {
+                        if (!line.trim()) return '<span data-line="' + lineIdx + '"></span>';
+                        let escaped = escapeHtml(line);
+                        keywords.forEach((kw, kwIdx) => {
+                            if (!kw) return;
+                            const color = KW_COLORS[kwIdx % KW_COLORS.length];
+                            const regex = new RegExp('(' + escapeRegExp(escapeHtml(kw)) + ')', 'gi');
+                            escaped = escaped.replace(regex,
+                                `<mark class="rule-fv-hl" data-kw-idx="${kwIdx}" data-line="${lineIdx}" style="background:${color.bg};color:${color.text};font-weight:600;padding:1px 3px;border-radius:3px;border:1px solid ${color.border};">$1</mark>`
+                            );
+                        });
+                        return '<span data-line="' + lineIdx + '">' + escaped + '</span>';
+                    });
+                    bodyEl.innerHTML = hlParts.join('<br>');
+
+                    // 3. 收集所有高亮元素（按文档顺序）
+                    _fvHighlights = Array.from(bodyEl.querySelectorAll('.rule-fv-hl'));
+                    _fvCurHl = _fvHighlights.length > 0 ? 0 : -1;
+
+                    // ---------- 统计各关键词命中数 ----------
+                    const kwHitCount = new Array(keywords.length).fill(0);
+                    _fvHighlights.forEach(el => {
+                        const ki = parseInt(el.getAttribute('data-kw-idx'));
+                        if (!isNaN(ki)) kwHitCount[ki] = (kwHitCount[ki] || 0) + 1;
+                    });
+                    const totalHits = _fvHighlights.length;
+
+                    // ---------- 顶部提示栏 ----------
+                    const hlBar    = document.getElementById('rule-fullViewHlBar');
+                    const hlTotal  = document.getElementById('rule-fullViewHlTotal');
+                    const hlKwTags = document.getElementById('rule-fullViewHlKwTags');
+                    const hlBarText = document.getElementById('rule-fullViewHlBarText');
+                    const hlPosText = document.getElementById('rule-fullViewHlPosText');
+
+                    if (totalHits > 0) {
+                        hlBar.style.display = 'flex';
+                        hlBarText.textContent = '已找到';
+                        hlTotal.textContent = totalHits;
+
+                        // 渲染关键词标签（带各自颜色和命中数）
+                        let tagsHtml = '';
+                        keywords.forEach((kw, ki) => {
+                            const c = KW_COLORS[ki % KW_COLORS.length];
+                            tagsHtml += `<span class="fv-kw-tag" style="background:${c.bg};color:${c.text};border:1px solid ${c.border};">"${escapeHtml(kw)}" ${kwHitCount[ki]} 处</span>`;
+                        });
+                        hlKwTags.innerHTML = tagsHtml;
+                        hlPosText.textContent = '';
+                    } else {
+                        hlBar.style.display = 'none';
+                        hlKwTags.innerHTML = '';
+                        hlPosText.textContent = '';
+                    }
+
+                    // ---------- 确定初始定位目标 ----------
+                    // 优先定位到搜索结果中展示的首个命中段落（与摘要同一段），
+                    // 找该段落中第一个高亮元素的位置
+                    const anchorPara = _ruleFirstMatchPara[idx] || null;
+                    let anchorHlIdx = 0; // 默认第一个高亮
+                    if (anchorPara && _fvHighlights.length > 0) {
+                        // 找全文中与 anchorPara 对应行号的第一个高亮
+                        const lines2 = rule.content.split(/\n/);
+                        const anchorLineIdx = lines2.findIndex(l => l === anchorPara);
+                        if (anchorLineIdx >= 0) {
+                            const found = _fvHighlights.findIndex(el =>
+                                parseInt(el.getAttribute('data-line')) === anchorLineIdx
+                            );
+                            if (found >= 0) anchorHlIdx = found;
+                        }
+                    }
+                    _fvCurHl = anchorHlIdx;
+
+                } else {
+                    // 无关键词：直接显示纯文本，回到顶部
+                    bodyEl.textContent = rule.content;
+                    _fvHighlights = [];
+                    _fvCurHl = -1;
+                    document.getElementById('rule-fullViewHlBar').style.display = 'none';
+                    document.getElementById('rule-fullViewHlKwTags').innerHTML = '';
+                    bodyEl.scrollTop = 0;
+                }
+
+                openModal('rule-fullViewModal');
+                // 模态框打开后滚动到目标位置（延迟确保DOM渲染完成）
+                if (_fvHighlights.length > 0) {
+                    setTimeout(() => ruleFvScrollToHl(_fvCurHl), 150);
+                }
+            };
+
+            function ruleFvScrollToHl(idx) {
+                if (_fvHighlights.length === 0) return;
+                // 移除旧的激活态
+                _fvHighlights.forEach(el => el.classList.remove('fv-active'));
+                _fvCurHl = ((idx % _fvHighlights.length) + _fvHighlights.length) % _fvHighlights.length;
+                const el = _fvHighlights[_fvCurHl];
+                el.classList.add('fv-active');
+                // 在内容容器内部精确滚动（避免 scrollIntoView 滚动整个页面）
+                const container = document.getElementById('rule-fullContentBody');
+                if (container) {
+                    const containerRect = container.getBoundingClientRect();
+                    const elRect = el.getBoundingClientRect();
+                    // 计算元素在容器中的相对位置，滚到元素居中
+                    const offset = elRect.top - containerRect.top + container.scrollTop - container.clientHeight / 2 + elRect.height / 2;
+                    container.scrollTo({ top: offset, behavior: 'smooth' });
+                } else {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                // 更新位置提示
+                const posEl = document.getElementById('rule-fullViewHlPosText');
+                if (posEl) posEl.textContent = '（第 ' + (_fvCurHl + 1) + ' / ' + _fvHighlights.length + ' 处）';
+            }
+
+            window.ruleFvNextHl = function() { ruleFvScrollToHl(_fvCurHl + 1); };
+            window.ruleFvPrevHl = function() { ruleFvScrollToHl(_fvCurHl - 1); };
 
             document.addEventListener('DOMContentLoaded', async function() {
                 await loadRulesFromDB();
@@ -2487,7 +2925,7 @@
                 }
                 return issues;
             }
-            window.saveDiary = function() {
+            window.saveDiary = function(btnEl) {
                 const date = document.getElementById('diary-date').value;
                 const work = document.getElementById('diary-work').value.trim();
                 if (!date) { alert('请选择日期'); return; }
@@ -2507,7 +2945,19 @@
                 document.getElementById('diary-today-btn').classList.remove('btn-secondary');
                 document.getElementById('diary-history-btn').classList.add('btn-secondary');
                 document.getElementById('diary-history-btn').classList.remove('btn-info');
-                alert('保存成功！');
+                // 自复式反馈：按钮变绿显示"已保存 ✓"，2秒后恢复
+                if (btnEl) {
+                    const orig = btnEl.innerHTML;
+                    const origBg = btnEl.style.background;
+                    btnEl.innerHTML = '✓ 已保存';
+                    btnEl.style.background = '#276749';
+                    btnEl.disabled = true;
+                    setTimeout(function() {
+                        btnEl.innerHTML = orig;
+                        btnEl.style.background = origBg;
+                        btnEl.disabled = false;
+                    }, 2000);
+                }
             };
             window.clearDiaryForm = function() {
                 document.getElementById('diary-date').value = '';
@@ -2531,26 +2981,46 @@
                 renderDiaryList();
                 if (diaries.length === 0) document.getElementById('diary-list').style.display = 'none';
             };
-            window.copyWork = function(text) {
-                navigator.clipboard.writeText(text).then(() => alert('工作内容已复制')).catch(() => {
-                    const textarea = document.createElement('textarea'); textarea.value = text; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea); alert('工作内容已复制');
-                });
-            };
-            window.copyIssue = function(text) {
-                navigator.clipboard.writeText(text).then(() => alert('问题已复制')).catch(() => {
-                    const textarea = document.createElement('textarea'); textarea.value = text; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea); alert('问题已复制');
-                });
-            };
-            window.copyAllToday = function() {
+            // 自复式复制工具函数：复制后按钮变色显示"已复制✓"，2秒后恢复
+            function _doCopy(text, btnEl, successLabel) {
+                const original = btnEl ? btnEl.innerHTML : '';
+                const originalBg = btnEl ? btnEl.style.background : '';
+                const originalColor = btnEl ? btnEl.style.color : '';
+                const doFeedback = function() {
+                    if (!btnEl) return;
+                    btnEl.innerHTML = successLabel || '已复制 ✓';
+                    btnEl.style.background = '#276749';
+                    btnEl.style.color = '#fff';
+                    btnEl.disabled = true;
+                    setTimeout(function() {
+                        btnEl.innerHTML = original;
+                        btnEl.style.background = originalBg;
+                        btnEl.style.color = originalColor;
+                        btnEl.disabled = false;
+                    }, 2000);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(doFeedback).catch(function() {
+                        const ta = document.createElement('textarea'); ta.value = text;
+                        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                        doFeedback();
+                    });
+                } else {
+                    const ta = document.createElement('textarea'); ta.value = text;
+                    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                    doFeedback();
+                }
+            }
+            window.copyWork = function(text, btnEl) { _doCopy(text, btnEl, '已复制 ✓'); };
+            window.copyIssue = function(text, btnEl) { _doCopy(text, btnEl, '已复制 ✓'); };
+            window.copyAllToday = function(btnEl) {
                 const work = document.getElementById('diary-work').value.trim();
                 const issues = collectIssues();
                 if (!work && issues.length === 0) { alert('没有可复制的内容'); return; }
                 let text = '';
                 if (work) text += `【工作内容】\n${work}\n`;
                 issues.forEach((issue, idx) => { text += `【问题${idx+1}】\n${issue}\n`; });
-                navigator.clipboard.writeText(text).then(() => alert('当日全部内容已复制')).catch(() => {
-                    const textarea = document.createElement('textarea'); textarea.value = text; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea); alert('当日全部内容已复制');
-                });
+                _doCopy(text, btnEl, '已复制 ✓');
             };
             window.deleteIssue = function(date, issueIndex) {
                 const diary = diaries.find(d => d.date === date);
@@ -2561,6 +3031,9 @@
                 renderDiaryList();
             };
             function escapeHtml(text) { return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+            // 当前渲染的日记列表（按显示顺序），供复制按钮取值
+            let _renderedDiaries = [];
+
             function renderDiaryList() {
                 const container = document.getElementById('diary-list');
                 let filteredDiaries = diaries;
@@ -2568,6 +3041,7 @@
                     const today = new Date().toISOString().slice(0,10);
                     filteredDiaries = diaries.filter(d => d.date === today);
                 }
+                _renderedDiaries = filteredDiaries; // 存储供复制按钮使用
                 document.getElementById('diary-count').textContent = filteredDiaries.length + ' 条';
                 if (filteredDiaries.length === 0) {
                     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>暂无工作记录</p></div>';
@@ -2575,17 +3049,18 @@
                     return;
                 }
                 let html = '';
-                filteredDiaries.forEach(diary => {
+                filteredDiaries.forEach((diary, di) => {
                     const dateObj = new Date(diary.date);
                     const dateStr = dateObj.getFullYear() + '年' + (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日';
                     const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
                     html += '<div class="diary-card">';
                     html += '<div class="diary-card-header"><div class="diary-card-date">' + dateStr + ' ' + weekDay + '</div><div class="diary-card-actions"><button class="btn btn-info btn-small" onclick="editDiary(\'' + diary.date + '\')">编辑</button><button class="btn btn-danger btn-small" onclick="deleteDiary(\'' + diary.date + '\')">删除</button></div></div>';
-                    html += '<div class="diary-work-block"><div class="diary-work-header"><span class="diary-work-title">📋 工作内容</span><div><button class="btn btn-small btn-secondary" onclick="copyWork(\'' + diary.work.replace(/'/g, "\\'") + '\')">复制</button></div></div><div class="diary-work-content">' + escapeHtml(diary.work) + '</div></div>';
+                    // 复制按钮用 data-di 存索引，不在 onclick 里嵌文本内容，避免引号冲突
+                    html += '<div class="diary-work-block"><div class="diary-work-header"><span class="diary-work-title">📋 工作内容</span><div><button class="btn btn-small btn-secondary diary-copy-work-btn" data-di="' + di + '">复制</button></div></div><div class="diary-work-content">' + escapeHtml(diary.work) + '</div></div>';
                     if (diary.issues && diary.issues.length > 0) {
                         html += '<div class="diary-issues-block"><div class="diary-issues-header"><span class="diary-issues-title">⚠️ 发现问题 (' + diary.issues.length + '条)</span></div>';
                         diary.issues.forEach((issue, idx) => {
-                            html += '<div class="diary-issue-item"><div class="diary-issue-item-num">' + (idx + 1) + '</div><div class="diary-issue-item-content">' + escapeHtml(issue) + '</div><div class="diary-issue-item-actions"><button class="btn btn-small btn-secondary" onclick="copyIssue(\'' + issue.replace(/'/g, "\\'") + '\')">复制</button><button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button></div></div>';
+                            html += '<div class="diary-issue-item"><div class="diary-issue-item-num">' + (idx + 1) + '</div><div class="diary-issue-item-content">' + escapeHtml(issue) + '</div><div class="diary-issue-item-actions"><button class="btn btn-small btn-secondary diary-copy-issue-btn" data-di="' + di + '" data-ii="' + idx + '">复制</button><button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button></div></div>';
                         });
                         html += '</div>';
                     }
@@ -2618,6 +3093,24 @@
                 document.getElementById('diary-today-btn').addEventListener('click', showToday);
                 document.getElementById('diary-history-btn').addEventListener('click', showHistory);
                 document.getElementById('diary-count').textContent = diaries.length + ' 条';
+
+                // 事件委托：处理日记列表里的复制按钮（避免动态HTML的引号问题）
+                document.getElementById('diary-list').addEventListener('click', function(e) {
+                    const workBtn = e.target.closest('.diary-copy-work-btn');
+                    const issueBtn = e.target.closest('.diary-copy-issue-btn');
+                    if (workBtn) {
+                        const di = parseInt(workBtn.getAttribute('data-di'));
+                        const diary = _renderedDiaries[di];
+                        if (diary) _doCopy(diary.work, workBtn, '已复制 ✓');
+                    } else if (issueBtn) {
+                        const di = parseInt(issueBtn.getAttribute('data-di'));
+                        const ii = parseInt(issueBtn.getAttribute('data-ii'));
+                        const diary = _renderedDiaries[di];
+                        if (diary && diary.issues && diary.issues[ii] !== undefined) {
+                            _doCopy(diary.issues[ii], issueBtn, '已复制 ✓');
+                        }
+                    }
+                });
             });
         })();
 
