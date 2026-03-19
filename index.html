@@ -1658,10 +1658,10 @@
                 toggle.classList.remove('open');
                 toggle.setAttribute('aria-label', '展开导航菜单');
             }
-            // 侧滑时显示 Toast 提示（含历史记录）
-            if (fromSwipe) {
-                _showSwipeToast(tab);
-            }
+            // 侧滑时不再显示 Toast 记录框
+            // if (fromSwipe) {
+            //     _showSwipeToast(tab);
+            // }
         };
 
         window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
@@ -3705,10 +3705,11 @@
                 // dx<0 左滑→下一模块；dx>0 右滑→上一模块
                 var nextIdx = dx < 0 ? curIdx + 1 : curIdx - 1;
 
-                if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) {
-                    // 到达边界 → 退出确认
-                    if (_exitReady) { doExit(); } else { showExitBar(); }
-                    return;
+                // 无限循环：到达边界时自动循环切换
+                if (nextIdx < 0) {
+                    nextIdx = TAB_ORDER.length - 1;
+                } else if (nextIdx >= TAB_ORDER.length) {
+                    nextIdx = 0;
                 }
 
                 switchTab(TAB_ORDER[nextIdx], true);
