@@ -17,41 +17,45 @@
     <style>
         /* ========== 全局变量 & 基础样式 (完全保留原样式) ========== */
         :root {
-            --primary: #1a365d;
-            --primary-light: #2c5282;
-            --primary-dark: #0d1b2a;
-            --accent: #c53030;
-            --accent-light: #e53e3e;
-            --success: #276749;
-            --warning: #c05621;
-            --info: #2b6cb0;
-            --bg: #f7fafc;
+            --primary: #1e3a5f;
+            --primary-light: #2d5a87;
+            --primary-dark: #0f1f33;
+            --accent: #dc3545;
+            --accent-light: #e74c3c;
+            --success: #28a745;
+            --warning: #fd7e14;
+            --info: #007bff;
+            --bg: #f0f2f5;
             --card-bg: #ffffff;
-            --text: #1a202c;
-            --text-secondary: #4a5568;
-            --border: #e2e8f0;
-            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-            --radius: 12px;
-            --radius-sm: 8px;
+            --text: #2c3e50;
+            --text-secondary: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --gradient-primary: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background: var(--bg);
+            background: linear-gradient(180deg, #f0f2f5 0%, #e8ecf1 100%);
             min-height: 100vh;
             color: var(--text);
             line-height: 1.6;
             font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         /* ========== 头部导航 ========== */
         .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            box-shadow: var(--shadow-lg);
+            background: var(--gradient-primary);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
             position: sticky;
             top: 0;
             z-index: 1000;
+            backdrop-filter: blur(10px);
         }
         .header-inner {
             max-width: 1400px;
@@ -793,54 +797,54 @@
         }
         
         /* ========== 目录列表 ========== */
-        .catalog-list { max-height: 50vh; overflow-y: auto; }
+        .catalog-list { max-height: 50vh; overflow-y: auto; padding: 8px; }
         .catalog-item {
             display: flex;
-            flex-direction: column;
-            padding: 12px;
+            flex-direction: row;
+            padding: 14px;
             border-radius: 8px;
-            margin-bottom: 8px;
-            background: #f7fafc;
-            border: 1px solid var(--border);
-            transition: all 0.2s;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
         }
-        .catalog-item:hover { background: #ebf8ff; border-color: #90cdf4; }
-        .catalog-info { flex: 1; min-width: 0; width: 100%; margin-bottom: 8px; }
+        .catalog-item:hover { background: #fff; border-color: #b8c5d3; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .catalog-info { flex: 1; min-width: 0; margin-right: 12px; }
         .catalog-title {
             font-weight: 600;
             color: var(--primary);
             white-space: normal;
             word-break: break-all;
             word-wrap: break-word;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.4;
         }
         .catalog-meta {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
-            margin-top: 4px;
+            margin-top: 6px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
         .catalog-trade {
-            background: #ebf8ff;
-            color: var(--info);
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            color: #1976d2;
             padding: 2px 8px;
-            border-radius: 12px;
+            border-radius: 10px;
             font-size: 0.7rem;
-            font-weight: 600;
+            font-weight: 500;
         }
         .catalog-actions { 
             display: flex; 
+            flex-direction: column;
             gap: 6px; 
-            width: 100%;
-            justify-content: flex-end;
+            flex-shrink: 0;
         }
         .catalog-actions .btn {
-            flex: 1;
-            max-width: 80px;
-            padding: 6px 8px;
+            padding: 5px 10px;
             font-size: 0.75rem;
+            border-radius: 4px;
         }
         
         /* 手机端适配 */
@@ -848,17 +852,17 @@
             .catalog-item {
                 flex-direction: column;
                 align-items: stretch;
+                padding: 12px;
             }
+            .catalog-info { margin-right: 0; margin-bottom: 10px; }
             .catalog-actions {
-                justify-content: space-between;
-                flex-wrap: wrap;
+                flex-direction: row;
+                justify-content: flex-end;
+                width: 100%;
             }
             .catalog-actions .btn {
                 flex: 1;
-                min-width: 60px;
-                max-width: none;
-                padding: 8px 4px;
-                font-size: 0.7rem;
+                padding: 8px 6px;
             }
         }
         
@@ -1125,6 +1129,38 @@
                 text-align: center;
             }
         }
+
+        /* ========== 全局响应式适配 ========== */
+        @media (max-width: 768px) {
+            body { font-size: 14px; }
+            .header-inner { padding: 0 12px; }
+            .logo-title { font-size: 1.1rem; }
+            .logo-subtitle { display: none; }
+            .card-header { padding: 14px 16px; }
+            .card-body { padding: 14px 16px; }
+            .nav-tabs { padding: 8px 10px; gap: 2px; }
+            .nav-btn { padding: 8px 10px; font-size: 0.8rem; }
+            .btn { padding: 8px 12px; font-size: 0.8rem; }
+            .form-input, .form-select { padding: 10px 12px; font-size: 0.85rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .header { padding: 8px 0; }
+            .logo { padding: 10px 0; }
+            .logo-icon { width: 36px; height: 36px; font-size: 18px; }
+            .card { border-radius: 8px; }
+            .modal-content { max-width: 100%; border-radius: 8px; }
+            .stats-bar { flex-direction: column; gap: 10px; }
+            .control-btns { flex-wrap: wrap; gap: 6px; }
+            .control-btns .btn { flex: 1 1 calc(50% - 3px); }
+        }
+        
+        /* 平滑滚动 */
+        html { scroll-behavior: smooth; }
+        
+        /* 选中文字样式 */
+        ::selection { background: rgba(30, 58, 95, 0.2); }
+
     </style>
 </head>
 <body>
@@ -1149,7 +1185,7 @@
                 <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule"><span>📋</span> 规章制度</button>
                 <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary"><span>📝</span> 工作写实</button>
                 <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone"><span>📞</span> 车站电话</button>
-                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🤖</span> AI助手</button>
+                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能查询</button>
             </nav>
         </div>
     </header>
@@ -1427,20 +1463,17 @@
             </div>
         </div>
 
-        <!-- AI助手模块 (不变) -->
+        <!-- 智能查询模块 -->
         <div id="panel-doubao" class="panel">
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">
-                        <div class="card-title-icon">🤖</div>
-                        AI助手
+                        <div class="card-title-icon">🔍</div>
+                        智能查询
                     </div>
                     <div class="card-subtitle">AI智能助手 · 全天候在线答疑</div>
                 </div>
                 <div class="card-body">
-                    <div style="text-align: center; margin-bottom: 12px;">
-                        <a href="https://www.doubao.com/chat/" target="_blank" class="btn btn-primary btn-lg">🌐 在新窗口打开AI</a>
-                    </div>
                     <div style="border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #f0f0f0;">
                         <iframe 
                             src="https://www.doubao.com/chat/"
@@ -1449,10 +1482,9 @@
                             style="border:none;" 
                             sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
                             referrerpolicy="no-referrer-when-downgrade"
-                            title="AI助手">
+                            title="智能查询">
                         </iframe>
                     </div>
-                    <p style="margin-top:8px; font-size:0.8rem; color:var(--text-secondary);">⚠️ 如果无法显示，请点击上方按钮在新窗口打开。部分浏览器可能限制嵌入。</p>
                 </div>
             </div>
         </div>
@@ -1643,7 +1675,7 @@
             rule: '📋 规章制度',
             diary: '📝 工作写实',
             phone: '📞 车站电话',
-            doubao: '🤖 AI助手'
+            doubao: '🔍 智能查询'
         };
 
         window.toggleNav = function() {
