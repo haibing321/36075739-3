@@ -796,8 +796,8 @@
         .catalog-list { max-height: 50vh; overflow-y: auto; }
         .catalog-item {
             display: flex;
-            align-items: center;
-            padding: 14px 16px;
+            flex-direction: column;
+            padding: 12px;
             border-radius: 8px;
             margin-bottom: 8px;
             background: #f7fafc;
@@ -805,13 +805,14 @@
             transition: all 0.2s;
         }
         .catalog-item:hover { background: #ebf8ff; border-color: #90cdf4; }
-        .catalog-info { flex: 1; min-width: 0; }
+        .catalog-info { flex: 1; min-width: 0; width: 100%; margin-bottom: 8px; }
         .catalog-title {
             font-weight: 600;
             color: var(--primary);
             white-space: normal;
             word-break: break-all;
             word-wrap: break-word;
+            font-size: 1rem;
         }
         .catalog-meta {
             font-size: 0.8rem;
@@ -829,7 +830,37 @@
             font-size: 0.7rem;
             font-weight: 600;
         }
-        .catalog-actions { display: flex; gap: 6px; }
+        .catalog-actions { 
+            display: flex; 
+            gap: 6px; 
+            width: 100%;
+            justify-content: flex-end;
+        }
+        .catalog-actions .btn {
+            flex: 1;
+            max-width: 80px;
+            padding: 6px 8px;
+            font-size: 0.75rem;
+        }
+        
+        /* 手机端适配 */
+        @media (max-width: 480px) {
+            .catalog-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .catalog-actions {
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            .catalog-actions .btn {
+                flex: 1;
+                min-width: 60px;
+                max-width: none;
+                padding: 8px 4px;
+                font-size: 0.7rem;
+            }
+        }
         
         /* ========== 加载动画 ========== */
         .loading { text-align: center; padding: 40px; }
