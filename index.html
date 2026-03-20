@@ -273,12 +273,12 @@
         .btn-lg { padding: 12px 24px; font-size: 1rem; }
         
         .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; }
-        .btn-success { background: linear-gradient(135deg, var(--success), #38a169); color: white; }
-        .btn-warning { background: linear-gradient(135deg, var(--warning), #dd6b20); color: white; }
+        .btn-success { background: linear-gradient(135deg, #5c9e7d, #4a8268); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #d4a76a, #c4975e); color: white; }
         .btn-danger { background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; }
         .btn-secondary { background: #edf2f7; color: var(--text); border: 1px solid var(--border); }
         .btn-secondary:hover { background: #e2e8f0; }
-        .btn-info { background: linear-gradient(135deg, var(--info), #4299e1); color: white; }
+        .btn-info { background: linear-gradient(135deg, #5a8cb8, #4a7a9e); color: white; }
         
         .btn-small { padding: 6px 12px; font-size: 0.75rem; border-radius: 6px; }
         .btn-tiny { padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; }
@@ -1208,31 +1208,31 @@
                             <div class="stat-item"><span class="stat-label">💾 存储</span><span class="stat-value" id="handbook-size">0 KB</span><div class="storage-bar"><div class="storage-fill" id="handbook-storageBar" style="width:0%"></div></div></div>
                         </div>
                         <div class="btn-group">
-                            <button class="btn btn-success" id="handbook-importBtn">📥 导入JSON</button>
+                            <button class="btn btn-success" id="handbook-importBtn">📥 导入</button>
                             <!-- 新增导出按钮 -->
-                            <button class="btn btn-primary" onclick="exportHandbook()">📤 导出JSON</button>
+                            <button class="btn btn-primary" onclick="exportHandbook()">📤 导出</button>
                             <button class="btn btn-warning" onclick="clearHandbookData()">🗑️ 清空</button>
                         </div>
                     </div>
 
                     <div class="selector-panel">
                         <div class="selector-row">
-                            <div class="selector-item">
-                                <label>第一章 选择章</label>
+                            <div class="selector-item" id="system-selector">
+                                <label>选择系统专业</label>
                                 <select id="chapterSelect" onchange="onChapterChange()">
-                                    <option value="">-- 请选择章 --</option>
+                                    <option value="">-- 请选择系统专业 --</option>
                                 </select>
                             </div>
-                            <div class="selector-item">
-                                <label>第二章 选择节</label>
-                                <select id="sectionSelect" onchange="onSectionChange()" disabled>
-                                    <option value="">-- 请先选择章 --</option>
+                            <div class="selector-item" id="category-selector" style="display: none;">
+                                <label>选择专业分类</label>
+                                <select id="sectionSelect" onchange="onSectionChange()">
+                                    <option value="">-- 请选择专业分类 --</option>
                                 </select>
                             </div>
-                            <div class="selector-item">
-                                <label>第三章 选择检查项目</label>
-                                <select id="itemSelect" onchange="onItemChange()" disabled>
-                                    <option value="">-- 请先选择节 --</option>
+                            <div class="selector-item" id="checkpoint-selector" style="display: none;">
+                                <label>选择检查项点</label>
+                                <select id="itemSelect" onchange="onItemChange()">
+                                    <option value="">-- 请选择检查项点 --</option>
                                 </select>
                             </div>
                         </div>
@@ -1245,10 +1245,6 @@
                             <span class="content-item" id="displayItem"></span>
                         </div>
                         <div class="content-body" id="displayContent"></div>
-                    </div>
-                    <div id="emptyPlaceholder" class="empty-state">
-                        <div class="empty-state-icon">📘</div>
-                        <p>请在左侧选择章、节、检查项目</p>
                     </div>
 
                     <input type="file" id="handbook-jsonFile" accept=".json" style="display:none;">
@@ -1280,8 +1276,8 @@
                             </div>
                         </div>
                         <div class="btn-group">
-                            <button class="btn btn-success" onclick="issueImportExcel()">📥 导入Excel</button>
-                            <button class="btn btn-primary" onclick="issueExportExcel()">📤 导出Excel</button>
+                            <button class="btn btn-success" onclick="issueImportExcel()">📥 导入</button>
+                            <button class="btn btn-primary" onclick="issueExportExcel()">📤 导出</button>
                             <button class="btn btn-info" onclick="issueDownloadTemplate()">📄 模板</button>
                             <button class="btn btn-warning" onclick="issueShowClear()">🗑️ 清空</button>
                         </div>
@@ -1437,8 +1433,8 @@
                             </div>
                         </div>
                         <div class="btn-group">
-                            <button class="btn btn-success" onclick="document.getElementById('phone-fileInput').click()">📥 导入Excel</button>
-                            <button class="btn btn-primary" onclick="phoneExportExcel()">📤 导出Excel</button>
+                            <button class="btn btn-success" onclick="document.getElementById('phone-fileInput').click()">📥 导入</button>
+                            <button class="btn btn-primary" onclick="phoneExportExcel()">📤 导出</button>
                             <button class="btn btn-info" onclick="phoneDownloadTemplate()">📄 模板</button>
                             <button class="btn btn-warning" onclick="phoneShowClear()">🗑️ 清空</button>
                         </div>
@@ -3399,7 +3395,6 @@
             const sectionSelect = document.getElementById('sectionSelect');
             const itemSelect = document.getElementById('itemSelect');
             const contentDisplay = document.getElementById('contentDisplay');
-            const emptyPlaceholder = document.getElementById('emptyPlaceholder');
             const displayChapter = document.getElementById('displayChapter');
             const displaySection = document.getElementById('displaySection');
             const displayItem = document.getElementById('displayItem');
@@ -3484,69 +3479,66 @@
             }
 
             function renderChapterSelect() {
-                chapterSelect.innerHTML = '<option value="">-- 请选择章 --</option>';
+                chapterSelect.innerHTML = '<option value="">-- 请选择系统专业 --</option>';
                 chapters.forEach(chap => {
                     const option = document.createElement('option');
                     option.value = chap;
                     option.textContent = chap;
                     chapterSelect.appendChild(option);
                 });
-                sectionSelect.innerHTML = '<option value="">-- 请先选择章 --</option>';
-                sectionSelect.disabled = true;
-                itemSelect.innerHTML = '<option value="">-- 请先选择节 --</option>';
-                itemSelect.disabled = true;
+                // 重置其他选择框并隐藏
+                document.getElementById('category-selector').style.display = 'none';
+                document.getElementById('checkpoint-selector').style.display = 'none';
                 contentDisplay.style.display = 'none';
-                emptyPlaceholder.style.display = 'block';
             }
 
             window.onChapterChange = function() {
                 const selectedChap = chapterSelect.value;
                 if (!selectedChap) {
-                    sectionSelect.innerHTML = '<option value="">-- 请先选择章 --</option>';
-                    sectionSelect.disabled = true;
-                    itemSelect.innerHTML = '<option value="">-- 请先选择节 --</option>';
-                    itemSelect.disabled = true;
+                    // 隐藏第二个和第三个选择框
+                    document.getElementById('category-selector').style.display = 'none';
+                    document.getElementById('checkpoint-selector').style.display = 'none';
                     contentDisplay.style.display = 'none';
-                    emptyPlaceholder.style.display = 'block';
                     return;
                 }
+                // 显示第二个选择框
+                document.getElementById('category-selector').style.display = 'block';
+                // 隐藏第三个选择框
+                document.getElementById('checkpoint-selector').style.display = 'none';
+
                 const sections = sectionsMap[selectedChap] || [];
-                sectionSelect.innerHTML = '<option value="">-- 请选择节 --</option>';
+                sectionSelect.innerHTML = '<option value="">-- 请选择专业分类 --</option>';
                 sections.forEach(sec => {
                     const option = document.createElement('option');
                     option.value = sec;
                     option.textContent = sec;
                     sectionSelect.appendChild(option);
                 });
-                sectionSelect.disabled = false;
-                itemSelect.innerHTML = '<option value="">-- 请先选择节 --</option>';
-                itemSelect.disabled = true;
                 contentDisplay.style.display = 'none';
-                emptyPlaceholder.style.display = 'block';
             };
 
             window.onSectionChange = function() {
                 const selectedChap = chapterSelect.value;
                 const selectedSec = sectionSelect.value;
                 if (!selectedChap || !selectedSec) {
-                    itemSelect.innerHTML = '<option value="">-- 请先选择节 --</option>';
-                    itemSelect.disabled = true;
+                    // 隐藏第三个选择框
+                    document.getElementById('checkpoint-selector').style.display = 'none';
                     contentDisplay.style.display = 'none';
-                    emptyPlaceholder.style.display = 'block';
                     return;
                 }
+                // 显示第三个选择框
+                document.getElementById('checkpoint-selector').style.display = 'block';
+
                 const key = selectedChap + '||' + selectedSec;
                 const items = itemsMap[key] || [];
-                itemSelect.innerHTML = '<option value="">-- 请选择检查项目 --</option>';
+                itemSelect.innerHTML = '<option value="">-- 请选择检查项点 --</option>';
                 items.forEach(it => {
                     const option = document.createElement('option');
                     option.value = it;
                     option.textContent = it;
                     itemSelect.appendChild(option);
                 });
-                itemSelect.disabled = false;
                 contentDisplay.style.display = 'none';
-                emptyPlaceholder.style.display = 'block';
             };
 
             window.onItemChange = function() {
@@ -3555,7 +3547,6 @@
                 const selectedItem = itemSelect.value;
                 if (!selectedChap || !selectedSec || !selectedItem) {
                     contentDisplay.style.display = 'none';
-                    emptyPlaceholder.style.display = 'block';
                     return;
                 }
                 const key = selectedChap + '||' + selectedSec + '||' + selectedItem;
@@ -3565,7 +3556,6 @@
                 displayItem.textContent = selectedItem;
                 displayContent.innerHTML = content.replace(/\n/g, '<br>');
                 contentDisplay.style.display = 'block';
-                emptyPlaceholder.style.display = 'none';
             };
 
             function loadSampleData() {
@@ -3598,6 +3588,9 @@
                     handbookData = [];
                     rebuildMaps();
                     renderChapterSelect();
+                    // 隐藏第二和第三个选择框
+                    document.getElementById('category-selector').style.display = 'none';
+                    document.getElementById('checkpoint-selector').style.display = 'none';
                     saveToStorage();
                 }
             };
@@ -3637,6 +3630,9 @@
                             handbookData = imported;
                             rebuildMaps();
                             renderChapterSelect();
+                            // 隐藏第二和第三个选择框
+                            document.getElementById('category-selector').style.display = 'none';
+                            document.getElementById('checkpoint-selector').style.display = 'none';
                             saveToStorage();
                             closeModal('handbook-importModal');
                         };
