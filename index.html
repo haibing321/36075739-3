@@ -492,7 +492,7 @@
             transition: all 0.2s;
         }
         .rule-card-item:hover { box-shadow: var(--shadow-lg); border-color: #90cdf4; }
-        .rule-title { font-size: 1.1rem; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+        .rule-title { font-size: 1.1rem; font-weight: 600; color: var(--primary); margin-bottom: 10px; white-space: normal; word-break: break-all; word-wrap: break-word; }
         .rule-trade {
             display: inline-block;
             background: linear-gradient(135deg, #ebf8ff, #e6fffa);
@@ -763,7 +763,7 @@
             color: white;
             flex-shrink: 0;
         }
-        .modal-title { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .modal-title { font-size: 1.1rem; font-weight: 600; display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; word-break: break-all; }
         .modal-body {
             padding: 24px;
             overflow-y: auto;
@@ -787,6 +787,9 @@
         #rule-editTitle {
             font-size: 1rem;
             padding: 12px 16px;
+            width: 100%;
+            word-break: break-all;
+            white-space: normal;
         }
         
         /* ========== 目录列表 ========== */
@@ -806,9 +809,9 @@
         .catalog-title {
             font-weight: 600;
             color: var(--primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            word-break: break-all;
+            word-wrap: break-word;
         }
         .catalog-meta {
             font-size: 0.8rem;
@@ -1129,7 +1132,7 @@
                         <div class="card-title-icon">📖</div>
                         安全检查手册
                     </div>
-                    <div class="card-subtitle">依次选择【章】→【节】→【检查项目】，查看详细内容</div>
+                    <div class="card-subtitle">分级浏览检查项点 · 快速定位关键环节</div>
                 </div>
                 <div class="card-body">
                     <div class="stats-bar">
@@ -1194,7 +1197,7 @@
                         <div class="card-title-icon">🔍</div>
                         检查信息智能查询
                     </div>
-                    <div class="card-subtitle">性质分级(A类/B类/C类/红线/空白) · 智能匹配(≥75%) · Excel导入导出</div>
+                    <div class="card-subtitle">A/B/C类问题分级 · 智能匹配快速检索</div>
                 </div>
                 <div class="card-body">
                     <div class="stats-bar">
@@ -1249,7 +1252,7 @@
                         <div class="card-title-icon">📋</div>
                         规章制度智能查询
                     </div>
-                    <div class="card-subtitle">多专业分类 · PDF/Word导入 · 智能检索（关键词AND同段落匹配）</div>
+                    <div class="card-subtitle">规章制度一站式管理 · 智能检索精准定位</div>
                 </div>
                 <div class="card-body">
                     <div class="control-bar stats-bar">
@@ -1305,7 +1308,7 @@
                         <div class="card-title-icon">📝</div>
                         工作日写实
                     </div>
-                    <div class="card-subtitle">每日工作内容 · 检查问题记录 · 一键复制</div>
+                    <div class="card-subtitle">工作日志电子化 · 检查问题随时记录</div>
                 </div>
                 <div class="card-body">
                     <div class="diary-form">
@@ -1351,7 +1354,7 @@
                         <div class="card-title-icon">📞</div>
                         车站电话查询
                     </div>
-                    <div class="card-subtitle">单位·线名·站名查询 · 市电一键拨号</div>
+                    <div class="card-subtitle">铁路通讯录查询 · 一键快速拨号</div>
                 </div>
                 <div class="card-body">
                     <div class="stats-bar">
@@ -1401,7 +1404,7 @@
                         <div class="card-title-icon">🤖</div>
                         AI助手
                     </div>
-                    <div class="card-subtitle">外部智能聊天工具 · 可点击下方按钮在新窗口打开</div>
+                    <div class="card-subtitle">AI智能助手 · 全天候在线答疑</div>
                 </div>
                 <div class="card-body">
                     <div style="text-align: center; margin-bottom: 12px;">
@@ -2652,7 +2655,7 @@
                     html += '<div class="rule-card-item">';
                     // 文件名改为可点击链接
                     html += '<div class="rule-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;" onclick="ruleViewFullText(' + absIdx + ')">';
-                    html += '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--info);text-decoration:underline;text-underline-offset:3px;">' + escapeHtml(item.rule.title) + '</span>';
+                    html += '<span style="flex:1;word-break:break-all;white-space:normal;color:var(--info);text-decoration:underline;text-underline-offset:3px;" title="' + escapeHtml(item.rule.title) + '">' + escapeHtml(item.rule.title) + '</span>';
                     html += '<button class="btn btn-info btn-small" style="flex-shrink:0;" onclick="event.stopPropagation();ruleViewFullText(' + absIdx + ')">📄 查看全文</button>';
                     html += '</div>';
                     html += '<span class="rule-trade">' + escapeHtml(item.rule.trade) + '</span>';
