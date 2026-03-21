@@ -31,7 +31,7 @@
             // 创建退出提示条
             var bar = document.createElement('div');
             bar.id = '_exit_bar';
-            bar.innerHTML = '<span class="_exit_icon">👆</span><span>再次滑入边缘退出系统</span>';
+            bar.innerHTML = '<span class="_exit_icon">👆</span><span>再次滑入退出</span>';
             document.body.appendChild(bar);
 
             var _exitReady = false, _exitTimer = null;
@@ -1274,7 +1274,7 @@
                 <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule"><span>📋</span> 规章制度</button>
                 <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary"><span>📝</span> 工作写实</button>
                 <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone"><span>📞</span> 车站电话</button>
-                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能查询</button>
+                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能助手</button>
             </nav>
         </div>
     </header>
@@ -1286,7 +1286,7 @@
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-title-icon">📖</div>
-                        安全检查手册
+                        安全检查手册查询
                     </div>
                     <div class="card-subtitle">分级浏览检查项点 · 快速定位关键环节</div>
                 </div>
@@ -1349,7 +1349,7 @@
                         <div class="card-title-icon">🔍</div>
                         检查信息智能查询
                     </div>
-                    <div class="card-subtitle">A/B/C类问题分级 · 智能匹配快速检索</div>
+                    <div class="card-subtitle">多关键词搜索 · 智能匹配快速检索</div>
                 </div>
                 <div class="card-body">
                     <div class="stats-bar">
@@ -1404,7 +1404,7 @@
                         <div class="card-title-icon">📋</div>
                         规章制度智能查询
                     </div>
-                    <div class="card-subtitle">规章制度一站式管理 · 智能检索精准定位</div>
+                    <div class="card-subtitle">规章一站式管理 · 智能检索精准定位</div>
                 </div>
                 <div class="card-body">
                     <div class="control-bar stats-bar">
@@ -1514,7 +1514,7 @@
                         <div class="card-title-icon">📞</div>
                         车站电话查询
                     </div>
-                    <div class="card-subtitle">铁路通讯录查询 · 一键快速拨号</div>
+                    <div class="card-subtitle">车站通讯录查询 · 一键快速拨号</div>
                 </div>
                 <div class="card-body">
                     <div class="stats-bar">
@@ -1562,7 +1562,7 @@
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-title-icon">🔍</div>
-                        智能查询
+                       AI 智能查询
                     </div>
                     <div class="card-subtitle">AI智能助手 · 全天候在线答疑</div>
                 </div>
@@ -1768,7 +1768,7 @@
             rule: '📋 规章制度',
             diary: '📝 工作写实',
             phone: '📞 车站电话',
-            doubao: '🔍 智能查询'
+            doubao: '🔍 智能系统'
         };
 
         window.toggleNav = function() {
