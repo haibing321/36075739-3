@@ -3694,7 +3694,7 @@
 
             var exitBar = document.createElement('div');
             exitBar.id = 'swipe-exit-bar';
-            exitBar.textContent = '已到边界，再次侧滑退出应用';
+            exitBar.textContent = '再次滑入退出';
             document.body.appendChild(exitBar);
 
             // ---- Toast 显示 ----
@@ -3715,24 +3715,14 @@
                 _toastTimer = setTimeout(function() { toastEl.classList.remove('show'); }, 3000);
             };
 
-            // ---- 退出确认 ----
-            var _exitReady = false;
+            // ---- 退出提示 ----
             var _exitTimer = null;
             function showExitBar() {
                 exitBar.classList.add('show');
-                _exitReady = true;
                 if (_exitTimer) clearTimeout(_exitTimer);
                 _exitTimer = setTimeout(function() {
                     exitBar.classList.remove('show');
-                    _exitReady = false;
                 }, 3000);
-            }
-            function doExit() {
-                exitBar.classList.remove('show');
-                _exitReady = false;
-                if (_exitTimer) clearTimeout(_exitTimer);
-                try { window.close(); } catch(e) {}
-                setTimeout(function() { history.back(); }, 150);
             }
 
             // ---- 触摸变量 ----
@@ -3773,13 +3763,9 @@
                 var isFromLeftEdge = _tx0 < EDGE_THRESHOLD; // 触摸起始在最左边缘
                 var isFromRightEdge = _tx0 > screenWidth - EDGE_THRESHOLD; // 触摸起始在最右边缘
 
-                // 边缘滑入 → 退出功能
+                // 边缘滑入 → 响应系统退出指令，显示提示
                 if (isFromLeftEdge || isFromRightEdge) {
-                    if (_exitReady) {
-                        doExit();
-                    } else {
-                        showExitBar();
-                    }
+                    showExitBar();
                     return;
                 }
 
@@ -3798,10 +3784,9 @@
                 if (nextIdx < 0) nextIdx = TAB_ORDER.length - 1;
                 if (nextIdx >= TAB_ORDER.length) nextIdx = 0;
 
-                // 切换模块，取消退出状态
-                if (_exitReady) {
+                // 切换模块时隐藏退出提示（如果有）
+                if (exitBar.classList.contains('show')) {
                     exitBar.classList.remove('show');
-                    _exitReady = false;
                     if (_exitTimer) clearTimeout(_exitTimer);
                 }
 
