@@ -38,9 +38,16 @@
             history.pushState(null, null, location.href);
 
             var _exitReady = false, _exitTimer = null;
+            var _isInitialized = false; // 标记是否已初始化，过滤页面加载时的自动 popstate
 
             // 系统级退出提示（popstate：浏览器后退/返回手势）
             window.addEventListener('popstate', function(e) {
+                // 过滤页面刚加载时浏览器自动触发的 popstate
+                if (!_isInitialized) {
+                    _isInitialized = true;
+                    return;
+                }
+
                 if (_exitReady) {
                     _exitReady = false;
                     return; // 第二次：允许真正退出
