@@ -3677,7 +3677,7 @@
                 '#swipe-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}',
                 '#swipe-exit-bar{',
                 '  position:fixed;bottom:0;left:0;right:0;',
-                '  background:rgba(197,48,48,.94);color:#fff;',
+                '  background:rgba(26,54,93,0.93);color:#fff;',
                 '  text-align:center;padding:16px;font-size:1rem;font-weight:700;',
                 '  z-index:99998;transform:translateY(100%);',
                 '  transition:transform .3s ease;',
@@ -3737,6 +3737,7 @@
 
             // ---- 触摸变量 ----
             var _tx0 = 0, _ty0 = 0, _tValid = false;
+            var EDGE_THRESHOLD = 40; // 边缘阈值（px）
 
             // 用 capture 模式确保最先收到事件，不被子元素吞掉
             document.addEventListener('touchstart', function(e) {
@@ -3768,6 +3769,21 @@
                 var nav = document.getElementById('mainNav');
                 if (nav && nav.classList.contains('nav-open')) return;
 
+                var screenWidth = window.innerWidth;
+                var isFromLeftEdge = _tx0 < EDGE_THRESHOLD; // 触摸起始在最左边缘
+                var isFromRightEdge = _tx0 > screenWidth - EDGE_THRESHOLD; // 触摸起始在最右边缘
+
+                // 边缘滑入 → 退出功能
+                if (isFromLeftEdge || isFromRightEdge) {
+                    if (_exitReady) {
+                        doExit();
+                    } else {
+                        showExitBar();
+                    }
+                    return;
+                }
+
+                // 中间区域滑动 → 模块切换（无限循环）
                 // 当前激活 tab
                 var activeBtn = document.querySelector('.nav-btn.active');
                 if (!activeBtn) return;
@@ -3777,20 +3793,12 @@
                 var curIdx = TAB_ORDER.indexOf(curTab);
                 if (curIdx < 0) return;
 
-                // dx<0 左滑→下一模块；dx>0 右滑→上一模块
+                // dx<0 左滑→下一模块；dx>0 右滑→上一模块（循环切换）
                 var nextIdx = dx < 0 ? curIdx + 1 : curIdx - 1;
+                if (nextIdx < 0) nextIdx = TAB_ORDER.length - 1;
+                if (nextIdx >= TAB_ORDER.length) nextIdx = 0;
 
-                // 到达边界：先提示，再次侧滑才退出
-                if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) {
-                    if (_exitReady) {
-                        doExit();
-                    } else {
-                        showExitBar();
-                    }
-                    return;
-                }
-
-                // 正常切换模块，取消退出状态
+                // 切换模块，取消退出状态
                 if (_exitReady) {
                     exitBar.classList.remove('show');
                     _exitReady = false;
