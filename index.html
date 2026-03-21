@@ -34,33 +34,40 @@
             bar.innerHTML = '<span class="_exit_icon">👆</span><span>再次滑入边缘退出系统</span>';
             document.body.appendChild(bar);
 
-            // 初始化历史记录（使系统边缘滑入能触发 popstate）
-            history.pushState(null, null, location.href);
-
             var _exitReady = false, _exitTimer = null;
-            var _isInitialized = false; // 标记是否已初始化，过滤页面加载时的自动 popstate
+            var _popEnabled = false; // 是否启用退出检测
 
-            // 系统级退出提示（popstate：浏览器后退/返回手势）
-            window.addEventListener('popstate', function(e) {
-                // 过滤页面刚加载时浏览器自动触发的 popstate
-                if (!_isInitialized) {
-                    _isInitialized = true;
-                    return;
-                }
+            // 启用退出检测（用户首次交互后调用）
+            function enableExitDetection() {
+                if (_popEnabled) return;
+                _popEnabled = true;
+                history.pushState(null, null, location.href);
 
-                if (_exitReady) {
-                    _exitReady = false;
-                    return; // 第二次：允许真正退出
-                }
-                // 第一次：显示退出提示
-                bar.classList.add('show');
-                _exitReady = true;
-                if (_exitTimer) clearTimeout(_exitTimer);
-                _exitTimer = setTimeout(function() {
-                    bar.classList.remove('show');
-                    _exitReady = false;
-                }, 3000);
-                history.pushState(null, null, location.href); // 恢复历史，允许再次触发
+                window.addEventListener('popstate', function(e) {
+                    if (!_popEnabled) return;
+
+                    if (_exitReady) {
+                        _exitReady = false;
+                        return; // 第二次：允许真正退出
+                    }
+                    // 第一次：显示退出提示
+                    bar.classList.add('show');
+                    _exitReady = true;
+                    if (_exitTimer) clearTimeout(_exitTimer);
+                    _exitTimer = setTimeout(function() {
+                        bar.classList.remove('show');
+                        _exitReady = false;
+                    }, 3000);
+                    history.pushState(null, null, location.href); // 恢复历史
+                });
+            }
+
+            // 页面加载后延迟 500ms 自动启用（覆盖大多数自动触发场景）
+            setTimeout(enableExitDetection, 500);
+
+            // 监听用户首次交互，提前启用
+            ['touchstart', 'click', 'keydown', 'focus'].forEach(function(evt) {
+                document.addEventListener(evt, enableExitDetection, { once: true, capture: true });
             });
 
             // 退出提示时隐藏（touch 事件触发 tab 切换时）
