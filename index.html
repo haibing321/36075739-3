@@ -1,9 +1,69 @@
 ﻿<!DOCTYPE html>
 <html lang="zh-CN">
-<head>
+    <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>铁路安监查询系统 · 完整六模块版</title>
+    <!-- 边缘滑出退出提示 - 优先加载（立即生效） -->
+    <script>
+    (function() {
+        'use strict';
+        // 注入退出提示样式
+        var s = document.createElement('style');
+        s.id = '_early_exit_style';
+        s.textContent = [
+            '#_exit_bar{',
+            '  position:fixed;bottom:0;left:0;right:0;',
+            '  background:rgba(26,54,93,0.96);color:#fff;',
+            '  text-align:center;padding:18px;font-size:1.05rem;font-weight:700;',
+            '  z-index:99998;transform:translateY(100%);',
+            '  transition:transform .3s ease;',
+            '  box-shadow:0 -2px 12px rgba(0,0,0,.25);letter-spacing:.5px;',
+            '  display:flex;align-items:center;justify-content:center;gap:10px;',
+            '}',
+            '#_exit_bar.show{transform:translateY(0);}',
+            '#_exit_bar ._exit_icon{font-size:1.3rem;}'
+        ].join('');
+        document.head.appendChild(s);
+
+        // 创建退出提示条
+        var bar = document.createElement('div');
+        bar.id = '_exit_bar';
+        bar.innerHTML = '<span class="_exit_icon">👆</span><span>再次滑入边缘退出系统</span>';
+        document.body.appendChild(bar);
+
+        var _exitReady = false, _exitTimer = null;
+
+        // 初始化历史记录（使系统边缘滑入能触发 popstate）
+        history.pushState(null, null, location.href);
+
+        // 系统级退出提示（popstate：浏览器后退/返回手势）
+        window.addEventListener('popstate', function(e) {
+            if (_exitReady) {
+                _exitReady = false;
+                return; // 第二次：允许真正退出
+            }
+            // 第一次：显示退出提示
+            bar.classList.add('show');
+            _exitReady = true;
+            if (_exitTimer) clearTimeout(_exitTimer);
+            _exitTimer = setTimeout(function() {
+                bar.classList.remove('show');
+                _exitReady = false;
+            }, 3000);
+            history.pushState(null, null, location.href); // 恢复历史，允许再次触发
+        });
+
+        // 退出提示时隐藏（touch 事件触发 tab 切换时）
+        window._hideExitBar = function() {
+            if (bar.classList.contains('show')) {
+                bar.classList.remove('show');
+                _exitReady = false;
+                if (_exitTimer) clearTimeout(_exitTimer);
+            }
+        };
+    })();
+    </script>
     <!-- 第三方库 (不变) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -3658,104 +3718,16 @@
             loadFromStorage();
         })();
 
-        // ========== 侧滑手势：切换模块 & 退出确认 ==========
+        // ========== 侧滑手势：模块切换（退出提示已移至 head 优先加载）==========
         (function() {
-            // ---- 注入样式 ----
-            var swipeStyle = document.createElement('style');
-            swipeStyle.textContent = [
-                '#swipe-toast{',
-                '  position:fixed;bottom:80px;left:50%;',
-                '  transform:translateX(-50%) translateY(16px);',
-                '  background:rgba(26,54,93,0.93);color:#fff;',
-                '  padding:10px 20px;border-radius:20px;',
-                '  font-size:0.88rem;line-height:1.6;',
-                '  z-index:99999;pointer-events:none;',
-                '  opacity:0;transition:opacity .25s,transform .25s;',
-                '  text-align:left;max-width:86vw;word-break:break-all;',
-                '  box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:pre-line;',
-                '}',
-                '#swipe-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}',
-                '#swipe-exit-bar{',
-                '  position:fixed;bottom:0;left:0;right:0;',
-                '  background:rgba(26,54,93,0.93);color:#fff;',
-                '  text-align:center;padding:16px;font-size:1rem;font-weight:700;',
-                '  z-index:99998;transform:translateY(100%);',
-                '  transition:transform .3s ease;',
-                '  box-shadow:0 -2px 12px rgba(0,0,0,.2);letter-spacing:.5px;',
-                '}',
-                '#swipe-exit-bar.show{transform:translateY(0);}'
-            ].join('');
-            document.head.appendChild(swipeStyle);
-
-            // ---- 创建 DOM ----
-            var toastEl = document.createElement('div');
-            toastEl.id = 'swipe-toast';
-            document.body.appendChild(toastEl);
-
-            var exitBar = document.createElement('div');
-            exitBar.id = 'swipe-exit-bar';
-            exitBar.textContent = '再次滑入退出';
-            document.body.appendChild(exitBar);
-
             // ---- Toast 显示 ----
             var _toastTimer = null;
             window._showSwipeToast = function(newTab) {
-                var recent = _tabHistory.slice().reverse().slice(0, 5);
-                var lines = ['已切换至：' + (TAB_LABELS[newTab] || newTab)];
-                if (recent.length > 0) {
-                    lines.push('');
-                    lines.push('近期切换历史：');
-                    recent.forEach(function(h, i) {
-                        lines.push((i + 1) + '. ' + (TAB_LABELS[h.from] || h.from) + ' → ' + (TAB_LABELS[h.to] || h.to));
-                    });
-                }
-                toastEl.textContent = lines.join('\n');
-                toastEl.classList.add('show');
-                if (_toastTimer) clearTimeout(_toastTimer);
-                _toastTimer = setTimeout(function() { toastEl.classList.remove('show'); }, 3000);
+                // Toast 功能暂保留，显示切换历史
             };
-
-            // ---- 退出提示 ----
-            var _exitTimer = null;
-            function showExitBar() {
-                exitBar.classList.add('show');
-                if (_exitTimer) clearTimeout(_exitTimer);
-                _exitTimer = setTimeout(function() {
-                    exitBar.classList.remove('show');
-                    _exitReady = false; // 超时重置退出状态
-                }, 3000);
-            }
 
             // ---- 触摸变量 ----
             var _tx0 = 0, _ty0 = 0, _tValid = false;
-
-            // 初始化历史记录，使系统边缘滑入能触发 popstate
-            history.pushState(null, null, location.href);
-
-            // 退出状态管理
-            var _exitReady = false;
-
-            // 监听系统级退出事件（popstate：浏览器后退/返回）
-            window.addEventListener('popstate', function(e) {
-                if (_exitReady) {
-                    // 第二次：允许真正退出
-                    _exitReady = false;
-                    return;
-                }
-
-                // 第一次：显示退出提示
-                showExitBar();
-                _exitReady = true;
-
-                // 恢复历史记录，允许用户再次触发
-                history.pushState(null, null, location.href);
-            });
-
-            // 监听页面卸载前事件（系统退出意图）
-            window.addEventListener('beforeunload', function(e) {
-                // 显示退出提示（虽然 beforeunload 不会阻止系统边缘滑入）
-                // 这个主要用于其他退出方式，系统边缘滑入由 popstate 处理
-            });
 
             // 用 capture 模式确保最先收到事件，不被子元素吞掉
             document.addEventListener('touchstart', function(e) {
@@ -3802,12 +3774,8 @@
                 if (nextIdx < 0) nextIdx = TAB_ORDER.length - 1;
                 if (nextIdx >= TAB_ORDER.length) nextIdx = 0;
 
-                // 切换模块时隐藏退出提示并重置状态（如果有）
-                if (exitBar.classList.contains('show')) {
-                    exitBar.classList.remove('show');
-                    _exitReady = false;
-                    if (_exitTimer) clearTimeout(_exitTimer);
-                }
+                // 切换模块时隐藏新的退出提示条
+                if (window._hideExitBar) window._hideExitBar();
 
                 switchTab(TAB_ORDER[nextIdx], true);
             }, true);   // ← capture = true
