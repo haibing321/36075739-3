@@ -797,7 +797,7 @@
         }
         
         /* ========== 目录列表 ========== */
-        .catalog-list { max-height: 50vh; overflow-y: auto; padding: 8px; }
+        .catalog-list { max-height: 50vh; overflow-y: auto; overflow-x: hidden; padding: 8px; }
         .catalog-item {
             display: flex;
             flex-direction: row;
@@ -807,17 +807,20 @@
             background: #f8f9fa;
             border: 1px solid #e9ecef;
             transition: all 0.2s ease;
+            min-width: 0;
         }
         .catalog-item:hover { background: #fff; border-color: #b8c5d3; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .catalog-info { flex: 1; min-width: 0; margin-right: 12px; }
+        .catalog-info { flex: 1; min-width: 0; margin-right: 12px; overflow: hidden; }
         .catalog-title {
             font-weight: 600;
             color: var(--primary);
             white-space: normal;
             word-break: break-all;
             word-wrap: break-word;
+            overflow-wrap: break-word;
             font-size: 0.95rem;
-            line-height: 1.4;
+            line-height: 1.5;
+            display: block;
         }
         .catalog-meta {
             font-size: 0.75rem;
@@ -1153,6 +1156,8 @@
             .stats-bar { flex-direction: column; gap: 10px; }
             .control-btns { flex-wrap: wrap; gap: 6px; }
             .control-btns .btn { flex: 1 1 calc(50% - 3px); }
+            .btn-group { flex-wrap: wrap; gap: 6px; }
+            .btn-group .btn { flex: 1 1 calc(50% - 3px); }
         }
         
         /* 平滑滚动 */
@@ -1374,6 +1379,20 @@
                     <div class="card-subtitle">工作日志电子化 · 检查问题随时记录</div>
                 </div>
                 <div class="card-body">
+                    <!-- 统计栏+按钮组（与其他模块统一风格） -->
+                    <div class="stats-bar">
+                        <div class="stats-left">
+                            <div class="stat-item">
+                                <span class="stat-label">📝 记录数:</span>
+                                <span class="stat-value" id="diary-count">0 条</span>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-info" id="diary-today-btn">📅 今日</button>
+                            <button class="btn btn-secondary" id="diary-history-btn">📚 历史</button>
+                        </div>
+                    </div>
+
                     <div class="diary-form">
                         <div class="diary-date-row">
                             <label>📅 日期:</label>
@@ -1395,12 +1414,6 @@
                             <button class="btn btn-primary" onclick="saveDiary(this)">💾 保存记录</button>
                             <button class="btn btn-secondary" onclick="clearDiaryForm()">🔄 重置</button>
                             <button class="btn btn-info" onclick="copyAllToday(this)">📋 复制全部</button>
-                        </div>
-
-                        <div style="display: flex; gap: 12px; align-items: center; margin: 20px 0 12px;">
-                            <button class="btn btn-info" id="diary-today-btn">📅 今天信息</button>
-                            <button class="btn btn-secondary" id="diary-history-btn">📚 历史信息</button>
-                            <span>记录数: <span id="diary-count">0</span></span>
                         </div>
                     </div>
 
@@ -3681,7 +3694,7 @@
 
             var exitBar = document.createElement('div');
             exitBar.id = 'swipe-exit-bar';
-            exitBar.textContent = '👈 再次侧滑退出应用';
+            exitBar.textContent = '已到边界，再次侧滑退出应用';
             document.body.appendChild(exitBar);
 
             // ---- Toast 显示 ----
@@ -3767,11 +3780,21 @@
                 // dx<0 左滑→下一模块；dx>0 右滑→上一模块
                 var nextIdx = dx < 0 ? curIdx + 1 : curIdx - 1;
 
-                // 无限循环：到达边界时自动循环切换
-                if (nextIdx < 0) {
-                    nextIdx = TAB_ORDER.length - 1;
-                } else if (nextIdx >= TAB_ORDER.length) {
-                    nextIdx = 0;
+                // 到达边界：先提示，再次侧滑才退出
+                if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) {
+                    if (_exitReady) {
+                        doExit();
+                    } else {
+                        showExitBar();
+                    }
+                    return;
+                }
+
+                // 正常切换模块，取消退出状态
+                if (_exitReady) {
+                    exitBar.classList.remove('show');
+                    _exitReady = false;
+                    if (_exitTimer) clearTimeout(_exitTimer);
                 }
 
                 switchTab(TAB_ORDER[nextIdx], true);
