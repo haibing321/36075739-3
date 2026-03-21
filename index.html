@@ -3722,6 +3722,7 @@
                 if (_exitTimer) clearTimeout(_exitTimer);
                 _exitTimer = setTimeout(function() {
                     exitBar.classList.remove('show');
+                    _exitReady = false; // 超时重置退出状态
                 }, 3000);
             }
 
@@ -3731,10 +3732,21 @@
             // 初始化历史记录，使系统边缘滑入能触发 popstate
             history.pushState(null, null, location.href);
 
+            // 退出状态管理
+            var _exitReady = false;
+
             // 监听系统级退出事件（popstate：浏览器后退/返回）
             window.addEventListener('popstate', function(e) {
-                // 显示退出提示
+                if (_exitReady) {
+                    // 第二次：允许真正退出
+                    _exitReady = false;
+                    return;
+                }
+
+                // 第一次：显示退出提示
                 showExitBar();
+                _exitReady = true;
+
                 // 恢复历史记录，允许用户再次触发
                 history.pushState(null, null, location.href);
             });
@@ -3790,9 +3802,10 @@
                 if (nextIdx < 0) nextIdx = TAB_ORDER.length - 1;
                 if (nextIdx >= TAB_ORDER.length) nextIdx = 0;
 
-                // 切换模块时隐藏退出提示（如果有）
+                // 切换模块时隐藏退出提示并重置状态（如果有）
                 if (exitBar.classList.contains('show')) {
                     exitBar.classList.remove('show');
+                    _exitReady = false;
                     if (_exitTimer) clearTimeout(_exitTimer);
                 }
 
