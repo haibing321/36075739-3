@@ -3727,7 +3727,23 @@
 
             // ---- 触摸变量 ----
             var _tx0 = 0, _ty0 = 0, _tValid = false;
-            var EDGE_THRESHOLD = 40; // 边缘阈值（px）
+
+            // 初始化历史记录，使系统边缘滑入能触发 popstate
+            history.pushState(null, null, location.href);
+
+            // 监听系统级退出事件（popstate：浏览器后退/返回）
+            window.addEventListener('popstate', function(e) {
+                // 显示退出提示
+                showExitBar();
+                // 恢复历史记录，允许用户再次触发
+                history.pushState(null, null, location.href);
+            });
+
+            // 监听页面卸载前事件（系统退出意图）
+            window.addEventListener('beforeunload', function(e) {
+                // 显示退出提示（虽然 beforeunload 不会阻止系统边缘滑入）
+                // 这个主要用于其他退出方式，系统边缘滑入由 popstate 处理
+            });
 
             // 用 capture 模式确保最先收到事件，不被子元素吞掉
             document.addEventListener('touchstart', function(e) {
@@ -3758,16 +3774,6 @@
                 // 导航菜单展开时不处理
                 var nav = document.getElementById('mainNav');
                 if (nav && nav.classList.contains('nav-open')) return;
-
-                var screenWidth = window.innerWidth;
-                var isFromLeftEdge = _tx0 < EDGE_THRESHOLD; // 触摸起始在最左边缘
-                var isFromRightEdge = _tx0 > screenWidth - EDGE_THRESHOLD; // 触摸起始在最右边缘
-
-                // 边缘滑入 → 响应系统退出指令，显示提示
-                if (isFromLeftEdge || isFromRightEdge) {
-                    showExitBar();
-                    return;
-                }
 
                 // 中间区域滑动 → 模块切换（无限循环）
                 // 当前激活 tab
