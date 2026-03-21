@@ -31,7 +31,7 @@
             // 创建退出提示条
             var bar = document.createElement('div');
             bar.id = '_exit_bar';
-            bar.innerHTML = '<span class="_exit_icon">👆</span><span>再次滑入退出</span>';
+            bar.innerHTML = '<span class="_exit_icon">👆</span><span>再次滑入边缘退出系统</span>';
             document.body.appendChild(bar);
 
             var _exitReady = false, _exitTimer = null;
@@ -335,9 +335,10 @@
         /* ========== 按钮系统 ========== */
         .btn-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
             justify-content: flex-end;
+            align-items: center;
         }
         .btn {
             padding: 10px 18px;
@@ -612,12 +613,12 @@
         .rule-ellipsis { color: var(--text-secondary); font-style: italic; }
         
         /* ========== 工作写实专用 ========== */
-        .diary-form {
+        /* 统一综合区域 */
+        .diary-unified-section {
             background: linear-gradient(to right, #ebf8ff, #f0fff4);
             padding: 20px;
             border-radius: 10px;
             border: 1px solid #bee3f8;
-            margin-bottom: 20px;
         }
         .diary-date-row {
             display: flex;
@@ -626,14 +627,187 @@
             margin-bottom: 16px;
             flex-wrap: wrap;
         }
-        .diary-date-row label { font-weight: 500; color: var(--primary); }
+        .diary-date-row label { font-weight: 600; color: var(--primary); font-size: 1rem; }
         .diary-date-row input {
             padding: 10px 14px;
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
-        .diary-section { margin-bottom: 16px; }
+        /* 统一卡片容器 */
+        .diary-unified-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .diary-view-panel {
+            padding: 16px;
+        }
+        .diary-view-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+        }
+        .diary-view-title {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        .diary-records-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        /* 日历样式 */
+        .diary-calendar {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+        .diary-today-section {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+        .diary-today-header {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .diary-today-records-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .diary-calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+        .diary-calendar-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+        .diary-calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+        .diary-calendar-nav button {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .diary-calendar-nav button:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .diary-calendar-nav .btn-close-calendar {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fecaca;
+            font-weight: bold;
+        }
+        .diary-calendar-nav .btn-close-calendar:hover {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+        .diary-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+        }
+        .diary-calendar-weekday {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 8px 0;
+        }
+        .diary-calendar-day {
+            padding: 8px 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .diary-calendar-day:hover:not(.empty):not(.has-record) {
+            background: #e2e8f0;
+        }
+        .diary-calendar-day.empty {
+            cursor: default;
+        }
+        .diary-calendar-day.has-record {
+            background: var(--info);
+            color: white;
+            font-weight: 600;
+        }
+        .diary-calendar-day.has-record:hover {
+            background: var(--primary);
+        }
+        .diary-calendar-day.today {
+            border: 2px solid var(--accent);
+        }
+        .diary-calendar-day.selected {
+            background: var(--success) !important;
+            color: white !important;
+        }
+        /* 日期详情 */
+        .diary-date-detail {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 16px;
+            box-shadow: var(--shadow);
+        }
+        .diary-date-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .diary-date-detail-title {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+        /* 输入视图内的section */
+        .diary-view-panel .diary-section {
+            margin-bottom: 16px;
+        }
+        .diary-view-panel .diary-section:last-child {
+            margin-bottom: 0;
+        }
         .diary-section-title {
             font-size: 0.9rem;
             font-weight: 600;
@@ -641,7 +815,7 @@
             margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
         .diary-textarea {
             width: 100%;
@@ -674,50 +848,48 @@
             resize: vertical;
             min-height: 40px;
             box-sizing: border-box;
-            padding-right: 40px;
+            padding-right: 70px;
         }
         .diary-issue-input:focus { outline: none; border-color: var(--info); }
-        .btn-remove-issue {
+        .diary-issue-actions {
             position: absolute;
             top: 6px;
-            right: 0;
-            width: 32px;
-            height: 32px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+        }
+        .btn-remove-issue {
+            width: 28px;
+            height: 28px;
             border: none;
-            background: #fed7d7;
-            color: var(--accent);
+            background: var(--accent);
+            color: white;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
         }
-        .btn-remove-issue:hover { background: var(--accent); color: white; }
+        .btn-remove-issue:hover { background: var(--accent-light); transform: scale(1.05); }
         .btn-add-issue {
             width: 100%;
             padding: 12px;
-            border: 2px dashed #fbbf6e;
+            border: 2px dashed #90cdf4;
             background: rgba(255,255,255,0.5);
-            color: var(--warning);
+            color: var(--info);
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 0.875rem;
             transition: all 0.2s;
             margin-top: 8px;
         }
-        .btn-add-issue:hover { background: white; border-color: var(--warning); }
+        .btn-add-issue:hover { background: white; border-color: var(--info); }
         .btn-add-issue:disabled {
             border-color: #e2e8f0;
             color: #a0aec0;
             cursor: not-allowed;
-        }
-        .diary-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
         }
         .diary-list {
             display: flex;
@@ -1274,7 +1446,7 @@
                 <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule"><span>📋</span> 规章制度</button>
                 <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary"><span>📝</span> 工作写实</button>
                 <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone"><span>📞</span> 车站电话</button>
-                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能助手</button>
+                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能查询</button>
             </nav>
         </div>
     </header>
@@ -1286,7 +1458,7 @@
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-title-icon">📖</div>
-                        安全检查手册查询
+                        安全检查手册
                     </div>
                     <div class="card-subtitle">分级浏览检查项点 · 快速定位关键环节</div>
                 </div>
@@ -1349,7 +1521,7 @@
                         <div class="card-title-icon">🔍</div>
                         检查信息智能查询
                     </div>
-                    <div class="card-subtitle">多关键词搜索 · 智能匹配快速检索</div>
+                    <div class="card-subtitle">A/B/C类问题分级 · 智能匹配快速检索</div>
                 </div>
                 <div class="card-body">
                     <div class="stats-bar">
@@ -1404,7 +1576,7 @@
                         <div class="card-title-icon">📋</div>
                         规章制度智能查询
                     </div>
-                    <div class="card-subtitle">规章一站式管理 · 智能检索精准定位</div>
+                    <div class="card-subtitle">规章制度一站式管理 · 智能检索精准定位</div>
                 </div>
                 <div class="card-body">
                     <div class="control-bar stats-bar">
@@ -1463,7 +1635,7 @@
                     <div class="card-subtitle">工作日志电子化 · 检查问题随时记录</div>
                 </div>
                 <div class="card-body">
-                    <!-- 统计栏+按钮组（与其他模块统一风格） -->
+                    <!-- 统计栏+按钮组（重新布局） -->
                     <div class="stats-bar">
                         <div class="stats-left">
                             <div class="stat-item">
@@ -1471,37 +1643,51 @@
                                 <span class="stat-value" id="diary-count">0 条</span>
                             </div>
                         </div>
-                        <div class="btn-group">
-                            <button class="btn btn-info" id="diary-today-btn">📅 今日</button>
-                            <button class="btn btn-secondary" id="diary-history-btn">📚 历史</button>
+                        <div class="btn-group" id="diary-btn-group">
+                            <button class="btn btn-secondary" id="diary-input-btn" onclick="showInputView()">✏️ 输入</button>
+                            <button class="btn btn-info" id="diary-history-btn" onclick="showQuery()">🔍 查询</button>
+                            <button class="btn btn-primary" onclick="saveDiary(this)">💾 保存</button>
+                            <button class="btn btn-warning" onclick="clearDiaryForm()">🔄 重置</button>
                         </div>
                     </div>
 
-                    <div class="diary-form">
+                    <!-- 综合区域：输入与查询合并 -->
+                    <div class="diary-unified-section">
+                        <!-- 日期选择 -->
                         <div class="diary-date-row">
                             <label>📅 日期:</label>
                             <input type="date" id="diary-date">
                         </div>
-                        
-                        <div class="diary-section">
-                            <div class="diary-section-title">📋 工作内容</div>
-                            <textarea id="diary-work" class="diary-textarea" placeholder="请输入今日工作内容..." oninput="autoResize(this)"></textarea>
-                        </div>
-                        
-                        <div class="diary-section">
-                            <div class="diary-section-title">⚠️ 检查发现问题</div>
-                            <div id="diary-issues-container"></div>
-                            <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
-                        </div>
 
-                        <div class="diary-actions" style="margin-top:16px;">
-                            <button class="btn btn-primary" onclick="saveDiary(this)">💾 保存记录</button>
-                            <button class="btn btn-secondary" onclick="clearDiaryForm()">🔄 重置</button>
-                            <button class="btn btn-info" onclick="copyAllToday(this)">📋 复制全部</button>
+                        <!-- 综合卡片：输入/显示切换 -->
+                        <div class="diary-unified-card">
+                            <!-- 查询视图：日历 + 日期详情 -->
+                            <div id="diary-history-view" class="diary-view-panel" style="display:none;">
+                                <div class="diary-view-header">
+                                    <span class="diary-view-title">📅 历史查询</span>
+                                </div>
+                                <div id="diary-calendar" class="diary-calendar"></div>
+                                <div id="diary-date-detail" class="diary-date-detail" style="display:none;"></div>
+                            </div>
+
+                            <!-- 输入视图：工作内容 + 问题输入（默认显示） -->
+                            <div id="diary-input-view" class="diary-view-panel">
+                                <div class="diary-view-header">
+                                    <span class="diary-view-title">✏️ 输入内容</span>
+                                    <button class="btn btn-secondary btn-small" onclick="copyAllToday(this)">📋 全部复制</button>
+                                </div>
+                                <div class="diary-section">
+                                    <div class="diary-section-title">📋 工作内容</div>
+                                    <textarea id="diary-work" class="diary-textarea" placeholder="请输入工作内容..." oninput="autoResize(this)"></textarea>
+                                </div>
+                                <div class="diary-section">
+                                    <div class="diary-section-title">⚠️ 检查发现问题</div>
+                                    <div id="diary-issues-container"></div>
+                                    <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <div id="diary-list" class="diary-list" style="display:none;"></div>
                 </div>
             </div>
         </div>
@@ -1514,7 +1700,7 @@
                         <div class="card-title-icon">📞</div>
                         车站电话查询
                     </div>
-                    <div class="card-subtitle">车站通讯录查询 · 一键快速拨号</div>
+                    <div class="card-subtitle">铁路通讯录查询 · 一键快速拨号</div>
                 </div>
                 <div class="card-body">
                     <div class="stats-bar">
@@ -1562,7 +1748,7 @@
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-title-icon">🔍</div>
-                       AI 智能查询
+                        智能查询
                     </div>
                     <div class="card-subtitle">AI智能助手 · 全天候在线答疑</div>
                 </div>
@@ -1768,7 +1954,7 @@
             rule: '📋 规章制度',
             diary: '📝 工作写实',
             phone: '📞 车站电话',
-            doubao: '🔍 智能助手'
+            doubao: '🔍 智能查询'
         };
 
         window.toggleNav = function() {
@@ -3042,6 +3228,8 @@
             let issueCount = 0;
             const MAX_ISSUES = 20;
             let diaryFilterMode = 'today';
+            let isEditMode = false; // 标记是否为编辑模式
+            let currentEditDate = null; // 记录编辑时的原始日期
 
             function loadDiaries() { try { const data = localStorage.getItem(STORAGE_KEY); if (data) diaries = JSON.parse(data); } catch (e) { diaries = []; } }
             function saveDiaries() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(diaries)); } catch (e) { alert('保存失败：' + e.message); } }
@@ -3049,7 +3237,7 @@
             function renderIssueFields(issues = []) {
                 const container = document.getElementById('diary-issues-container');
                 container.innerHTML = '';
-                issueCount = issues.length || 1;
+                issueCount = issues.length > 0 ? issues.length : 1;
                 for (let i = 0; i < issueCount; i++) {
                     addIssueFieldToDOM(issues[i] || '', i);
                 }
@@ -3062,7 +3250,10 @@
                 div.id = `diary-issue-row-${index}`;
                 div.innerHTML = `
                     <textarea class="diary-issue-input" id="diary-issue-${index}" placeholder="问题 ${index + 1}" oninput="autoResize(this)">${escapeHtml(value)}</textarea>
-                    ${index > 0 ? '<button class="btn-remove-issue" onclick="removeIssueField(' + index + ')">×</button>' : ''}
+                    <div class="diary-issue-actions">
+                        <button class="btn btn-small btn-secondary" onclick="copyIssueInput(${index})">复制</button>
+                        ${index > 0 ? '<button class="btn-remove-issue" onclick="removeIssueField(' + index + ')">×</button>' : ''}
+                    </div>
                 `;
                 container.appendChild(div);
                 const textarea = document.getElementById(`diary-issue-${index}`);
@@ -3084,8 +3275,15 @@
                     const textarea = row.querySelector('textarea');
                     textarea.id = `diary-issue-${idx}`;
                     textarea.placeholder = `问题 ${idx + 1}`;
-                    const removeBtn = row.querySelector('.btn-remove-issue');
-                    if (removeBtn) removeBtn.setAttribute('onclick', `removeIssueField(${idx})`);
+                    const actionsDiv = row.querySelector('.diary-issue-actions');
+                    if (actionsDiv) {
+                        const removeBtn = actionsDiv.querySelector('.btn-remove-issue');
+                        if (removeBtn) removeBtn.setAttribute('onclick', `removeIssueField(${idx})`);
+                        const copyBtn = actionsDiv.querySelector('button');
+                        if (copyBtn && copyBtn.textContent.includes('复制')) {
+                            copyBtn.setAttribute('onclick', `copyIssueInput(${idx})`);
+                        }
+                    }
                     requestAnimationFrame(() => autoResize(textarea));
                 });
                 updateAddIssueButton();
@@ -3107,23 +3305,70 @@
                 const date = document.getElementById('diary-date').value;
                 const work = document.getElementById('diary-work').value.trim();
                 if (!date) { alert('请选择日期'); return; }
-                if (!work) { alert('请输入工作内容'); return; }
+                if (!work && collectIssues().length === 0) { alert('请输入工作内容或问题'); return; }
                 const issues = collectIssues();
+
+                // 检查日期是否已有记录
                 const existingIdx = diaries.findIndex(d => d.date === date);
+
+                // 如果有重叠记录，弹出选项
                 if (existingIdx !== -1) {
-                    if (!confirm('该日期已有记录，是否覆盖？')) return;
-                    diaries[existingIdx] = { date, work, issues };
-                } else { diaries.push({ date, work, issues }); }
+                    // 已有记录，提示选择覆盖、合并或另存
+                    const choice = prompt('该日期已有记录，请选择操作：\n1 - 覆盖（用新内容替换）\n2 - 合并（追加到现有内容）\n3 - 另存为（选择其他日期）\n\n请输入 1、2 或 3');
+                    if (choice === null || choice === '') { alert('已取消'); return; }
+                    if (choice === '1') {
+                        // 覆盖
+                        diaries[existingIdx] = { date, work, issues };
+                        alert('已覆盖保存');
+                    } else if (choice === '2') {
+                        // 合并：工作内容后缀追加，问题按序号继续排
+                        const existing = diaries[existingIdx];
+                        const mergedWork = existing.work + '\n' + work;
+                        const mergedIssues = [...(existing.issues || []), ...issues];
+                        diaries[existingIdx] = { date, work: mergedWork, issues: mergedIssues };
+                        alert('已合并保存');
+                    } else if (choice === '3') {
+                        // 另存为 - 弹出日期选择器让用户选择新日期
+                        const newDate = prompt('请输入新的日期（格式：YYYY-MM-DD）：', date);
+                        if (!newDate || !newDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            alert('无效的日期格式');
+                            return;
+                        }
+                        // 检查新日期是否也有记录
+                        const anotherIdx = diaries.findIndex(d => d.date === newDate);
+                        if (anotherIdx !== -1) {
+                            alert('该日期也有记录，请先删除或选择其他日期');
+                            return;
+                        }
+                        diaries.push({ date: newDate, work, issues });
+                        alert('已另存到 ' + newDate);
+                    } else {
+                        alert('无效选择，请输入1、2或3');
+                        return;
+                    }
+                } else {
+                    // 没有重叠，直接添加
+                    diaries.push({ date, work, issues });
+                    alert('已添加新记录');
+                }
+
                 diaries.sort((a, b) => new Date(b.date) - new Date(a.date));
                 saveDiaries();
-                diaryFilterMode = 'today';
-                renderDiaryList();
-                document.getElementById('diary-list').style.display = 'block';
-                document.getElementById('diary-today-btn').classList.add('btn-info');
-                document.getElementById('diary-today-btn').classList.remove('btn-secondary');
-                document.getElementById('diary-history-btn').classList.add('btn-secondary');
-                document.getElementById('diary-history-btn').classList.remove('btn-info');
-                // 自复式反馈：按钮变绿显示"已保存 ✓"，2秒后恢复
+                updateDiaryCount();
+
+                // 重置编辑状态
+                isEditMode = false;
+                currentEditDate = null;
+
+                // 清空输入框
+                document.getElementById('diary-work').value = '';
+                renderIssueFields([]);
+                document.getElementById('diary-date').valueAsDate = new Date();
+
+                // 切换到查询视图
+                showQuery();
+
+                // 自复式反馈
                 if (btnEl) {
                     const orig = btnEl.innerHTML;
                     const origBg = btnEl.style.background;
@@ -3138,28 +3383,40 @@
                 }
             };
             window.clearDiaryForm = function() {
-                document.getElementById('diary-date').value = '';
+                isEditMode = false;
+                currentEditDate = null;
+                // 重置为网页打开初始状态
+                document.getElementById('diary-date').valueAsDate = new Date();
                 document.getElementById('diary-work').value = '';
                 autoResize(document.getElementById('diary-work'));
                 renderIssueFields([]);
+                // 切换到输入视图
+                showInputView();
             };
             window.editDiary = function(date) {
                 const diary = diaries.find(d => d.date === date);
                 if (!diary) return;
+                isEditMode = true; // 标记为编辑模式
+                currentEditDate = diary.date; // 记录原始编辑日期
                 document.getElementById('diary-date').value = diary.date;
                 document.getElementById('diary-work').value = diary.work;
                 autoResize(document.getElementById('diary-work'));
                 renderIssueFields(diary.issues || []);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                // 切换到输入视图以便编辑
+                showInputView();
             };
             window.deleteDiary = function(date) {
                 if (!confirm('确定要删除该日期的记录吗？')) return;
                 diaries = diaries.filter(d => d.date !== date);
                 saveDiaries();
-                renderDiaryList();
-                if (diaries.length === 0) document.getElementById('diary-list').style.display = 'none';
+                updateDiaryCount();
+                if (diaryFilterMode === 'history') {
+                    renderCalendar();
+                    document.getElementById('diary-date-detail').style.display = 'none';
+                }
             };
-            // 自复式复制工具函数：复制后按钮变色显示"已复制✓"，2秒后恢复
+            // 自复式复制工具函数
             function _doCopy(text, btnEl, successLabel) {
                 const original = btnEl ? btnEl.innerHTML : '';
                 const originalBg = btnEl ? btnEl.style.background : '';
@@ -3189,7 +3446,22 @@
                     doFeedback();
                 }
             }
-            window.copyWork = function(text, btnEl) { _doCopy(text, btnEl, '已复制 ✓'); };
+            // 复制输入框中的工作内容
+            window.copyWorkContent = function() {
+                const work = document.getElementById('diary-work').value.trim();
+                if (!work) { alert('没有工作内容可复制'); return; }
+                const btnEl = document.querySelector('.diary-section:first-of-type .diary-copy-work-btn');
+                _doCopy(work, btnEl, '已复制 ✓');
+            };
+            // 复制单个问题输入框内容
+            window.copyIssueInput = function(index) {
+                const textarea = document.getElementById('diary-issue-' + index);
+                if (!textarea) return;
+                const text = textarea.value.trim();
+                if (!text) { alert('没有内容可复制'); return; }
+                const btnEl = textarea.parentElement.querySelector('.diary-issue-actions button');
+                _doCopy(text, btnEl, '已复制 ✓');
+            };
             window.copyIssue = function(text, btnEl) { _doCopy(text, btnEl, '已复制 ✓'); };
             window.copyAllToday = function(btnEl) {
                 const work = document.getElementById('diary-work').value.trim();
@@ -3197,7 +3469,9 @@
                 if (!work && issues.length === 0) { alert('没有可复制的内容'); return; }
                 let text = '';
                 if (work) text += `【工作内容】\n${work}\n`;
-                issues.forEach((issue, idx) => { text += `【问题${idx+1}】\n${issue}\n`; });
+                if (issues.length > 0) {
+                    issues.forEach((issue, idx) => { text += `【问题${idx+1}】\n${issue}\n`; });
+                }
                 _doCopy(text, btnEl, '已复制 ✓');
             };
             window.deleteIssue = function(date, issueIndex) {
@@ -3206,89 +3480,224 @@
                 if (!confirm('确定要删除该问题吗？')) return;
                 diary.issues.splice(issueIndex, 1);
                 saveDiaries();
-                renderDiaryList();
+                if (diaryFilterMode === 'history') {
+                    renderCalendar();
+                    renderDateDetail(date);
+                } else {
+                    renderDateDetail(date);
+                }
             };
             function escapeHtml(text) { return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-            // 当前渲染的日记列表（按显示顺序），供复制按钮取值
-            let _renderedDiaries = [];
 
-            function renderDiaryList() {
-                const container = document.getElementById('diary-list');
-                let filteredDiaries = diaries;
-                if (diaryFilterMode === 'today') {
-                    const today = new Date().toISOString().slice(0,10);
-                    filteredDiaries = diaries.filter(d => d.date === today);
-                }
-                _renderedDiaries = filteredDiaries; // 存储供复制按钮使用
-                document.getElementById('diary-count').textContent = filteredDiaries.length + ' 条';
-                if (filteredDiaries.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>暂无工作记录</p></div>';
-                    container.style.display = 'block';
+            // 更新记录数显示
+            function updateDiaryCount() {
+                document.getElementById('diary-count').textContent = diaries.length + ' 条';
+            }
+
+            // 渲染今日记录列表
+            function renderTodayRecords() {
+                const container = document.getElementById('diary-records-list');
+                const today = new Date().toISOString().slice(0, 10);
+                const todayRecords = diaries.filter(d => d.date === today);
+
+                if (todayRecords.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>今日暂无工作记录</p></div>';
                     return;
                 }
+
                 let html = '';
-                filteredDiaries.forEach((diary, di) => {
+                todayRecords.forEach((diary) => {
                     const dateObj = new Date(diary.date);
-                    const dateStr = dateObj.getFullYear() + '年' + (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日';
                     const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
+                    const dateStr = (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日 ' + weekDay;
+
                     html += '<div class="diary-card">';
-                    html += '<div class="diary-card-header"><div class="diary-card-date">' + dateStr + ' ' + weekDay + '</div><div class="diary-card-actions"><button class="btn btn-info btn-small" onclick="editDiary(\'' + diary.date + '\')">编辑</button><button class="btn btn-danger btn-small" onclick="deleteDiary(\'' + diary.date + '\')">删除</button></div></div>';
-                    // 复制按钮用 data-di 存索引，不在 onclick 里嵌文本内容，避免引号冲突
-                    html += '<div class="diary-work-block"><div class="diary-work-header"><span class="diary-work-title">📋 工作内容</span><div><button class="btn btn-small btn-secondary diary-copy-work-btn" data-di="' + di + '">复制</button></div></div><div class="diary-work-content">' + escapeHtml(diary.work) + '</div></div>';
+                    html += '<div class="diary-card-header"><div class="diary-card-date">' + dateStr + '</div><div class="diary-card-actions"><button class="btn btn-info btn-small" onclick="editDiary(\'' + diary.date + '\')">编辑</button><button class="btn btn-danger btn-small" onclick="deleteDiary(\'' + diary.date + '\')">删除</button></div></div>';
+                    html += '<div class="diary-work-block"><div class="diary-work-header"><span class="diary-work-title">📋 工作内容</span><button class="btn btn-small btn-secondary" onclick="copyDiaryWork(\'' + diary.date + '\')">复制</button></div><div class="diary-work-content">' + escapeHtml(diary.work) + '</div></div>';
+
                     if (diary.issues && diary.issues.length > 0) {
                         html += '<div class="diary-issues-block"><div class="diary-issues-header"><span class="diary-issues-title">⚠️ 发现问题 (' + diary.issues.length + '条)</span></div>';
                         diary.issues.forEach((issue, idx) => {
-                            html += '<div class="diary-issue-item"><div class="diary-issue-item-num">' + (idx + 1) + '</div><div class="diary-issue-item-content">' + escapeHtml(issue) + '</div><div class="diary-issue-item-actions"><button class="btn btn-small btn-secondary diary-copy-issue-btn" data-di="' + di + '" data-ii="' + idx + '">复制</button><button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button></div></div>';
+                            html += '<div class="diary-issue-item"><div class="diary-issue-item-num">' + (idx + 1) + '</div><div class="diary-issue-item-content">' + escapeHtml(issue) + '</div><div class="diary-issue-item-actions"><button class="btn btn-small btn-secondary" onclick="copyDiaryIssue(\'' + diary.date + '\', ' + idx + ')">复制</button><button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button></div></div>';
                         });
                         html += '</div>';
                     }
                     html += '</div>';
                 });
                 container.innerHTML = html;
+            }
+
+            // 日历相关变量
+            let _calendarYear = new Date().getFullYear();
+            let _calendarMonth = new Date().getMonth();
+            let _selectedDate = null;
+
+            // 复制日记中的工作内容
+            window.copyDiaryWork = function(date) {
+                const diary = diaries.find(d => d.date === date);
+                if (diary) _doCopy(diary.work, null, '已复制 ✓');
+            };
+
+            // 复制日记中的单个问题
+            window.copyDiaryIssue = function(date, index) {
+                const diary = diaries.find(d => d.date === date);
+                if (diary && diary.issues && diary.issues[index]) {
+                    _doCopy(diary.issues[index], null, '已复制 ✓');
+                }
+            };
+
+            // 渲染日历
+            function renderCalendar() {
+                const container = document.getElementById('diary-calendar');
+                const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+                // 获取该月的所有日期记录
+                const datesWithRecords = new Set(diaries.map(d => d.date));
+                const today = new Date().toISOString().slice(0, 10);
+
+                let html = '<div class="diary-calendar-header">';
+                html += '<span class="diary-calendar-title">' + _calendarYear + '年 ' + monthNames[_calendarMonth] + '</span>';
+                html += '<div class="diary-calendar-nav">';
+                html += '<button onclick="closeCalendar()" class="btn-close-calendar" title="关闭日历">✕</button>';
+                html += '<button onclick="prevMonth()">◀</button>';
+                html += '<button onclick="nextMonth()">▶</button>';
+                html += '</div></div>';
+
+                html += '<div class="diary-calendar-grid">';
+                html += '<div class="diary-calendar-weekday">日</div>';
+                html += '<div class="diary-calendar-weekday">一</div>';
+                html += '<div class="diary-calendar-weekday">二</div>';
+                html += '<div class="diary-calendar-weekday">三</div>';
+                html += '<div class="diary-calendar-weekday">四</div>';
+                html += '<div class="diary-calendar-weekday">五</div>';
+                html += '<div class="diary-calendar-weekday">六</div>';
+
+                const firstDay = new Date(_calendarYear, _calendarMonth, 1).getDay();
+                const daysInMonth = new Date(_calendarYear, _calendarMonth + 1, 0).getDate();
+
+                // 填充空白
+                for (let i = 0; i < firstDay; i++) {
+                    html += '<div class="diary-calendar-day empty"></div>';
+                }
+
+                // 填充日期
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = _calendarYear + '-' + String(_calendarMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                    const isToday = dateStr === today;
+                    const hasRecord = datesWithRecords.has(dateStr);
+                    const isSelected = dateStr === _selectedDate;
+
+                    let classes = 'diary-calendar-day';
+                    if (isToday) classes += ' today';
+                    if (hasRecord) classes += ' has-record';
+                    if (isSelected) classes += ' selected';
+
+                    html += '<div class="' + classes + '" onclick="selectDate(\'' + dateStr + '\')">' + day + '</div>';
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+            }
+
+            window.prevMonth = function() {
+                _calendarMonth--;
+                if (_calendarMonth < 0) {
+                    _calendarMonth = 11;
+                    _calendarYear--;
+                }
+                renderCalendar();
+            };
+
+            window.nextMonth = function() {
+                _calendarMonth++;
+                if (_calendarMonth > 11) {
+                    _calendarMonth = 0;
+                    _calendarYear++;
+                }
+                renderCalendar();
+            };
+
+            window.closeCalendar = function() {
+                document.getElementById('diary-calendar').style.display = 'none';
+                // 只清除选中状态，不关闭查询结果详情
+                _selectedDate = null;
+            };
+
+            window.selectDate = function(dateStr) {
+                _selectedDate = dateStr;
+                renderCalendar();
+                document.getElementById('diary-calendar').style.display = 'block';
+                renderDateDetail(dateStr);
+            };
+
+            function renderDateDetail(dateStr) {
+                const container = document.getElementById('diary-date-detail');
+                const diary = diaries.find(d => d.date === dateStr);
+
+                if (!diary) {
+                    container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;">该日期暂无记录</p>';
+                    container.style.display = 'block';
+                    return;
+                }
+
+                const dateObj = new Date(diary.date);
+                const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
+                const dateStr2 = (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日 ' + weekDay;
+
+                let html = '<div class="diary-date-detail-header">';
+                html += '<span class="diary-date-detail-title">' + dateStr2 + '</span>';
+                html += '<div><button class="btn btn-info btn-small" onclick="editDiary(\'' + diary.date + '\')">编辑</button> <button class="btn btn-danger btn-small" onclick="deleteDiary(\'' + diary.date + '\')">删除</button></div>';
+                html += '</div>';
+
+                html += '<div class="diary-work-block"><div class="diary-work-header"><span class="diary-work-title">📋 工作内容</span><button class="btn btn-small btn-secondary" onclick="copyDiaryWork(\'' + diary.date + '\')">复制</button></div><div class="diary-work-content">' + escapeHtml(diary.work) + '</div></div>';
+
+                if (diary.issues && diary.issues.length > 0) {
+                    html += '<div class="diary-issues-block"><div class="diary-issues-header"><span class="diary-issues-title">⚠️ 发现问题 (' + diary.issues.length + '条)</span></div>';
+                    diary.issues.forEach((issue, idx) => {
+                        html += '<div class="diary-issue-item"><div class="diary-issue-item-num">' + (idx + 1) + '</div><div class="diary-issue-item-content">' + escapeHtml(issue) + '</div><div class="diary-issue-item-actions"><button class="btn btn-small btn-secondary" onclick="copyDiaryIssue(\'' + diary.date + '\', ' + idx + ')">复制</button><button class="btn btn-small btn-danger" onclick="deleteIssue(\'' + diary.date + '\', ' + idx + ')">删除</button></div></div>';
+                    });
+                    html += '</div>';
+                }
+
+                container.innerHTML = html;
                 container.style.display = 'block';
             }
-            function showToday() {
-                diaryFilterMode = 'today';
-                renderDiaryList();
-                document.getElementById('diary-today-btn').classList.add('btn-info');
-                document.getElementById('diary-today-btn').classList.remove('btn-secondary');
+
+            // 切换视图函数
+            function showInputView() {
+                diaryFilterMode = 'input';
+                document.getElementById('diary-input-view').style.display = 'block';
+                document.getElementById('diary-history-view').style.display = 'none';
+                // 按钮状态
+                document.getElementById('diary-input-btn').classList.add('btn-info');
+                document.getElementById('diary-input-btn').classList.remove('btn-secondary');
                 document.getElementById('diary-history-btn').classList.add('btn-secondary');
                 document.getElementById('diary-history-btn').classList.remove('btn-info');
             }
-            function showHistory() {
-                diaryFilterMode = 'all';
-                renderDiaryList();
+
+            function showQuery() {
+                diaryFilterMode = 'history';
+                document.getElementById('diary-input-view').style.display = 'none';
+                document.getElementById('diary-history-view').style.display = 'block';
+                // 按钮状态
+                document.getElementById('diary-input-btn').classList.add('btn-secondary');
+                document.getElementById('diary-input-btn').classList.remove('btn-info');
                 document.getElementById('diary-history-btn').classList.add('btn-info');
                 document.getElementById('diary-history-btn').classList.remove('btn-secondary');
-                document.getElementById('diary-today-btn').classList.add('btn-secondary');
-                document.getElementById('diary-today-btn').classList.remove('btn-info');
+                _selectedDate = null;
+                renderCalendar();
+                document.getElementById('diary-calendar').style.display = 'block';
+                document.getElementById('diary-date-detail').style.display = 'none';
             }
+            window.showInputView = showInputView;
+            window.showQuery = showQuery;
+
             document.addEventListener('DOMContentLoaded', () => {
                 loadDiaries();
                 document.getElementById('diary-date').valueAsDate = new Date();
                 renderIssueFields([]);
-                document.getElementById('diary-list').style.display = 'none';
-                document.getElementById('diary-today-btn').addEventListener('click', showToday);
-                document.getElementById('diary-history-btn').addEventListener('click', showHistory);
-                document.getElementById('diary-count').textContent = diaries.length + ' 条';
-
-                // 事件委托：处理日记列表里的复制按钮（避免动态HTML的引号问题）
-                document.getElementById('diary-list').addEventListener('click', function(e) {
-                    const workBtn = e.target.closest('.diary-copy-work-btn');
-                    const issueBtn = e.target.closest('.diary-copy-issue-btn');
-                    if (workBtn) {
-                        const di = parseInt(workBtn.getAttribute('data-di'));
-                        const diary = _renderedDiaries[di];
-                        if (diary) _doCopy(diary.work, workBtn, '已复制 ✓');
-                    } else if (issueBtn) {
-                        const di = parseInt(issueBtn.getAttribute('data-di'));
-                        const ii = parseInt(issueBtn.getAttribute('data-ii'));
-                        const diary = _renderedDiaries[di];
-                        if (diary && diary.issues && diary.issues[ii] !== undefined) {
-                            _doCopy(diary.issues[ii], issueBtn, '已复制 ✓');
-                        }
-                    }
-                });
+                updateDiaryCount();
+                showInputView(); // 默认显示输入视图
             });
         })();
 
