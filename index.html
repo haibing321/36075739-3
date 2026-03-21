@@ -8,60 +8,70 @@
     <script>
     (function() {
         'use strict';
-        // 注入退出提示样式
-        var s = document.createElement('style');
-        s.id = '_early_exit_style';
-        s.textContent = [
-            '#_exit_bar{',
-            '  position:fixed;bottom:0;left:0;right:0;',
-            '  background:rgba(26,54,93,0.96);color:#fff;',
-            '  text-align:center;padding:18px;font-size:1.05rem;font-weight:700;',
-            '  z-index:99998;transform:translateY(100%);',
-            '  transition:transform .3s ease;',
-            '  box-shadow:0 -2px 12px rgba(0,0,0,.25);letter-spacing:.5px;',
-            '  display:flex;align-items:center;justify-content:center;gap:10px;',
-            '}',
-            '#_exit_bar.show{transform:translateY(0);}',
-            '#_exit_bar ._exit_icon{font-size:1.3rem;}'
-        ].join('');
-        document.head.appendChild(s);
+        // 退出提示 DOM 和样式创建（等待 DOM 加载完成后执行）
+        function initExitHint() {
+            // 注入退出提示样式
+            var s = document.createElement('style');
+            s.id = '_early_exit_style';
+            s.textContent = [
+                '#_exit_bar{',
+                '  position:fixed;bottom:0;left:0;right:0;',
+                '  background:rgba(26,54,93,0.96);color:#fff;',
+                '  text-align:center;padding:18px;font-size:1.05rem;font-weight:700;',
+                '  z-index:99998;transform:translateY(100%);',
+                '  transition:transform .3s ease;',
+                '  box-shadow:0 -2px 12px rgba(0,0,0,.25);letter-spacing:.5px;',
+                '  display:flex;align-items:center;justify-content:center;gap:10px;',
+                '}',
+                '#_exit_bar.show{transform:translateY(0);}',
+                '#_exit_bar ._exit_icon{font-size:1.3rem;}'
+            ].join('');
+            document.head.appendChild(s);
 
-        // 创建退出提示条
-        var bar = document.createElement('div');
-        bar.id = '_exit_bar';
-        bar.innerHTML = '<span class="_exit_icon">👆</span><span>再次滑入边缘退出系统</span>';
-        document.body.appendChild(bar);
+            // 创建退出提示条
+            var bar = document.createElement('div');
+            bar.id = '_exit_bar';
+            bar.innerHTML = '<span class="_exit_icon">👆</span><span>再次滑入边缘退出系统</span>';
+            document.body.appendChild(bar);
 
-        var _exitReady = false, _exitTimer = null;
+            // 初始化历史记录（使系统边缘滑入能触发 popstate）
+            history.pushState(null, null, location.href);
 
-        // 初始化历史记录（使系统边缘滑入能触发 popstate）
-        history.pushState(null, null, location.href);
+            var _exitReady = false, _exitTimer = null;
 
-        // 系统级退出提示（popstate：浏览器后退/返回手势）
-        window.addEventListener('popstate', function(e) {
-            if (_exitReady) {
-                _exitReady = false;
-                return; // 第二次：允许真正退出
-            }
-            // 第一次：显示退出提示
-            bar.classList.add('show');
-            _exitReady = true;
-            if (_exitTimer) clearTimeout(_exitTimer);
-            _exitTimer = setTimeout(function() {
-                bar.classList.remove('show');
-                _exitReady = false;
-            }, 3000);
-            history.pushState(null, null, location.href); // 恢复历史，允许再次触发
-        });
-
-        // 退出提示时隐藏（touch 事件触发 tab 切换时）
-        window._hideExitBar = function() {
-            if (bar.classList.contains('show')) {
-                bar.classList.remove('show');
-                _exitReady = false;
+            // 系统级退出提示（popstate：浏览器后退/返回手势）
+            window.addEventListener('popstate', function(e) {
+                if (_exitReady) {
+                    _exitReady = false;
+                    return; // 第二次：允许真正退出
+                }
+                // 第一次：显示退出提示
+                bar.classList.add('show');
+                _exitReady = true;
                 if (_exitTimer) clearTimeout(_exitTimer);
-            }
-        };
+                _exitTimer = setTimeout(function() {
+                    bar.classList.remove('show');
+                    _exitReady = false;
+                }, 3000);
+                history.pushState(null, null, location.href); // 恢复历史，允许再次触发
+            });
+
+            // 退出提示时隐藏（touch 事件触发 tab 切换时）
+            window._hideExitBar = function() {
+                if (bar.classList.contains('show')) {
+                    bar.classList.remove('show');
+                    _exitReady = false;
+                    if (_exitTimer) clearTimeout(_exitTimer);
+                }
+            };
+        }
+
+        // 如果 DOM 已就绪，立即执行；否则等待 DOMContentLoaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initExitHint);
+        } else {
+            initExitHint();
+        }
     })();
     </script>
     <!-- 第三方库 (不变) -->
