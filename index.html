@@ -882,7 +882,7 @@
         }
         .diary-issue-input {
             width: 100%;
-            padding: 10px 14px;
+            padding: 10px 40px 10px 14px;
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             font-size: 0.9rem;
@@ -893,28 +893,25 @@
             padding-right: 70px;
         }
         .diary-issue-input:focus { outline: none; border-color: var(--info); }
-        .diary-issue-actions {
+        .btn-remove-issue {
             position: absolute;
             top: 6px;
-            right: 8px;
-            display: flex;
-            gap: 4px;
-        }
-        .btn-remove-issue {
-            width: 28px;
-            height: 28px;
+            right: 6px;
+            width: 24px;
+            height: 24px;
             border: none;
-            background: var(--accent);
-            color: white;
-            border-radius: 6px;
+            background: rgba(220, 38, 38, 0.15);
+            color: #dc2626;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            line-height: 1;
         }
-        .btn-remove-issue:hover { background: var(--accent-light); transform: scale(1.05); }
+        .btn-remove-issue:hover { background: #dc2626; color: white; }
         .btn-add-issue {
             width: 100%;
             padding: 12px;
@@ -1687,48 +1684,41 @@
                             </div>
                         </div>
                         <div class="btn-group" id="diary-btn-group">
-                            <button class="btn btn-secondary" id="diary-input-btn" onclick="showInputView()">✏️ 输入</button>
+                            <button class="btn btn-secondary" id="diary-input-btn" onclick="clearDiaryForm(); showInputView();">✏️ 输入</button>
                             <button class="btn btn-info" id="diary-history-btn" onclick="showQuery()">🔍 查询</button>
                             <button class="btn btn-primary" onclick="saveDiary(this)">💾 保存</button>
-                            <button class="btn btn-warning" onclick="clearDiaryForm()">🔄 重置</button>
+                            <button class="btn btn-warning" onclick="exportDiary()">📤 导出</button>
                         </div>
                     </div>
 
-                    <!-- 综合区域：输入与查询合并 -->
-                    <div class="diary-unified-section">
-                        <!-- 日期选择 -->
+                    <!-- 查询视图：日历 + 日期详情 -->
+                    <div id="diary-history-view" class="diary-view-panel" style="display:none;">
+                        <div class="diary-view-header">
+                            <span class="diary-view-title">📅 历史查询</span>
+                        </div>
+                        <div id="diary-calendar" class="diary-calendar"></div>
+                        <div id="diary-date-detail" class="diary-date-detail" style="display:none;"></div>
+                    </div>
+
+                    <!-- 输入视图：日期 + 工作内容 + 问题输入（默认显示） -->
+                    <div id="diary-input-view" class="diary-view-panel">
+                        <div class="diary-view-header">
+                            <span class="diary-view-title">✏️ 输入内容</span>
+                            <button class="btn btn-secondary btn-small" onclick="copyAllToday(this)">📋 全部复制</button>
+                        </div>
+                        <!-- 日期选择（仅输入视图显示） -->
                         <div class="diary-date-row">
                             <label>📅 日期:</label>
                             <input type="date" id="diary-date">
                         </div>
-
-                        <!-- 综合卡片：输入/显示切换 -->
-                        <div class="diary-unified-card">
-                            <!-- 查询视图：日历 + 日期详情 -->
-                            <div id="diary-history-view" class="diary-view-panel" style="display:none;">
-                                <div class="diary-view-header">
-                                    <span class="diary-view-title">📅 历史查询</span>
-                                </div>
-                                <div id="diary-calendar" class="diary-calendar"></div>
-                                <div id="diary-date-detail" class="diary-date-detail" style="display:none;"></div>
-                            </div>
-
-                            <!-- 输入视图：工作内容 + 问题输入（默认显示） -->
-                            <div id="diary-input-view" class="diary-view-panel">
-                                <div class="diary-view-header">
-                                    <span class="diary-view-title">✏️ 输入内容</span>
-                                    <button class="btn btn-secondary btn-small" onclick="copyAllToday(this)">📋 全部复制</button>
-                                </div>
-                                <div class="diary-section">
-                                    <div class="diary-section-title">📋 工作内容</div>
-                                    <textarea id="diary-work" class="diary-textarea" placeholder="请输入工作内容..." oninput="autoResize(this)"></textarea>
-                                </div>
-                                <div class="diary-section">
-                                    <div class="diary-section-title">⚠️ 检查发现问题</div>
-                                    <div id="diary-issues-container"></div>
-                                    <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
-                                </div>
-                            </div>
+                        <div class="diary-section">
+                            <div class="diary-section-title">📋 工作内容</div>
+                            <textarea id="diary-work" class="diary-textarea" placeholder="请输入工作内容..." oninput="autoResize(this)"></textarea>
+                        </div>
+                        <div class="diary-section">
+                            <div class="diary-section-title">⚠️ 检查发现问题</div>
+                            <div id="diary-issues-container"></div>
+                            <button class="btn-add-issue" id="btn-add-issue" onclick="addIssueField()">+ 添加问题</button>
                         </div>
                     </div>
                 </div>
@@ -3292,11 +3282,8 @@
                 div.className = 'diary-issue-row';
                 div.id = `diary-issue-row-${index}`;
                 div.innerHTML = `
-                    <textarea class="diary-issue-input" id="diary-issue-${index}" placeholder="问题 ${index + 1}" oninput="autoResize(this)">${escapeHtml(value)}</textarea>
-                    <div class="diary-issue-actions">
-                        <button class="btn btn-small btn-secondary" onclick="copyIssueInput(${index})">复制</button>
-                        ${index > 0 ? '<button class="btn-remove-issue" onclick="removeIssueField(' + index + ')">×</button>' : ''}
-                    </div>
+                    <textarea class="diary-issue-input" id="diary-issue-${index}" placeholder="${index + 1}" oninput="autoResize(this)">${escapeHtml(value)}</textarea>
+                    ${index > 0 ? '<button class="btn-remove-issue" onclick="removeIssueField(' + index + ')">×</button>' : ''}
                 `;
                 container.appendChild(div);
                 const textarea = document.getElementById(`diary-issue-${index}`);
@@ -3317,16 +3304,10 @@
                     row.id = `diary-issue-row-${idx}`;
                     const textarea = row.querySelector('textarea');
                     textarea.id = `diary-issue-${idx}`;
-                    textarea.placeholder = `问题 ${idx + 1}`;
-                    const actionsDiv = row.querySelector('.diary-issue-actions');
-                    if (actionsDiv) {
-                        const removeBtn = actionsDiv.querySelector('.btn-remove-issue');
-                        if (removeBtn) removeBtn.setAttribute('onclick', `removeIssueField(${idx})`);
-                        const copyBtn = actionsDiv.querySelector('button');
-                        if (copyBtn && copyBtn.textContent.includes('复制')) {
-                            copyBtn.setAttribute('onclick', `copyIssueInput(${idx})`);
-                        }
-                    }
+                    textarea.placeholder = `${idx + 1}`;
+                    const removeBtn = row.querySelector('.btn-remove-issue');
+                    if (removeBtn) removeBtn.setAttribute('onclick', `removeIssueField(${idx})`);
+                    if (idx === 0 && removeBtn) removeBtn.style.display = 'none';
                     requestAnimationFrame(() => autoResize(textarea));
                 });
                 updateAddIssueButton();
@@ -3727,6 +3708,7 @@
                 document.getElementById('diary-input-btn').classList.remove('btn-info');
                 document.getElementById('diary-history-btn').classList.add('btn-info');
                 document.getElementById('diary-history-btn').classList.remove('btn-secondary');
+                // 渲染日历并显示
                 _selectedDate = null;
                 renderCalendar();
                 document.getElementById('diary-calendar').style.display = 'block';
@@ -3734,6 +3716,19 @@
             }
             window.showInputView = showInputView;
             window.showQuery = showQuery;
+            
+            // 导出日记数据
+            window.exportDiary = function() {
+                if (diaries.length === 0) { alert('没有数据可导出'); return; }
+                const dataStr = JSON.stringify(diaries, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '工作写实_' + new Date().toISOString().slice(0,10) + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
 
             document.addEventListener('DOMContentLoaded', () => {
                 loadDiaries();
