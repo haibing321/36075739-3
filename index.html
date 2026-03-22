@@ -612,7 +612,33 @@
         .rule-context { color: var(--text-secondary); }
         .rule-ellipsis { color: var(--text-secondary); font-style: italic; }
         
-        /* ========== 工作写实专用 ========== */
+        /* ========== 工作日志专用 ========== */
+        /* 备忘弹窗 */
+        .memo-modal-content { max-width: 480px; }
+        .modal-close {
+            background: none; border: none; font-size: 1.2rem;
+            cursor: pointer; color: var(--text-secondary); padding: 4px 8px;
+            border-radius: 6px; transition: background .2s;
+        }
+        .modal-close:hover { background: #f1f5f9; }
+        .memo-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 12px; border: 1px solid var(--border);
+            border-radius: var(--radius-sm); margin-bottom: 8px;
+            background: #f8fafc;
+        }
+        .memo-item.memo-done { opacity: 0.5; text-decoration: line-through; }
+        .memo-item-info { flex: 1; min-width: 0; }
+        .memo-item-time { font-size: 0.82rem; color: var(--info); font-weight: 600; margin-bottom: 4px; }
+        .memo-item-text { font-size: 0.9rem; color: var(--text); word-break: break-all; }
+        .memo-item-del {
+            width: 24px; height: 24px; border: none; background: rgba(220,38,38,.12);
+            color: #dc2626; border-radius: 4px; cursor: pointer; font-size: 14px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .memo-item-del:hover { background: #dc2626; color: white; }
+        .memo-empty { text-align: center; color: var(--text-secondary); padding: 24px 0; font-size: 0.9rem; }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; }
         /* 统一综合区域 */
         .diary-unified-section {
             background: linear-gradient(135deg, #e0f2fe 0%, #d1fae5 100%);
@@ -1483,9 +1509,9 @@
                 <button class="nav-btn active" onclick="switchTab('handbook')" id="tab-handbook"><span>📖</span> 检查手册</button>
                 <button class="nav-btn" onclick="switchTab('issue')" id="tab-issue"><span>🔍</span> 检查信息</button>
                 <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule"><span>📋</span> 规章制度</button>
-                <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary"><span>📝</span> 工作写实</button>
+                <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary"><span>📝</span> 工作日志</button>
                 <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone"><span>📞</span> 车站电话</button>
-                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能助手</button>
+                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能查询</button>
             </nav>
         </div>
     </header>
@@ -1616,7 +1642,7 @@
                         <div class="card-title-icon">📋</div>
                         规章制度智能查询
                     </div>
-                    <div class="card-subtitle">规章制度一站式管理 · 智能检索精准定位</div>
+                    <div class="card-subtitle">规章一站式管理 · 智能检索精准定位</div>
                 </div>
                 <div class="card-body">
                     <div class="control-bar stats-bar">
@@ -1664,15 +1690,15 @@
             </div>
         </div>
 
-        <!-- 工作写实模块 (不变) -->
+        <!-- 工作日志模块 -->
         <div id="panel-diary" class="panel">
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-title-icon">📝</div>
-                        工作日写实
+                        工作日志及备忘录
                     </div>
-                    <div class="card-subtitle">工作日志电子化 · 检查问题随时记录</div>
+                    <div class="card-subtitle">日志备忘电子化 · 记录提醒两不误</div>
                 </div>
                 <div class="card-body">
                     <!-- 统计栏+按钮组（重新布局） -->
@@ -1686,7 +1712,7 @@
                         <div class="btn-group" id="diary-btn-group">
                             <button class="btn btn-secondary" id="diary-input-btn" onclick="clearDiaryForm(); showInputView();">✏️ 输入</button>
                             <button class="btn btn-info" id="diary-history-btn" onclick="showQuery()">🔍 查询</button>
-                            <button class="btn btn-primary" onclick="saveDiary(this)">💾 保存</button>
+                            <button class="btn btn-success" onclick="openMemoModal()">🔔 备忘</button>
                             <button class="btn btn-warning" onclick="exportDiary()">📤 导出</button>
                         </div>
                     </div>
@@ -1704,7 +1730,10 @@
                     <div id="diary-input-view" class="diary-view-panel">
                         <div class="diary-view-header">
                             <span class="diary-view-title">✏️ 输入内容</span>
-                            <button class="btn btn-secondary btn-small" onclick="copyAllToday(this)">📋 全部复制</button>
+                            <div style="display:flex;gap:6px;align-items:center;">
+                                <button class="btn btn-primary btn-small" onclick="saveDiary(this)">💾 保存</button>
+                                <button class="btn btn-secondary btn-small" onclick="copyAllToday(this)">📋 全部复制</button>
+                            </div>
                         </div>
                         <!-- 日期选择（仅输入视图显示） -->
                         <div class="diary-date-row">
@@ -1781,7 +1810,7 @@
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-title-icon">🔍</div>
-                        AI智能查询
+                        AI智能助手
                     </div>
                     <div class="card-subtitle">AI智能助手 · 全天候在线答疑</div>
                 </div>
@@ -1804,8 +1833,43 @@
 
     <footer class="footer">
         <div>铁路安监查询系统 · 开发者：赵海兵</div>
-        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览 · 六大模块快速查询</div>
+        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览 · 新增检查手册模块</div>
     </footer>
+
+    <!-- 备忘弹窗 -->
+    <div id="memo-modal" class="modal">
+        <div class="modal-content memo-modal-content">
+            <div class="modal-header">
+                <div class="modal-title">🔔 新建备忘提醒</div>
+                <button class="modal-close" onclick="closeMemoModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- 备忘列表 -->
+                <div id="memo-list-section">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <span style="font-weight:600;color:var(--text);">📋 已有备忘</span>
+                        <button class="btn btn-primary btn-small" onclick="showMemoForm()">＋ 新建</button>
+                    </div>
+                    <div id="memo-list"></div>
+                </div>
+                <!-- 新建备忘表单 -->
+                <div id="memo-form-section" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">📅 提醒日期时间</label>
+                        <input type="datetime-local" id="memo-datetime" class="form-input" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:1rem;">
+                    </div>
+                    <div class="form-group" style="margin-top:12px;">
+                        <label class="form-label">📝 提醒内容</label>
+                        <textarea id="memo-content" class="diary-textarea" placeholder="请输入提醒内容..." rows="4" style="min-height:90px;" oninput="autoResize(this)"></textarea>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:16px;">
+                        <button class="btn btn-primary" style="flex:1;" onclick="saveMemo()">💾 保存提醒</button>
+                        <button class="btn btn-secondary" style="flex:1;" onclick="showMemoList()">↩ 返回列表</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- 原有模态框 (规章制度相关需完整保留) -->
     <div id="issue-clearModal" class="modal">
@@ -1985,7 +2049,7 @@
             handbook: '📖 检查手册',
             issue: '🔍 检查信息',
             rule: '📋 规章制度',
-            diary: '📝 工作写实',
+            diary: '📝 工作日志',
             phone: '📞 车站电话',
             doubao: '🔍 智能助手'
         };
@@ -3739,7 +3803,165 @@
             });
         })();
 
+        // ========== 备忘提醒模块 ==========
+        (function() {
+            const MEMO_KEY = 'railway_memo_v1';
+            let memos = [];
+            let memoCheckTimer = null;
+
+            function loadMemos() {
+                try { memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '[]'); } catch(e) { memos = []; }
+            }
+            function saveMemos() {
+                try { localStorage.setItem(MEMO_KEY, JSON.stringify(memos)); } catch(e) {}
+            }
+
+            // 请求通知权限
+            function requestNotifyPermission(cb) {
+                if (!('Notification' in window)) { alert('您的浏览器不支持系统通知'); return; }
+                if (Notification.permission === 'granted') { cb && cb(); return; }
+                if (Notification.permission === 'denied') {
+                    alert('通知权限已被拒绝，请在浏览器设置中手动开启通知权限后刷新页面');
+                    return;
+                }
+                Notification.requestPermission().then(p => {
+                    if (p === 'granted') { cb && cb(); }
+                    else { alert('未获得通知权限，备忘将在页面打开时弹窗提醒'); }
+                });
+            }
+
+            // 发送系统通知
+            function sendNotification(title, body) {
+                if (Notification.permission === 'granted') {
+                    new Notification(title, {
+                        body: body,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">🔔</text></svg>',
+                        tag: 'railway-memo'
+                    });
+                } else {
+                    alert('📅 备忘提醒\n\n' + title + '\n' + body);
+                }
+            }
+
+            // 轮询检查备忘时间
+            function startMemoCheck() {
+                if (memoCheckTimer) clearInterval(memoCheckTimer);
+                memoCheckTimer = setInterval(function() {
+                    const now = new Date();
+                    memos.forEach(function(m) {
+                        if (m.done) return;
+                        const t = new Date(m.datetime);
+                        // 在设定时间前后30秒内触发
+                        if (Math.abs(now - t) < 30000) {
+                            m.done = true;
+                            saveMemos();
+                            sendNotification('🔔 工作提醒', m.content);
+                            renderMemoList();
+                        }
+                    });
+                }, 15000); // 每15秒检查一次
+            }
+
+            // 渲染备忘列表
+            function renderMemoList() {
+                const el = document.getElementById('memo-list');
+                if (!el) return;
+                loadMemos();
+                if (memos.length === 0) {
+                    el.innerHTML = '<div class="memo-empty">暂无备忘，点击右上角新建</div>';
+                    return;
+                }
+                // 未完成的排前面
+                const sorted = [...memos].sort((a, b) => {
+                    if (a.done !== b.done) return a.done ? 1 : -1;
+                    return new Date(a.datetime) - new Date(b.datetime);
+                });
+                el.innerHTML = sorted.map((m, i) => {
+                    const dt = new Date(m.datetime);
+                    const dtStr = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+                    const realIdx = memos.indexOf(m);
+                    return `<div class="memo-item ${m.done ? 'memo-done' : ''}">
+                        <div class="memo-item-info">
+                            <div class="memo-item-time">⏰ ${dtStr}${m.done ? '（已提醒）' : ''}</div>
+                            <div class="memo-item-text">${escapeHtmlMemo(m.content)}</div>
+                        </div>
+                        <button class="memo-item-del" onclick="deleteMemo(${realIdx})" title="删除">×</button>
+                    </div>`;
+                }).join('');
+            }
+
+            function escapeHtmlMemo(str) {
+                return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+
+            // 对外接口
+            window.openMemoModal = function() {
+                loadMemos();
+                renderMemoList();
+                showMemoList();
+                document.getElementById('memo-modal').classList.add('active');
+                // 请求通知权限
+                requestNotifyPermission();
+            };
+            window.closeMemoModal = function() {
+                document.getElementById('memo-modal').classList.remove('active');
+            };
+            window.showMemoForm = function() {
+                // 默认时间为当前时间+1小时
+                const d = new Date(Date.now() + 3600000);
+                const pad = n => String(n).padStart(2,'0');
+                const local = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+                document.getElementById('memo-datetime').value = local;
+                document.getElementById('memo-content').value = '';
+                document.getElementById('memo-list-section').style.display = 'none';
+                document.getElementById('memo-form-section').style.display = 'block';
+            };
+            window.showMemoList = function() {
+                document.getElementById('memo-list-section').style.display = 'block';
+                document.getElementById('memo-form-section').style.display = 'none';
+            };
+            window.saveMemo = function() {
+                const dt = document.getElementById('memo-datetime').value;
+                const content = document.getElementById('memo-content').value.trim();
+                if (!dt) { alert('请选择提醒时间'); return; }
+                if (!content) { alert('请输入提醒内容'); return; }
+                const memoTime = new Date(dt);
+                if (memoTime <= new Date()) { alert('提醒时间必须晚于当前时间'); return; }
+                loadMemos();
+                memos.push({ datetime: dt, content: content, done: false, id: Date.now() });
+                saveMemos();
+                renderMemoList();
+                showMemoList();
+                alert('备忘已保存，将在 ' + dt.replace('T',' ') + ' 提醒您');
+            };
+            window.deleteMemo = function(idx) {
+                if (!confirm('确定删除该备忘？')) return;
+                loadMemos();
+                memos.splice(idx, 1);
+                saveMemos();
+                renderMemoList();
+            };
+
+            // 初始化
+            loadMemos();
+            startMemoCheck();
+            // 页面加载时检查已过期未提醒的备忘
+            setTimeout(function() {
+                const now = new Date();
+                let hasOverdue = false;
+                memos.forEach(m => {
+                    if (!m.done && new Date(m.datetime) < now) {
+                        hasOverdue = true;
+                        m.done = true;
+                        sendNotification('🔔 逾期备忘提醒', m.content);
+                    }
+                });
+                if (hasOverdue) { saveMemos(); }
+            }, 1500);
+        })();
+
         // ========== 电话模块 ==========
+
         (function() {
             const STORAGE_KEY = 'railway_phone_db_v1';
             let phoneData = [];
