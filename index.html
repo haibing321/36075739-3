@@ -637,6 +637,19 @@
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .memo-item-del:hover { background: #dc2626; color: white; }
+        .memo-item-confirm {
+            height: 24px; padding: 0 8px; border: none; background: rgba(34,197,94,.15);
+            color: #16a34a; border-radius: 4px; cursor: pointer; font-size: 12px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .memo-item-confirm:hover { background: #16a34a; color: white; }
+        .memo-confirmed-tag {
+            height: 24px; padding: 0 8px; background: rgba(34,197,94,.1);
+            color: #16a34a; border-radius: 4px; font-size: 12px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            white-space: nowrap;
+        }
         .memo-empty { text-align: center; color: var(--text-secondary); padding: 24px 0; font-size: 0.9rem; }
         .modal-header { display:flex; justify-content:space-between; align-items:center; }
         /* 统一综合区域 */
@@ -1511,7 +1524,7 @@
                 <button class="nav-btn" onclick="switchTab('rule')" id="tab-rule"><span>📋</span> 规章制度</button>
                 <button class="nav-btn" onclick="switchTab('diary')" id="tab-diary"><span>📝</span> 工作日志</button>
                 <button class="nav-btn" onclick="switchTab('phone')" id="tab-phone"><span>📞</span> 车站电话</button>
-                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能查询</button>
+                <button class="nav-btn" onclick="switchTab('doubao')" id="tab-doubao"><span>🔍</span> 智能助手</button>
             </nav>
         </div>
     </header>
@@ -3816,31 +3829,9 @@
                 try { localStorage.setItem(MEMO_KEY, JSON.stringify(memos)); } catch(e) {}
             }
 
-            // 请求通知权限
-            function requestNotifyPermission(cb) {
-                if (!('Notification' in window)) { alert('您的浏览器不支持系统通知'); return; }
-                if (Notification.permission === 'granted') { cb && cb(); return; }
-                if (Notification.permission === 'denied') {
-                    alert('通知权限已被拒绝，请在浏览器设置中手动开启通知权限后刷新页面');
-                    return;
-                }
-                Notification.requestPermission().then(p => {
-                    if (p === 'granted') { cb && cb(); }
-                    else { alert('未获得通知权限，备忘将在页面打开时弹窗提醒'); }
-                });
-            }
-
-            // 发送系统通知
+            // 发送提醒（页面内弹窗）
             function sendNotification(title, body) {
-                if (Notification.permission === 'granted') {
-                    new Notification(title, {
-                        body: body,
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">🔔</text></svg>',
-                        tag: 'railway-memo'
-                    });
-                } else {
-                    alert('📅 备忘提醒\n\n' + title + '\n' + body);
-                }
+                alert('📅 备忘提醒\n\n' + title + '\n' + body);
             }
 
             // 轮询检查备忘时间
@@ -3880,12 +3871,18 @@
                     const dt = new Date(m.datetime);
                     const dtStr = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
                     const realIdx = memos.indexOf(m);
+                    const confirmBtn = m.confirmed
+                        ? `<span class="memo-confirmed-tag">✅ 已确认</span>`
+                        : `<button class="memo-item-confirm" onclick="confirmMemo(${realIdx})" title="确认">✓ 确认</button>`;
                     return `<div class="memo-item ${m.done ? 'memo-done' : ''}">
                         <div class="memo-item-info">
                             <div class="memo-item-time">⏰ ${dtStr}${m.done ? '（已提醒）' : ''}</div>
                             <div class="memo-item-text">${escapeHtmlMemo(m.content)}</div>
                         </div>
-                        <button class="memo-item-del" onclick="deleteMemo(${realIdx})" title="删除">×</button>
+                        <div style="display:flex;flex-direction:column;gap:4px;align-items:center;flex-shrink:0;">
+                            ${confirmBtn}
+                            <button class="memo-item-del" onclick="deleteMemo(${realIdx})" title="删除">×</button>
+                        </div>
                     </div>`;
                 }).join('');
             }
@@ -3900,8 +3897,6 @@
                 renderMemoList();
                 showMemoList();
                 document.getElementById('memo-modal').classList.add('active');
-                // 请求通知权限
-                requestNotifyPermission();
             };
             window.closeMemoModal = function() {
                 document.getElementById('memo-modal').classList.remove('active');
@@ -3940,6 +3935,14 @@
                 memos.splice(idx, 1);
                 saveMemos();
                 renderMemoList();
+            };
+            window.confirmMemo = function(idx) {
+                loadMemos();
+                if (memos[idx]) {
+                    memos[idx].confirmed = true;
+                    saveMemos();
+                    renderMemoList();
+                }
             };
 
             // 初始化
