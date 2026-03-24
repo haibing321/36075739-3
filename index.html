@@ -4503,19 +4503,40 @@
                     // 优先读取新四级存储，若没有则尝试迁移旧三级数据
                     const stored4 = localStorage.getItem('handbook_fourlevel_v1');
                     if (stored4) {
-                        handbookData = JSON.parse(stored4);
+                        const raw4 = JSON.parse(stored4);
+                        // 自动修复：清除之前错误迁移强补的 "xxx - 详细内容" 格式 subitem
+                        handbookData = raw4.map(entry => {
+                            const rec = Object.assign({}, entry);
+                            if (rec.subitem && typeof rec.subitem === 'string' &&
+                                rec.item && rec.subitem === rec.item + ' - 详细内容') {
+                                delete rec.subitem; // 还原为三级数据
+                            }
+                            return rec;
+                        });
+                        // 若修复了数据，回写修正后的版本
+                        try {
+                            if (raw4.some((e, i) => (e.subitem !== undefined) !== (handbookData[i].subitem !== undefined))) {
+                                localStorage.setItem('handbook_fourlevel_v1', JSON.stringify(handbookData));
+                            }
+                        } catch(e) {}
                     } else {
                         const stored3 = localStorage.getItem('handbook_threelevel_v2');
                         if (stored3) {
                             // 迁移旧三级数据：为每条记录补充 subitem 字段
                             const old = JSON.parse(stored3);
-                            handbookData = old.map(entry => ({
-                                chapter: entry.chapter || '',
-                                section: entry.section || '',
-                                item: entry.item || '',
-                                subitem: entry.subitem || (entry.item ? entry.item + ' - 详细内容' : '详细内容'),
-                                content: entry.content || ''
-                            }));
+                            // 迁移时保留原始字段，不强补 subitem
+                            // rebuildMaps 会自动识别无 subitem 的三级数据
+                            handbookData = old.map(entry => {
+                                const rec = {
+                                    chapter: entry.chapter || '',
+                                    section: entry.section || '',
+                                    item: entry.item || '',
+                                    content: entry.content || ''
+                                };
+                                // 只有原始数据本身有 subitem 才保留
+                                if (entry.subitem) rec.subitem = entry.subitem;
+                                return rec;
+                            });
                         } else {
                             loadSampleData();
                             return;
