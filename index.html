@@ -94,6 +94,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.6.2/fuse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin/2.11.0/pinyin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -601,6 +602,8 @@
             line-height: 1.7;
             color: var(--text);
             border-left: 3px solid var(--info);
+            white-space: normal;
+            word-break: break-word;
         }
         .rule-snippet p {
             margin-bottom: 0.5em;
@@ -1270,7 +1273,7 @@
 
         /* 规章全文模态框内容区域 */
         #rule-fullContentBody {
-            white-space: pre-wrap;
+            white-space: normal;
             line-height: 1.9;
             font-size: 0.95rem;
             color: var(--text);
@@ -1282,6 +1285,117 @@
             font-weight: 600;
             padding: 1px 4px;
             border-radius: 3px;
+        }
+
+        /* ========== 富文本内容样式（表格、图片、列表等） ========== */
+        #rule-fullContentBody table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9rem;
+            background: #fff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        #rule-fullContentBody table thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+        }
+        #rule-fullContentBody table th,
+        #rule-fullContentBody table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        #rule-fullContentBody table th {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        #rule-fullContentBody table tbody tr:hover {
+            background: #f8fafc;
+        }
+        #rule-fullContentBody table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        #rule-fullContentBody table td {
+            color: var(--text);
+            vertical-align: top;
+        }
+
+        /* 图片样式 - 限制最大宽度为60%，点击可放大 */
+        #rule-fullContentBody img {
+            max-width: 60%;
+            max-height: 400px;
+            height: auto;
+            border-radius: 6px;
+            margin: 12px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: zoom-in;
+            transition: transform 0.2s ease;
+        }
+        #rule-fullContentBody img:hover {
+            transform: scale(1.02);
+        }
+        #rule-fullContentBody img.zoomed {
+            max-width: 100%;
+            max-height: none;
+            cursor: zoom-out;
+            transform: scale(1);
+        }
+
+        /* 列表样式 */
+        #rule-fullContentBody ul,
+        #rule-fullContentBody ol {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+        #rule-fullContentBody li {
+            margin: 6px 0;
+            line-height: 1.7;
+        }
+        #rule-fullContentBody ul li {
+            list-style-type: disc;
+        }
+        #rule-fullContentBody ol li {
+            list-style-type: decimal;
+        }
+
+        /* 段落样式 */
+        #rule-fullContentBody p {
+            margin: 12px 0;
+            text-align: justify;
+        }
+
+        /* 标题样式 */
+        #rule-fullContentBody h1,
+        #rule-fullContentBody h2,
+        #rule-fullContentBody h3,
+        #rule-fullContentBody h4 {
+            color: var(--primary);
+            margin: 20px 0 12px 0;
+            font-weight: 600;
+        }
+        #rule-fullContentBody h1 { font-size: 1.5rem; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+        #rule-fullContentBody h2 { font-size: 1.3rem; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+        #rule-fullContentBody h3 { font-size: 1.1rem; }
+        #rule-fullContentBody h4 { font-size: 1rem; }
+
+        /* 强调样式 */
+        #rule-fullContentBody strong { font-weight: 600; color: var(--primary-dark); }
+        #rule-fullContentBody em { font-style: italic; color: var(--text-secondary); }
+
+        /* 引用块样式 */
+        #rule-fullContentBody blockquote {
+            border-left: 4px solid var(--info);
+            margin: 16px 0;
+            padding: 12px 20px;
+            background: #f8fafc;
+            color: var(--text-secondary);
+            font-style: italic;
+            border-radius: 0 6px 6px 0;
         }
 
         /* 规章全文模态框 — 响应式宽度 */
@@ -1594,7 +1708,7 @@
                         <div class="content-body" id="displayContent"></div>
                     </div>
 
-                    <input type="file" id="handbook-jsonFile" accept=".json" style="display:none;">
+                    <input type="file" id="handbook-jsonFile" accept=".json,.docx,.doc" style="display:none;">
                 </div>
             </div>
         </div>
@@ -1692,13 +1806,16 @@
                     <div class="search-box">
                         <div id="rule-keywordContainer" class="keyword-list"></div>
                         <button class="btn-add" id="rule-btnAdd">+ 添加关键词 (最多4个)</button>
+                        
+
+                        
                         <div class="search-actions">
                             <button class="btn btn-primary btn-lg" id="rule-searchBtn">🔍 智能搜索</button>
                             <button class="btn btn-secondary btn-lg" id="rule-clearSearchBtn">重置条件</button>
                         </div>
                     </div>
 
-                    <input type="file" id="rule-fileInput" accept=".pdf,.doc,.docx,.json" style="display:none;" multiple>
+                    <input type="file" id="rule-fileInput" accept=".pdf,.doc,.docx,.json,.zip" style="display:none;" multiple>
 
                     <div class="results-header" style="display: none;">
                         <span class="results-title">📋 查询结果</span>
@@ -1997,7 +2114,7 @@
 
     <div id="rule-exportModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header"><div class="modal-title">📤 按专业导出</div></div>
+            <div class="modal-header"><div class="modal-title">📤 导出规章</div></div>
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">选择要导出的专业</label>
@@ -2005,10 +2122,23 @@
                         <option value="">所有专业 (全部导出)</option>
                     </select>
                 </div>
+                <div class="form-group" style="margin-top:16px;">
+                    <label class="form-label">选择导出格式</label>
+                    <div style="display:flex;gap:12px;margin-top:8px;">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                            <input type="radio" name="exportFormat" value="json" checked style="cursor:pointer;">
+                            <span>JSON格式（纯数据，体积小）</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                            <input type="radio" name="exportFormat" value="zip" style="cursor:pointer;">
+                            <span>ZIP格式（含图片，完整备份）</span>
+                        </label>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('rule-exportModal')">取消</button>
-                <button class="btn btn-primary" onclick="doExport()">导出 JSON</button>
+                <button class="btn btn-primary" onclick="doExport(document.querySelector('input[name=exportFormat]:checked').value)">导出</button>
             </div>
         </div>
     </div>
@@ -2042,7 +2172,7 @@
                     </div>
                 </div>
                 <!-- 全文内容区 -->
-                <div id="rule-fullContentBody" style="background:#f7fafc;padding:20px;border-radius:10px;border-left:4px solid var(--info);max-height:58vh;overflow-y:auto;font-size:0.95rem;line-height:1.9;color:var(--text);word-break:break-word;white-space:pre-wrap;"></div>
+                <div id="rule-fullContentBody" style="background:#f7fafc;padding:20px;border-radius:10px;border-left:4px solid var(--info);max-height:58vh;overflow-y:auto;font-size:0.95rem;line-height:1.9;color:var(--text);word-break:break-word;"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('rule-fullViewModal')">关闭</button>
@@ -2582,12 +2712,17 @@
                 { trade: '电务', title: '信号设备检修规程', content: '信号机显示距离应符合标准。\n轨道电路电压调整在规定范围。\n电缆绝缘测试每月一次。' },
                 { trade: '供电', title: '接触网安全工作规程', content: 'V停作业必须穿戴绝缘靴手套。\n地线接设位置正确，验电接地。\n作业车平台升降严禁侵入邻线。' }
             ];
-            let keywordCount = 0, MAX_KEYWORDS = 4, pendingFiles = [], isProcessing = false, currentEditIndex = null;
+            // 使用window挂载keywordCount，避免IIFE闭包作用域问题
+            if (typeof window.ruleKeywordCount === 'undefined') {
+                window.ruleKeywordCount = 0;
+            }
+            const MAX_KEYWORDS = 4;
+            let pendingFiles = [], isProcessing = false, currentEditIndex = null;
             const ruleSearchMode = 'paragraph'; // 固定段落模式
             let rulePage = 1, rulePageSize = 10, ruleTotalPages = 1, ruleAllResults = [];
 
             // IndexedDB 封装
-            const DB_NAME = 'RailwayRuleDB', STORE_NAME = 'ruleCollection', DB_VERSION = 1;
+            const DB_NAME = 'RailwayRuleDB', STORE_NAME = 'ruleCollection', IMAGE_STORE_NAME = 'rule_images', DB_VERSION = 2;
             let db = null;
             function initRuleDB() {
                 return new Promise((resolve, reject) => {
@@ -2597,12 +2732,151 @@
                     request.onsuccess = () => { db = request.result; resolve(db); };
                     request.onupgradeneeded = (e) => {
                         const database = e.target.result;
+                        const oldVersion = e.oldVersion;
                         if (!database.objectStoreNames.contains(STORE_NAME)) {
                             const store = database.createObjectStore(STORE_NAME, { keyPath: 'id' });
                             store.put({ id: 1, data: [] });
                         }
+                        // v2: 新增图片存储区
+                        if (oldVersion < 2 && !database.objectStoreNames.contains(IMAGE_STORE_NAME)) {
+                            database.createObjectStore(IMAGE_STORE_NAME, { keyPath: 'id' });
+                        }
                     };
                 });
+            }
+
+            // 图片存储辅助函数
+            async function saveImageToDB(id, blob) {
+                const database = await initRuleDB();
+                return new Promise((resolve, reject) => {
+                    const tx = database.transaction([IMAGE_STORE_NAME], 'readwrite');
+                    const store = tx.objectStore(IMAGE_STORE_NAME);
+                    const request = store.put({ id, blob });
+                    request.onsuccess = () => resolve(id);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async function getImageFromDB(id) {
+                const database = await initRuleDB();
+                return new Promise((resolve, reject) => {
+                    const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
+                    const store = tx.objectStore(IMAGE_STORE_NAME);
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result?.blob);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async function deleteImagesFromDB(ids) {
+                if (!ids || ids.length === 0) return;
+                const database = await initRuleDB();
+                return new Promise((resolve, reject) => {
+                    const tx = database.transaction([IMAGE_STORE_NAME], 'readwrite');
+                    const store = tx.objectStore(IMAGE_STORE_NAME);
+                    let count = 0;
+                    ids.forEach(id => {
+                        const request = store.delete(id);
+                        request.onsuccess = () => {
+                            count++;
+                            if (count === ids.length) resolve();
+                        };
+                        request.onerror = () => reject(request.error);
+                    });
+                });
+            }
+
+            // 渲染规章 HTML（替换图片占位符）
+            async function renderRuleHtml(html) {
+                if (!html) return html;
+                const imgIdRegex = /__IMG_ID__([a-zA-Z0-9_-]+)__/g;
+                const matches = html.match(imgIdRegex);
+                if (!matches) return html;
+
+                let renderedHtml = html;
+                for (const match of matches) {
+                    const id = match.replace(/__IMG_ID__/, '').replace(/__$/, '');
+                    const blob = await getImageFromDB(id);
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        renderedHtml = renderedHtml.replace(match, url);
+                    }
+                }
+                return renderedHtml;
+            }
+
+            // 从 HTML 提取纯文本，保留段落换行
+            function stripHtml(html) {
+                if (!html) return '';
+                // 先将段落、div、标题等块级元素替换为带换行的版本
+                let processed = html
+                    .replace(/<\/p>/gi, '\n')
+                    .replace(/<\/div>/gi, '\n')
+                    .replace(/<br\s*\/?>/gi, '\n')
+                    .replace(/<\/h[1-6]>/gi, '\n')
+                    .replace(/<\/li>/gi, '\n');
+                const tmp = document.createElement('div');
+                tmp.innerHTML = processed;
+                let text = tmp.textContent || tmp.innerText || '';
+                // 压缩连续换行，最多保留2个
+                text = text.replace(/\n{3,}/g, '\n\n');
+                return text.trim();
+            }
+            
+            // 清洗HTML：移除空段落、多余换行和空格
+            function cleanHtml(html) {
+                if (!html) return '';
+                let cleaned = html.trim();
+                
+                // 1. 移除空段落：<p></p> 或 <p> </p> 或 <p>&nbsp;</p>
+                cleaned = cleaned.replace(/<p[^>]*>\s*(?:&nbsp;|\s)*\s*<\/p>/gi, '');
+                
+                // 2. 移除连续两个以上的空段落
+                cleaned = cleaned.replace(/(<p[^>]*>\s*<\/p>\s*){2,}/gi, '');
+                
+                // 3. 限制连续换行符（<br>）最多保留2个
+                cleaned = cleaned.replace(/(<br\s*\/?>\s*){3,}/gi, '<br><br>');
+                
+                // 4. 压缩段落内连续空格为单个空格（保留有意义的空格）
+                cleaned = cleaned.replace(/([^<>\s])\s{2,}/g, '$1 ');
+                
+                // 5. 移除标签之间的多余空白，但保留段落之间的换行（用于可读性）
+                // 先保护 </p> 和 <p> 之间的空白
+                cleaned = cleaned.replace(/<\/p>\s*<p/gi, '</p>\n<p');
+                // 再处理其他标签之间的空白
+                cleaned = cleaned.replace(/>(\s+)</g, (match, spaces) => {
+                    // 如果包含换行，保留一个换行用于可读性
+                    if (spaces.includes('\n')) return '>\n<';
+                    return '><';
+                });
+                
+                // 6. 压缩表格单元格内的空格
+                cleaned = cleaned.replace(/<td[^>]*>(.*?)<\/td>/gi, (match, content) => {
+                    const trimmed = content.replace(/\s+/g, ' ').trim();
+                    return `<td>${trimmed}</td>`;
+                });
+                
+                // 7. 最终trim
+                return cleaned.trim();
+            }
+            
+            // 规范化搜索文本：压缩所有空白为单个空格（用于搜索框输入）
+            function normalizeSearchText(text) {
+                if (!text) return '';
+                return text
+                    .replace(/\s+/g, ' ')          // 所有空白压缩为单个空格
+                    .replace(/[^\w\u4e00-\u9fa5]/g, ' ') // 保留中文和字母数字
+                    .trim();
+            }
+
+            // 规范化文本用于搜索匹配：压缩空白、去除标点、统一为小写
+            function normalizeText(text) {
+                if (!text) return '';
+                return text
+                    .replace(/\s+/g, ' ')                          // 压缩空白
+                    .replace(/[^\w\u4e00-\u9fa5\u3400-\u4dbf]/g, '') // 移除非文字字符（保留中文、字母、数字、下划线）
+                    .toLowerCase()
+                    .trim();
             }
             async function loadRulesFromDB() {
                 try {
@@ -2723,65 +2997,153 @@
                 return result;
             }
 
-            function splitLongParagraphWithAllKeywords(paragraph, keywords, maxLen = 380) {
-                const lowerPara = paragraph.toLowerCase();
-                const positions = [];
-                keywords.forEach(kw => {
-                    const lowerKw = kw.toLowerCase();
-                    let pos = -1;
-                    while ((pos = lowerPara.indexOf(lowerKw, pos + 1)) !== -1) {
-                        positions.push({ kw, start: pos, end: pos + kw.length });
+            // 智能段落切分：先按换行分割，再对超长行按条目编号模式二次分割
+            function smartSplitParagraphs(text) {
+                if (!text) return [];
+                let rawParagraphs = text.split(/\r?\n/).filter(p => p.trim() !== '');
+                const paragraphs = [];
+                // 条目编号模式匹配
+                const itemPatterns = [
+                    /^(?:附表\s*\d+|附件\s*\d+)/,
+                    /^第[一二三四五六七八九十百千\d]+[章节条款款项]/,
+                    /^(?:^|\s)\d+[\.、]/,
+                    /^[（(]\d+[)）]/
+                ];
+                rawParagraphs.forEach(para => {
+                    if (para.length > 200) {
+                        // 对长段落按条目边界二次分割
+                        let lastSplit = 0;
+                        const lines = para.split(/(?<=[。；！？\n])/);
+                        const parts = [];
+                        lines.forEach(line => {
+                            if (parts.length === 0) {
+                                parts.push(line);
+                            } else if (itemPatterns.some(p => p.test(line.trim()))) {
+                                parts.push(line);
+                            } else {
+                                parts[parts.length - 1] += line;
+                            }
+                        });
+                        parts.forEach(p => {
+                            if (p.trim()) paragraphs.push(p.trim());
+                        });
+                    } else {
+                        paragraphs.push(para);
                     }
                 });
-                if (positions.length === 0) return [{ text: paragraph, start: 0, end: paragraph.length }];
-                positions.sort((a, b) => a.start - b.start);
-                let minStart = positions[0].start;
-                let maxEnd = positions[positions.length - 1].end;
-                const windowLen = maxEnd - minStart;
-                if (windowLen <= maxLen) {
-                    const extra = maxLen - windowLen;
-                    let left = Math.max(0, minStart - Math.floor(extra / 2));
-                    let right = Math.min(paragraph.length, maxEnd + Math.ceil(extra / 2));
-                    if (right - left < maxLen) {
-                        if (left === 0) right = Math.min(paragraph.length, left + maxLen);
-                        else left = Math.max(0, right - maxLen);
+                return paragraphs.length > 0 ? paragraphs : rawParagraphs;
+            }
+
+            function splitLongParagraphWithAllKeywords(paragraph, keywords, matchMode = 'and', maxLen = 380) {
+                // 使用规范化后的文本进行匹配
+                const normalizedPara = normalizeText(paragraph).toLowerCase();
+                const normalizedKws = keywords.map(kw => normalizeText(kw).toLowerCase());
+                
+                // 定义所有标点符号（用于边界扩展）
+                const punctuations = ['\u3002', '\uff01', '\uff1f', '.', '!', '?', '\uff0c', ',', '\uff1b', ';', '\u3001', '\uff1a', ':', '\uff08', '(', '\uff09', ')', '\u201c', '\u201d', '\u2018', '\u2019', '"', "'", '\u300a', '\u300b', '\u3008', '\u3009', '[', ']', '\u3010', '\u3011'];
+                
+                // 收集每个关键词的所有位置（基于规范化文本）
+                const kwAllPositions = [];
+                normalizedKws.forEach((kw, kwIdx) => {
+                    let pos = -1;
+                    while ((pos = normalizedPara.indexOf(kw, pos + 1)) !== -1) {
+                        kwAllPositions.push({ kwIdx, start: pos, end: pos + kw.length });
                     }
-                    let snippet = paragraph.substring(left, right);
-                    if (left > 0) snippet = '…' + snippet;
-                    if (right < paragraph.length) snippet = snippet + '…';
-                    return [{ text: snippet, start: left, end: right }];
-                } else {
-                    const fragments = [];
-                    let i = 0;
-                    while (i < positions.length) {
-                        let start = positions[i].start;
-                        let end = positions[i].end;
-                        let j = i + 1;
-                        while (j < positions.length) {
-                            const newEnd = positions[j].end;
-                            if (newEnd - start <= maxLen) {
-                                end = newEnd;
-                                j++;
-                            } else {
-                                break;
-                            }
+                });
+                
+                if (kwAllPositions.length === 0) return [];
+                
+                // 按起始位置排序
+                kwAllPositions.sort((a, b) => a.start - b.start);
+                
+                let allWindows = [];
+                
+                // AND模式：找到包含所有关键词的窗口
+                const kwCount = normalizedKws.length;
+
+                for (let i = 0; i < kwAllPositions.length; i++) {
+                    const windowKws = new Set();
+                    let windowStart = kwAllPositions[i].start;
+                    let windowEnd = kwAllPositions[i].end;
+
+                    for (let j = i; j < kwAllPositions.length; j++) {
+                        windowKws.add(kwAllPositions[j].kwIdx);
+                        windowEnd = Math.max(windowEnd, kwAllPositions[j].end);
+
+                        if (windowKws.size === kwCount) {
+                            // 找到包含所有关键词的窗口
+                            allWindows.push({ start: windowStart, end: windowEnd, matchedKwCount: kwCount });
+                            break;
                         }
-                        const extra = maxLen - (end - start);
-                        let left = Math.max(0, start - Math.floor(extra / 2));
-                        let right = Math.min(paragraph.length, end + Math.ceil(extra / 2));
-                        if (right - left < maxLen) {
-                            if (left === 0) right = Math.min(paragraph.length, left + maxLen);
-                            else left = Math.max(0, right - maxLen);
-                        }
-                        fragments.push({
-                            text: paragraph.substring(left, right),
-                            start: left,
-                            end: right
-                        });
-                        i = j;
                     }
-                    return fragments;
                 }
+                
+                if (allWindows.length === 0) return [];
+                
+                // 按起始位置排序
+                allWindows.sort((a, b) => a.start - b.start);
+                
+                // 合并重叠的窗口
+                const mergedWindows = [];
+                let currentWindow = { ...allWindows[0] };
+                
+                for (let i = 1; i < allWindows.length; i++) {
+                    const nextWindow = allWindows[i];
+                    // 合并重叠或距离很近的窗口（小于50字符）
+                    if (nextWindow.start <= currentWindow.end + 50) {
+                        currentWindow.end = Math.max(currentWindow.end, nextWindow.end);
+                        currentWindow.matchedKwCount = Math.max(currentWindow.matchedKwCount, nextWindow.matchedKwCount);
+                    } else {
+                        mergedWindows.push(currentWindow);
+                        currentWindow = { ...nextWindow };
+                    }
+                }
+                mergedWindows.push(currentWindow);
+                
+                // 按匹配关键词数量降序排序，优先显示匹配更多的片段
+                mergedWindows.sort((a, b) => b.matchedKwCount - a.matchedKwCount);
+                
+                // 限制最多返回3个片段，避免结果过长
+                const limitedWindows = mergedWindows.slice(0, 3);
+                
+                // 处理每个窗口，扩展到标点符号边界
+                const fragments = [];
+                limitedWindows.forEach((window, idx) => {
+                    // 向前扩展到标点符号后
+                    let snippetStart = window.start;
+                    const beforeText = paragraph.substring(0, window.start);
+                    let lastPuncPos = -1;
+                    for (const punc of punctuations) {
+                        const pos = beforeText.lastIndexOf(punc);
+                        if (pos > lastPuncPos) lastPuncPos = pos;
+                    }
+                    if (lastPuncPos >= 0) {
+                        snippetStart = lastPuncPos + 1;
+                    }
+                    
+                    // 向后扩展到标点符号前
+                    let snippetEnd = window.end;
+                    const afterText = paragraph.substring(window.end);
+                    let nextPuncPos = Infinity;
+                    for (const punc of punctuations) {
+                        const pos = afterText.indexOf(punc);
+                        if (pos >= 0 && pos < nextPuncPos) nextPuncPos = pos;
+                    }
+                    if (nextPuncPos !== Infinity) {
+                        snippetEnd = window.end + nextPuncPos;
+                    }
+                    
+                    // 截取片段
+                    let snippet = paragraph.substring(snippetStart, snippetEnd).trim();
+                    
+                    // 添加省略号
+                    if (snippetStart > 0) snippet = '\u2026' + snippet;
+                    if (snippetEnd < paragraph.length) snippet = snippet + '\u2026';
+                    
+                    fragments.push({ text: snippet, start: snippetStart, end: snippetEnd, matchedKwCount: window.matchedKwCount });
+                });
+                
+                return fragments;
             }
 
             function collectPrevParagraphs(paragraphs, startIdx, targetLen = 150, maxCount = 6) {
@@ -2797,21 +3159,23 @@
                 return collected;
             }
 
-            function processParagraph(paragraph, index, allParagraphs, keywords) {
+            function processParagraph(paragraph, index, allParagraphs, keywords, ruleIdx, matchMode = 'and') {
                 const len = paragraph.length;
                 const SHORT_THRESHOLD = 50, LONG_THRESHOLD = 400, PREV_TARGET = 150, NEXT_TARGET = 190, MAX_PREV_PARAS = 6;
+                
+                // 匹配模式标记固定为AND
+                const modeAttr = 'data-match-mode="and"';
+                
                 if (len > LONG_THRESHOLD) {
-                    const fragments = splitLongParagraphWithAllKeywords(paragraph, keywords);
+                    const fragments = splitLongParagraphWithAllKeywords(paragraph, keywords, matchMode);
                     let html = '';
                     fragments.forEach(f => {
-                        let text = f.text;
-                        if (f.start > 0) text = '…' + text;
-                        if (f.end < paragraph.length) text = text + '…';
-                        html += `<p>${highlightKeywords(text, keywords)}</p>`;
+                        // 函数返回的片段已经包含省略号，直接使用
+                        html += `<p class="rule-match-para" ${modeAttr} data-para-index="${index}" data-rule-idx="${ruleIdx}" style="cursor:pointer;" onclick="ruleViewFullTextAndScroll(${ruleIdx}, ${index})">${highlightKeywords(f.text, keywords)}</p>`;
                     });
                     return html;
                 } else if (len >= SHORT_THRESHOLD && len <= LONG_THRESHOLD) {
-                    return `<p>${highlightKeywords(paragraph, keywords)}</p>`;
+                    return `<p class="rule-match-para" ${modeAttr} data-para-index="${index}" data-rule-idx="${ruleIdx}" style="cursor:pointer;" onclick="ruleViewFullTextAndScroll(${ruleIdx}, ${index})">${highlightKeywords(paragraph, keywords)}</p>`;
                 } else {
                     const prevParas = collectPrevParagraphs(allParagraphs, index, PREV_TARGET, MAX_PREV_PARAS);
                     let nextPara = '';
@@ -2821,50 +3185,57 @@
                     }
                     let html = '';
                     prevParas.forEach(p => html += `<span class="rule-context">${escapeHtml(p)}</span> `);
-                    html += `<span class="rule-matched-paragraph">${highlightKeywords(paragraph, keywords)}</span>`;
+                    html += `<span class="rule-matched-paragraph rule-match-para" ${modeAttr} data-para-index="${index}" data-rule-idx="${ruleIdx}" style="cursor:pointer;" onclick="ruleViewFullTextAndScroll(${ruleIdx}, ${index})">${highlightKeywords(paragraph, keywords)}</span>`;
                     if (nextPara) html += ` <span class="rule-context">${escapeHtml(nextPara)}</span>`;
                     return `<p>${html}</p>`;
                 }
             }
 
-            function generateRuleSnippet(rule, keywords) {
-                const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
+            function generateRuleSnippet(rule, keywords, ruleIdx, matchMode = 'and') {
+                const paragraphs = smartSplitParagraphs(rule.content);
                 if (paragraphs.length === 0) return '';
                 const lowerKeywords = keywords.map(k => k.toLowerCase());
                 const matchedIndices = [];
                 paragraphs.forEach((para, idx) => {
                     const lowerPara = para.toLowerCase();
-                    const allMatch = lowerKeywords.every(kw => lowerPara.includes(kw));
-                    if (allMatch) matchedIndices.push(idx);
+                    let matched;
+                    // AND模式：必须包含所有关键词
+                    matched = lowerKeywords.every(kw => lowerPara.includes(kw));
+                    if (matched) matchedIndices.push(idx);
                 });
                 if (matchedIndices.length === 0) return '';
                 let html = '';
                 matchedIndices.forEach(idx => {
-                    html += processParagraph(paragraphs[idx], idx, paragraphs, keywords);
+                    html += processParagraph(paragraphs[idx], idx, paragraphs, keywords, ruleIdx, matchMode);
                 });
                 return html;
             }
 
             function getKeywords() {
                 const keywords = [];
-                for (let i = 1; i <= keywordCount; i++) {
+                for (let i = 1; i <= window.ruleKeywordCount; i++) {
                     const kw = document.getElementById('rule-input_' + i)?.value.trim();
                     if (kw) keywords.push(kw);
                 }
                 return keywords;
             }
 
+            // 获取用户输入的原始关键词（用于搜索条件提示显示）
+            function getRawKeywords() {
+                return getKeywords();
+            }
+
             function addKeywordInput() {
-                if (keywordCount >= MAX_KEYWORDS) return;
-                keywordCount++;
+                if (window.ruleKeywordCount >= MAX_KEYWORDS) return;
+                window.ruleKeywordCount++;
                 const container = document.getElementById('rule-keywordContainer');
                 if (!container) return;
                 const div = document.createElement('div');
                 div.className = 'keyword-row';
-                div.id = 'rule-kw_' + keywordCount;
-                div.innerHTML = '<label>关键词' + keywordCount + '</label><input type="text" id="rule-input_' + keywordCount + '" placeholder="输入关键词' + keywordCount + '">' + (keywordCount > 1 ? '<button class="btn-remove" onclick="removeRuleKeyword(' + keywordCount + ')">×</button>' : '');
+                div.id = 'rule-kw_' + window.ruleKeywordCount;
+                div.innerHTML = '<label>关键词' + window.ruleKeywordCount + '</label><input type="text" id="rule-input_' + window.ruleKeywordCount + '" placeholder="输入关键词' + window.ruleKeywordCount + '">' + (window.ruleKeywordCount > 1 ? '<button class="btn-remove" onclick="removeRuleKeyword(' + window.ruleKeywordCount + ')">×</button>' : '');
                 container.appendChild(div);
-                setTimeout(() => document.getElementById('rule-input_' + keywordCount)?.focus(), 100);
+                setTimeout(() => document.getElementById('rule-input_' + window.ruleKeywordCount)?.focus(), 100);
                 updateAddBtn();
             }
 
@@ -2872,21 +3243,21 @@
                 const el = document.getElementById('rule-kw_' + n);
                 if (el) el.remove();
                 const items = document.querySelectorAll('#rule-keywordContainer .keyword-row');
-                keywordCount = 0;
+                window.ruleKeywordCount = 0;
                 items.forEach((item) => {
-                    keywordCount++;
-                    item.id = 'rule-kw_' + keywordCount;
+                    window.ruleKeywordCount++;
+                    item.id = 'rule-kw_' + window.ruleKeywordCount;
                     const label = item.querySelector('label');
-                    if (label) label.textContent = '关键词' + keywordCount;
+                    if (label) label.textContent = '关键词' + window.ruleKeywordCount;
                     const input = item.querySelector('input');
                     if (input) {
-                        input.id = 'rule-input_' + keywordCount;
-                        input.placeholder = '输入关键词' + keywordCount;
+                        input.id = 'rule-input_' + window.ruleKeywordCount;
+                        input.placeholder = '输入关键词' + window.ruleKeywordCount;
                     }
                     const btn = item.querySelector('.btn-remove');
                     if (btn) {
-                        if (keywordCount === 1) btn.remove();
-                        else btn.setAttribute('onclick', 'removeRuleKeyword(' + keywordCount + ')');
+                        if (window.ruleKeywordCount === 1) btn.remove();
+                        else btn.setAttribute('onclick', 'removeRuleKeyword(' + window.ruleKeywordCount + ')');
                     }
                 });
                 updateAddBtn();
@@ -2895,14 +3266,14 @@
             function updateAddBtn() {
                 const btn = document.getElementById('rule-btnAdd');
                 if (!btn) return;
-                if (keywordCount >= MAX_KEYWORDS) { btn.disabled = true; btn.textContent = '已达到最大关键词数量(4个)'; }
-                else { btn.disabled = false; btn.textContent = '+ 添加关键词 (还可添加' + (MAX_KEYWORDS - keywordCount) + '个)'; }
+                if (window.ruleKeywordCount >= MAX_KEYWORDS) { btn.disabled = true; btn.textContent = '已达到最大关键词数量(4个)'; }
+                else { btn.disabled = false; btn.textContent = '+ 添加关键词 (还可添加' + (MAX_KEYWORDS - window.ruleKeywordCount) + '个)'; }
             }
 
             function clearSearch() {
                 const container = document.getElementById('rule-keywordContainer');
                 if (container) container.innerHTML = '';
-                keywordCount = 0;
+                window.ruleKeywordCount = 0;
                 addKeywordInput();
                 const tradeSelect = document.getElementById('rule-tradeSelect');
                 if (tradeSelect) tradeSelect.value = '';
@@ -2914,16 +3285,231 @@
                 if (isProcessing) { alert('正在处理中'); return; }
                 const input = document.getElementById('rule-fileInput');
                 if (!input) return;
-                input.onchange = (e) => {
+                input.onchange = async (e) => {
                     const files = e.target.files;
                     if (!files || files.length === 0) return;
-                    window.pendingImportFiles = Array.from(files);
-                    openModal('rule-importModal');
+                    
+                    // 检查是否有ZIP文件
+                    const zipFile = Array.from(files).find(f => f.name.toLowerCase().endsWith('.zip'));
+                    if (zipFile) {
+                        // ZIP文件直接导入
+                        await importFromZip(zipFile);
+                    } else {
+                        // 其他文件(PDF/DOCX/JSON)走原有逻辑
+                        window.pendingImportFiles = Array.from(files);
+                        openModal('rule-importModal');
+                    }
                     e.target.value = '';
                 };
                 input.click();
             }
-            window.closeImportModal = function() { closeModal('rule-importModal'); window.pendingImportFiles = []; }
+            
+            // 将DOCX按章节拆分为多个section（保留图片、表格、排版）
+            // 策略：先用mammoth完整转换HTML（保留图片/表格），再按h1/h2标题标签拆分章节
+            async function organizeDocxToSections(arrayBuffer, filename) {
+                const sections = [];
+                
+                try {
+                    if (typeof mammoth === 'undefined') throw new Error('mammoth 库未加载');
+                    
+                    // ===== 第1步：用mammoth完整转换HTML（保留图片、表格、排版） =====
+                    const imageIds = [];
+                    const options = {
+                        convertImage: mammoth.images.imgElement(function(image) {
+                            return image.read("base64").then(async function(imageBuffer) {
+                                const imgId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                                const contentType = image.contentType;
+                                const byteCharacters = atob(imageBuffer);
+                                const byteNumbers = new Array(byteCharacters.length);
+                                for (let i = 0; i < byteCharacters.length; i++) {
+                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                }
+                                const byteArray = new Uint8Array(byteNumbers);
+                                const blob = new Blob([byteArray], { type: contentType });
+                                await saveImageToDB(imgId, blob);
+                                imageIds.push(imgId);
+                                return { src: '__IMG_ID__' + imgId + '__' };
+                            });
+                        })
+                    };
+                    
+                    const result = await mammoth.convertToHtml({ arrayBuffer }, options);
+                    const fullHtml = cleanHtml(result.value);
+                    
+                    if (!fullHtml || !fullHtml.trim()) {
+                        console.warn('mammoth转换结果为空，跳过章节拆分');
+                        return sections;
+                    }
+                    
+                    // ===== 第2步：解析HTML，按h1/h2标题标签拆分章节 =====
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = fullHtml;
+                    
+                    const allChildren = Array.from(tempDiv.childNodes);
+                    let currentSection = null;
+                    let currentHtmlParts = [];
+                    
+                    // 检测标题元素：优先使用mammoth生成的h1/h2标签
+                    function isHeadingElement(el) {
+                        if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
+                        const tag = el.tagName.toLowerCase();
+                        if (tag === 'h1' || tag === 'h2') return true;
+                        // 同时检查是否有Word样式映射的类名（mammoth可能生成p.style-heading1等）
+                        if (tag === 'p') {
+                            const cls = el.className || '';
+                            if (/heading\s*1|Heading1|style\s*1/i.test(cls)) return true;
+                            if (/heading\s*2|Heading2|style\s*2/i.test(cls)) return true;
+                        }
+                        return false;
+                    }
+                    
+                    function getHeadingLevel(el) {
+                        const tag = (el.tagName || '').toLowerCase();
+                        if (tag === 'h1') return 1;
+                        if (tag === 'h2') return 2;
+                        if (tag === 'p') {
+                            const cls = el.className || '';
+                            if (/heading\s*1|Heading1|style\s*1/i.test(cls)) return 1;
+                            if (/heading\s*2|Heading2|style\s*2/i.test(cls)) return 2;
+                        }
+                        return 2;
+                    }
+                    
+                    function saveCurrentSection() {
+                        if (currentSection && currentHtmlParts.length > 0) {
+                            const sectionHtml = currentHtmlParts.join('\n');
+                            const cleanedSectionHtml = cleanHtml(sectionHtml);
+                            if (cleanedSectionHtml.trim()) {
+                                sections.push({
+                                    title: currentSection,
+                                    content: stripHtml(cleanedSectionHtml),  // 保留换行，用于段落搜索
+                                    searchText: normalizeSearchText(stripHtml(cleanedSectionHtml)),  // 无换行，用于分数计算
+                                    contentHtml: cleanedSectionHtml,
+                                    imageIds: imageIds.slice() // 共享所有图片ID引用
+                                });
+                            }
+                        }
+                    }
+                    
+                    function getElementHtml(el) {
+                        // 获取元素的外部HTML（包含标签本身）
+                        if (el.nodeType === Node.ELEMENT_NODE) return el.outerHTML;
+                        if (el.nodeType === Node.TEXT_NODE) return el.textContent;
+                        return '';
+                    }
+                    
+                    // 遍历所有顶层子节点，遇到h1/h2开始新章节
+                    for (const child of allChildren) {
+                        if (child.nodeType === Node.ELEMENT_NODE && isHeadingElement(child)) {
+                            // 保存之前章节
+                            saveCurrentSection();
+                            
+                            const headingText = child.textContent.trim();
+                            // 只对有实际内容的标题进行拆分，跳过空标题
+                            if (headingText && headingText.length < 200) {
+                                currentSection = headingText;
+                                currentHtmlParts = [];
+                            } else {
+                                // 标题太长，当作普通内容
+                                currentHtmlParts.push(getElementHtml(child));
+                            }
+                        } else {
+                            if (!currentSection) {
+                                // 还没遇到第一个标题，内容归入"前言"
+                                currentSection = filename.replace(/\.[^/.]+$/, '');
+                            }
+                            const html = getElementHtml(child);
+                            if (html && html.trim()) {
+                                currentHtmlParts.push(html);
+                            }
+                        }
+                    }
+                    
+                    // 保存最后一个章节
+                    saveCurrentSection();
+                    
+                    // 如果没有检测到h1/h2标题（可能文档没有用标题样式），
+                    // 尝试从原始XML中检测Word大纲级别来辅助判断
+                    if (sections.length <= 1) {
+                        // 只检测到0或1个章节，说明可能没有使用标题样式
+                        // 尝试用XML辅助检测（仅检查大纲级别，不丢失格式）
+                        try {
+                            const JSZip = window.JSZip;
+                            const zip = await JSZip.loadAsync(arrayBuffer);
+                            const xmlContent = await zip.file('word/document.xml').async('text');
+                            const parser = new DOMParser();
+                            const xmlDoc = parser.parseFromString(xmlContent, 'application/xml');
+                            
+                            // 收集有大纲级别的段落索引
+                            const headingIndices = new Set();
+                            xmlDoc.querySelectorAll('w p').forEach((para, idx) => {
+                                const outlineLvl = para.querySelector('w outlineLvl');
+                                const level = outlineLvl ? parseInt(outlineLvl.getAttribute('w:val')) : -1;
+                                if (level === 0 || level === 1) {
+                                    // 提取文本验证不是空段落
+                                    const texts = [];
+                                    para.querySelectorAll('w t').forEach(t => { if (t.textContent) texts.push(t.textContent); });
+                                    const text = texts.join('').trim();
+                                    if (text && text.length < 200) {
+                                        headingIndices.add(idx);
+                                    }
+                                }
+                            });
+                            
+                            if (headingIndices.size > 1) {
+                                // XML中有多个大纲级别标题，按段落位置重新拆分
+                                sections = [];
+                                const pElements = Array.from(tempDiv.querySelectorAll('p, div, h1, h2, h3, h4, table'));
+                                let pIdx = 0;
+                                currentSection = null;
+                                currentHtmlParts = [];
+                                
+                                for (const el of pElements) {
+                                    if (headingIndices.has(pIdx)) {
+                                        saveCurrentSection();
+                                        currentSection = el.textContent.trim();
+                                        currentHtmlParts = [];
+                                    } else {
+                                        if (!currentSection) {
+                                            currentSection = filename.replace(/\.[^/.]+$/, '');
+                                        }
+                                        currentHtmlParts.push(el.outerHTML);
+                                    }
+                                    pIdx++;
+                                }
+                                saveCurrentSection();
+                            }
+                        } catch (xmlErr) {
+                            console.warn('XML辅助拆分失败，保持原始结果:', xmlErr);
+                        }
+                    }
+                    
+                    // 如果最终只有1个section或0个section，直接返回（processFiles的多章节路径会正常处理）
+                    if (sections.length === 0 && fullHtml && fullHtml.trim()) {
+                        // XML辅助也未拆分成功，将整个文档作为1个section返回
+                        sections.push({
+                            title: filename.replace(/\.[^/.]+$/, ''),
+                            content: stripHtml(fullHtml),
+                            searchText: normalizeSearchText(stripHtml(fullHtml)),
+                            contentHtml: fullHtml,
+                            imageIds: imageIds.slice()
+                        });
+                    }
+                    // 如果sections.length === 1，也直接返回，让processFiles走多章节路径
+                    // 这样避免了processFiles再次调用mammoth导致图片重复存储
+                    
+                } catch (err) {
+                    console.error('整理DOCX失败:', err);
+                }
+                
+                return sections;
+            }
+            
+            window.closeImportModal = function() { 
+                closeModal('rule-importModal'); 
+                window.pendingImportFiles = []; 
+                document.getElementById('rule-importTitle').textContent = '📥 导入规章';
+            }
             window.confirmImportTrade = async function() {
                 let trade = document.getElementById('rule-importTrade')?.value;
                 const newTrade = document.getElementById('rule-importNewTrade')?.value.trim();
@@ -2942,7 +3528,11 @@
                     const ext = file.name.split('.').pop().toLowerCase();
                     if (btn) btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></span> ' + (i + 1) + '/' + files.length;
                     try {
-                        let text = '';
+                        let contentHtml = '';
+                        let searchText = '';
+                        let plainText = '';  // 保留换行的纯文本，用于段落搜索
+                        let imageIds = [];
+                        
                         if (ext === 'pdf') {
                             if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js 库未加载');
                             const arrayBuffer = await file.arrayBuffer();
@@ -2950,34 +3540,104 @@
                             for (let p = 1; p <= pdf.numPages; p++) {
                                 const page = await pdf.getPage(p);
                                 const content = await page.getTextContent();
-                                text += content.items.map(item => item.str).join(' ') + '\n';
+                                searchText += content.items.map(item => item.str).join(' ') + '\n';
                             }
+                            plainText = searchText;  // PDF文本自带换行，直接用作content
+                            contentHtml = '<pre style="white-space:pre-wrap;word-break:break-word;">' + escapeHtml(searchText) + '</pre>';
                         } else if (ext === 'docx' || ext === 'doc') {
                             if (typeof mammoth === 'undefined') throw new Error('mammoth 库未加载');
                             const arrayBuffer = await file.arrayBuffer();
-                            const result = await mammoth.extractRawText({ arrayBuffer });
-                            text = result.value;
+                            
+                            // 先尝试按章节整理（新版本已用mammoth转换，保留图片/表格/排版）
+                            const organizedSections = await organizeDocxToSections(arrayBuffer, file.name);
+                            if (organizedSections.length > 0) {
+                                // 成功拆分为章节（或整个文档作为1个section），逐个导入
+                                for (const section of organizedSections) {
+                                    const dupIdx = rules.findIndex(r => 
+                                        r.title.toLowerCase().trim() === section.title.toLowerCase().trim() && 
+                                        r.trade === trade
+                                    );
+                                    const ruleData = {
+                                        trade,
+                                        title: section.title,
+                                        content: section.content,  // 保留换行的纯文本（stripHtml结果）
+                                        contentHtml: section.contentHtml,
+                                        searchText: section.searchText || normalizeSearchText(section.content),  // 无换行，用于分数计算
+                                        imageIds: section.imageIds || []
+                                    };
+                                    if (dupIdx !== -1) rules[dupIdx] = ruleData;
+                                    else rules.push(ruleData);
+                                    successCount++;
+                                }
+                                continue; // 跳过下面的单文件处理
+                            }
+                            
+                            // 无法拆分章节，直接按单文件处理（含图片）
+                            const options = {
+                                convertImage: mammoth.images.imgElement(function(image) {
+                                    return image.read("base64").then(async function(imageBuffer) {
+                                        const imgId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                                        const contentType = image.contentType;
+                                        const byteCharacters = atob(imageBuffer);
+                                        const byteNumbers = new Array(byteCharacters.length);
+                                        for (let i = 0; i < byteCharacters.length; i++) {
+                                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                        }
+                                        const byteArray = new Uint8Array(byteNumbers);
+                                        const blob = new Blob([byteArray], { type: contentType });
+                                        await saveImageToDB(imgId, blob);
+                                        imageIds.push(imgId);
+                                        return { src: '__IMG_ID__' + imgId + '__' };
+                                    });
+                                })
+                            };
+                            
+                            const result = await mammoth.convertToHtml({ arrayBuffer }, options);
+                            contentHtml = cleanHtml(result.value);
+                            const plainText = stripHtml(contentHtml);  // 保留换行的纯文本
+                            searchText = normalizeSearchText(plainText);  // 无换行，用于分数计算
                         } else if (ext === 'json') {
                             const textContent = await file.text();
                             const data = JSON.parse(textContent);
                             if (Array.isArray(data)) {
-                                data.forEach(item => {
-                                    if (item.title && item.content) {
+                                for (const item of data) {
+                                    if (item.title && (item.content || item.contentHtml)) {
                                         const itemTrade = item.trade || trade;
+                                        // 处理导入的图片（如果是ZIP导出格式）
+                                        if (item.imageIds && item.imageIds.length > 0) {
+                                            imageIds = item.imageIds;
+                                        }
                                         const dupIdx = rules.findIndex(r => r.title.toLowerCase().trim() === item.title.toLowerCase().trim() && r.trade === itemTrade);
-                                        if (dupIdx !== -1) rules[dupIdx] = { trade: itemTrade, title: item.title, content: item.content };
-                                        else rules.push({ trade: itemTrade, title: item.title, content: item.content });
+                                        const ruleData = { 
+                                            trade: itemTrade, 
+                                            title: item.title, 
+                                            content: item.content || stripHtml(item.contentHtml),
+                                            contentHtml: item.contentHtml || item.content,
+                                            searchText: item.searchText || item.content || stripHtml(item.contentHtml),
+                                            imageIds: item.imageIds || []
+                                        };
+                                        if (dupIdx !== -1) rules[dupIdx] = ruleData;
+                                        else rules.push(ruleData);
                                         successCount++;
                                     }
-                                });
+                                }
                                 continue;
                             }
                         } else { skipCount++; continue; }
-                        if (!text.trim()) { skipCount++; continue; }
+                        
+                        if (!searchText.trim() && !contentHtml.trim()) { skipCount++; continue; }
                         const title = file.name.replace(/\.[^/.]+$/, '');
                         const dupIdx = rules.findIndex(r => r.title.toLowerCase().trim() === title.toLowerCase().trim());
-                        if (dupIdx !== -1) rules[dupIdx] = { trade, title, content: text };
-                        else rules.push({ trade, title, content: text });
+                        const ruleData = { 
+                            trade, 
+                            title, 
+                            content: plainText || searchText,  // 保留换行的纯文本（DOCX用plainText，PDF等用searchText）
+                            contentHtml: contentHtml,
+                            searchText: searchText,
+                            imageIds: imageIds
+                        };
+                        if (dupIdx !== -1) rules[dupIdx] = ruleData;
+                        else rules.push(ruleData);
                         successCount++;
                     } catch (err) { console.error(err); skipCount++; }
                 }
@@ -2986,21 +3646,266 @@
                 isProcessing = false;
                 alert('导入完成：成功 ' + successCount + ' 个，跳过 ' + skipCount + ' 个');
             }
-            window.doExport = function() {
+            window.doExport = async function(format) {
                 const selectedTrade = document.getElementById('rule-exportTrade')?.value;
                 let exportRules = rules;
                 if (selectedTrade && selectedTrade !== '') exportRules = rules.filter(r => r.trade === selectedTrade);
                 if (exportRules.length === 0) { alert('所选专业暂无规章'); return; }
-                const dataStr = JSON.stringify(exportRules, null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = selectedTrade ? '铁路规章_' + selectedTrade + '_' + new Date().toISOString().slice(0, 10) + '.json' : '铁路规章_全部_' + new Date().toISOString().slice(0, 10) + '.json';
-                a.click();
-                URL.revokeObjectURL(url);
+                
+                if (format === 'zip') {
+                    // ZIP导出（包含图片）
+                    await exportToZipWithSelection(selectedTrade, exportRules);
+                } else {
+                    // JSON导出
+                    const dataStr = JSON.stringify(exportRules, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = selectedTrade ? '铁路规章_' + selectedTrade + '_' + new Date().toISOString().slice(0, 10) + '.json' : '铁路规章_全部_' + new Date().toISOString().slice(0, 10) + '.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
                 closeModal('rule-exportModal');
             }
+
+            // 根据选择导出ZIP（支持按专业筛选）
+            window.exportToZipWithSelection = async function(selectedTrade, exportRules) {
+                if (exportRules.length === 0) { alert('暂无规章可导出'); return; }
+                if (typeof JSZip === 'undefined') { alert('JSZip 库未加载，请检查网络连接'); return; }
+                
+                try {
+                    const zip = new JSZip();
+                    const exportData = [];
+                    
+                    // 收集所有图片ID
+                    const allImageIds = new Set();
+                    exportRules.forEach(rule => {
+                        if (rule.imageIds && rule.imageIds.length > 0) {
+                            rule.imageIds.forEach(id => allImageIds.add(id));
+                        }
+                    });
+                    
+                    // 导出图片到ZIP
+                    if (allImageIds.size > 0) {
+                        const database = await initRuleDB();
+                        const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
+                        const store = tx.objectStore(IMAGE_STORE_NAME);
+                        
+                        for (const imgId of allImageIds) {
+                            try {
+                                const blob = await getImageFromDB(imgId);
+                                if (blob) {
+                                    const ext = blob.type === 'image/png' ? 'png' : 
+                                               blob.type === 'image/gif' ? 'gif' : 'jpg';
+                                    zip.file(`images/${imgId}.${ext}`, blob);
+                                }
+                            } catch (e) {
+                                console.error('导出图片失败:', imgId, e);
+                            }
+                        }
+                    }
+                    
+                    // 准备导出数据
+                    exportRules.forEach(rule => {
+                        exportData.push({
+                            trade: rule.trade,
+                            title: rule.title,
+                            content: rule.content,
+                            contentHtml: rule.contentHtml,
+                            searchText: rule.searchText,
+                            imageIds: rule.imageIds || []
+                        });
+                    });
+                    
+                    // 添加数据文件
+                    zip.file('rules.json', JSON.stringify(exportData, null, 2));
+                    zip.file('manifest.json', JSON.stringify({
+                        version: 2,
+                        exportDate: new Date().toISOString(),
+                        count: exportRules.length,
+                        hasImages: allImageIds.size > 0
+                    }, null, 2));
+                    
+                    // 生成ZIP文件
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    const url = URL.createObjectURL(zipBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const tradeSuffix = selectedTrade ? '_' + selectedTrade : '_全部';
+                    a.download = '铁路规章' + tradeSuffix + '_' + new Date().toISOString().slice(0, 10) + '.zip';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    alert('导出成功！共 ' + exportRules.length + ' 条规章' + (allImageIds.size > 0 ? '，包含 ' + allImageIds.size + ' 张图片' : ''));
+                } catch (err) {
+                    console.error('ZIP导出失败:', err);
+                    alert('导出失败: ' + err.message);
+                }
+            };
+
+            // ========== ZIP 导出/导入功能 ==========
+            window.exportToZip = async function() {
+                if (rules.length === 0) { alert('暂无规章可导出'); return; }
+                if (typeof JSZip === 'undefined') { alert('JSZip 库未加载，请检查网络连接'); return; }
+                
+                try {
+                    const zip = new JSZip();
+                    const exportData = [];
+                    
+                    // 收集所有图片ID
+                    const allImageIds = new Set();
+                    rules.forEach(rule => {
+                        if (rule.imageIds && rule.imageIds.length > 0) {
+                            rule.imageIds.forEach(id => allImageIds.add(id));
+                        }
+                    });
+                    
+                    // 导出图片到ZIP
+                    if (allImageIds.size > 0) {
+                        const database = await initRuleDB();
+                        const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
+                        const store = tx.objectStore(IMAGE_STORE_NAME);
+                        
+                        for (const imgId of allImageIds) {
+                            try {
+                                const blob = await getImageFromDB(imgId);
+                                if (blob) {
+                                    // 获取文件扩展名
+                                    const ext = blob.type === 'image/png' ? 'png' : 
+                                               blob.type === 'image/gif' ? 'gif' : 'jpg';
+                                    zip.file(`images/${imgId}.${ext}`, blob);
+                                }
+                            } catch (e) {
+                                console.error('导出图片失败:', imgId, e);
+                            }
+                        }
+                    }
+                    
+                    // 准备导出数据（移除Blob，保留imageIds引用）
+                    rules.forEach(rule => {
+                        exportData.push({
+                            trade: rule.trade,
+                            title: rule.title,
+                            content: rule.content,
+                            contentHtml: rule.contentHtml,
+                            searchText: rule.searchText,
+                            imageIds: rule.imageIds || []
+                        });
+                    });
+                    
+                    // 添加数据文件
+                    zip.file('rules.json', JSON.stringify(exportData, null, 2));
+                    zip.file('manifest.json', JSON.stringify({
+                        version: 2,
+                        exportDate: new Date().toISOString(),
+                        count: rules.length,
+                        hasImages: allImageIds.size > 0
+                    }, null, 2));
+                    
+                    // 生成ZIP文件
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    const url = URL.createObjectURL(zipBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '铁路规章备份_' + new Date().toISOString().slice(0, 10) + '.zip';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    alert('导出成功！共 ' + rules.length + ' 条规章' + (allImageIds.size > 0 ? '，包含 ' + allImageIds.size + ' 张图片' : ''));
+                } catch (err) {
+                    console.error('ZIP导出失败:', err);
+                    alert('导出失败: ' + err.message);
+                }
+            };
+
+            window.importFromZip = async function(file) {
+                if (typeof JSZip === 'undefined') { alert('JSZip 库未加载，请检查网络连接'); return; }
+                if (!file) return;
+                
+                try {
+                    const zip = await JSZip.loadAsync(file);
+                    
+                    // 读取manifest
+                    let manifest = { version: 1 };
+                    if (zip.file('manifest.json')) {
+                        const manifestContent = await zip.file('manifest.json').async('string');
+                        manifest = JSON.parse(manifestContent);
+                    }
+                    
+                    // 读取rules.json
+                    if (!zip.file('rules.json')) {
+                        throw new Error('ZIP文件中缺少 rules.json');
+                    }
+                    
+                    const rulesContent = await zip.file('rules.json').async('string');
+                    const importRules = JSON.parse(rulesContent);
+                    
+                    if (!Array.isArray(importRules)) {
+                        throw new Error('导入的数据格式不正确');
+                    }
+                    
+                    let successCount = 0;
+                    let skipCount = 0;
+                    let imageCount = 0;
+                    
+                    // 导入图片
+                    const imageFiles = Object.keys(zip.files).filter(name => name.startsWith('images/'));
+                    for (const imgPath of imageFiles) {
+                        try {
+                            const imgId = imgPath.replace('images/', '').replace(/\.(jpg|jpeg|png|gif)$/i, '');
+                            const blob = await zip.file(imgPath).async('blob');
+                            await saveImageToDB(imgId, blob);
+                            imageCount++;
+                        } catch (e) {
+                            console.error('导入图片失败:', imgPath, e);
+                        }
+                    }
+                    
+                    // 导入规章
+                    for (const item of importRules) {
+                        if (item.title && (item.content || item.contentHtml)) {
+                            const dupIdx = rules.findIndex(r => 
+                                r.title.toLowerCase().trim() === item.title.toLowerCase().trim() && 
+                                r.trade === (item.trade || '通用')
+                            );
+                            const ruleData = {
+                                trade: item.trade || '通用',
+                                title: item.title,
+                                content: item.content || stripHtml(item.contentHtml),
+                                contentHtml: item.contentHtml || item.content,
+                                searchText: item.searchText || item.content || stripHtml(item.contentHtml),
+                                imageIds: item.imageIds || []
+                            };
+                            if (dupIdx !== -1) {
+                                // 删除旧图片
+                                const oldRule = rules[dupIdx];
+                                if (oldRule.imageIds && oldRule.imageIds.length > 0) {
+                                    await deleteImagesFromDB(oldRule.imageIds);
+                                }
+                                rules[dupIdx] = ruleData;
+                            } else {
+                                rules.push(ruleData);
+                            }
+                            successCount++;
+                        } else {
+                            skipCount++;
+                        }
+                    }
+                    
+                    await saveToStorage();
+                    refreshTradeSelect();
+                    updateTotalBadge();
+                    renderResults();
+                    
+                    alert('导入完成：成功 ' + successCount + ' 条' + 
+                          (imageCount > 0 ? '，图片 ' + imageCount + ' 张' : '') + 
+                          (skipCount > 0 ? '，跳过 ' + skipCount + ' 条' : ''));
+                } catch (err) {
+                    console.error('ZIP导入失败:', err);
+                    alert('导入失败: ' + err.message);
+                }
+            };
             window.showCatalog = function() {
                 renderCatalog();
                 openModal('rule-catalogModal');
@@ -3059,6 +3964,15 @@
             };
             window.deleteRule = async function(idx) {
                 if (confirm('确定要删除规章"' + rules[idx].title + '"吗？')) {
+                    const rule = rules[idx];
+                    // 清理关联的图片
+                    if (rule.imageIds && rule.imageIds.length > 0) {
+                        try {
+                            await deleteImagesFromDB(rule.imageIds);
+                        } catch (e) {
+                            console.error('删除图片失败:', e);
+                        }
+                    }
                     rules.splice(idx, 1);
                     await saveToStorage(); refreshTradeSelect(); updateTotalBadge(); renderCatalog(); renderResults();
                 }
@@ -3069,13 +3983,22 @@
                 }
             };
 
+            // 匹配模式固定为AND（全部包含）
+            function getMatchMode() {
+                return 'and';
+            }
+
             window.renderResults = function() {
+                try {
                 const trade = document.getElementById('rule-tradeSelect')?.value || '';
                 const keywords = getKeywords();
+                const matchMode = getMatchMode();
                 const resultsList = document.getElementById('rule-resultsList');
                 const resultCount = document.getElementById('rule-resultCount');
                 const header = document.querySelector('#panel-rule .results-header');
                 if (!resultsList) return;
+
+                console.log('[renderResults] rules总数:', rules.length, 'trade:', trade, 'keywords:', keywords, 'matchMode:', matchMode);
 
                 if (trade === '' && keywords.length === 0) {
                     resultsList.style.display = 'none';
@@ -3089,41 +4012,78 @@
                 let filtered = rules;
                 if (trade !== '') filtered = filtered.filter(r => r.trade === trade);
 
+                console.log('[renderResults] 过滤后:', filtered.length);
+
                 let results = [];
                 if (keywords.length > 0) {
-                    filtered.forEach(rule => {
+                    filtered.forEach((rule, ruleIdx) => {
                         const content = rule.content;
+                        console.log('[renderResults] 处理规则:', rule.title, 'content长度:', (content||'').length, 'content前100字:', (content||'').substring(0,100));
                         if (ruleSearchMode === 'full') {
                             const lowerContent = content.toLowerCase();
-                            const allMatch = keywords.every(k => lowerContent.includes(k.toLowerCase()));
-                            if (allMatch) {
+                            
+                            // AND模式：必须包含所有关键词
+                            const isMatch = keywords.every(k => lowerContent.includes(k.toLowerCase()));
+                            const matchScore = isMatch ? keywords.length : 0;
+                            
+                            if (isMatch) {
                                 const snippet = content.length > 200 ? content.substring(0, 200) + '…' : content;
-                                results.push({ rule, snippetHtml: `<p>${escapeHtml(snippet)}</p>`, matchCount: 1 });
+                                results.push({ rule, snippetHtml: `<p>${escapeHtml(snippet)}</p>`, matchCount: matchScore, matchScore });
                             }
                         } else {
-                            const snippetHtml = generateRuleSnippet(rule, keywords);
-                            if (snippetHtml) {
-                                const matchCount = (snippetHtml.match(/<p>/g) || []).length;
-                                results.push({ rule, snippetHtml, matchCount });
+                            try {
+                                const snippetHtml = generateRuleSnippet(rule, keywords, ruleIdx, matchMode);
+                                console.log('[renderResults] snippetHtml长度:', (snippetHtml||'').length);
+                                if (snippetHtml) {
+                                    const matchCount = (snippetHtml.match(/<p>/g) || []).length;
+                                    // 计算匹配分数（OR模式下按命中关键词数量排序）
+                                    const matchScore = calculateMatchScore(rule, keywords, matchMode);
+                                    results.push({ rule, snippetHtml, matchCount, matchScore });
+                                }
+                            } catch(snippetErr) {
+                                console.error('[renderResults] generateRuleSnippet报错:', rule.title, snippetErr);
                             }
                         }
                     });
                 } else {
                     filtered.forEach(rule => {
-                        const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
+                        const content = rule.content || '';
+                        const paragraphs = smartSplitParagraphs(content);
                         let fullHtml = '';
                         paragraphs.forEach(para => fullHtml += `<p>${escapeHtml(para)}</p>`);
-                        results.push({ rule, snippetHtml: fullHtml, matchCount: paragraphs.length });
+                        results.push({ rule, snippetHtml: fullHtml, matchCount: paragraphs.length, matchScore: 0 });
                     });
                 }
 
-                results.sort((a, b) => b.matchCount - a.matchCount);
+                // 排序：先按匹配分数降序，再按匹配段落数降序
+                results.sort((a, b) => {
+                    if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+                    return b.matchCount - a.matchCount;
+                });
                 ruleAllResults = results;
                 ruleTotalPages = Math.ceil(results.length / rulePageSize) || 1;
                 rulePage = 1;
+                console.log('[renderResults] 最终结果数:', results.length, 'results详情:', results.map(r => ({title:r.rule.title, snippetLen:r.snippetHtml.length})));
                 displayRulePage();
                 if (resultCount) resultCount.textContent = results.length + ' 项';
+                } catch(renderErr) {
+                    console.error('[renderResults] 整体报错:', renderErr);
+                    const resultsList = document.getElementById('rule-resultsList');
+                    if (resultsList) resultsList.innerHTML = '<div style="color:red;padding:16px;">搜索出错: ' + escapeHtml(renderErr.message) + '</div>';
+                }
             };
+
+            // 计算匹配分数
+            function calculateMatchScore(rule, keywords, matchMode) {
+                const text = rule.searchText || rule.content || '';
+                // 使用规范化后的文本进行匹配
+                const normalizedText = normalizeText(text).toLowerCase();
+                const normalizedKeywords = keywords.map(k => normalizeText(k).toLowerCase());
+                
+                // AND模式：全部匹配得满分
+                const allMatch = normalizedKeywords.every(k => normalizedText.includes(k));
+                return allMatch ? keywords.length : 0;
+            }
 
             function displayRulePage() {
                 const resultsList = document.getElementById('rule-resultsList');
@@ -3136,8 +4096,25 @@
                     return;
                 }
 
+                // 获取当前搜索状态
+                const keywords = getKeywords();
+                const matchMode = getMatchMode();
+                const hasKeywords = keywords.length > 0;
 
+                // 获取原始关键词用于显示
+                const rawKeywords = getRawKeywords();
+                
                 let html = '<div class="result-list">';
+                
+                // 添加搜索提示
+                if (hasKeywords) {
+                    html += `<div style="margin-bottom:16px;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:0.9rem;color:#0369a1;">
+                        <strong>🔍 搜索条件：</strong>
+                        <span style="margin-left:8px;padding:4px 10px;background:#fff;border-radius:4px;border:1px solid #7dd3fc;">全部包含</span>
+                        <span style="margin-left:8px;">关键词：${rawKeywords.map(kw => `<span style="padding:2px 8px;background:#e0f2fe;border-radius:4px;margin-right:4px;">${escapeHtml(kw)}</span>`).join('')}</span>
+                    </div>`;
+                }
+                
                 pageResults.forEach(item => {
                     const ruleIdx = ruleAllResults.indexOf(item);
                     const absIdx = rules.indexOf(item.rule);
@@ -3155,6 +4132,13 @@
                     html += '<button class="btn btn-info btn-small" style="flex-shrink:0;" onclick="event.stopPropagation();ruleViewFullText(' + absIdx + ')">📄 查看全文</button>';
                     html += '</div>';
                     html += '<span class="rule-trade">' + escapeHtml(item.rule.trade) + '</span>';
+                    
+                    // 添加匹配信息提示
+                    if (hasKeywords) {
+                        const matchInfoText = `✓ 匹配 ${item.matchCount} 个段落`;
+                        html += `<div class="rule-match-info" style="font-size:0.8rem;color:#64748b;margin-bottom:8px;padding:4px 8px;background:#f1f5f9;border-radius:4px;display:inline-block;">${matchInfoText}</div>`;
+                    }
+                    
                     html += '<div class="rule-snippet">' + item.snippetHtml + '</div>';
                     html += '</div>';
                 });
@@ -3178,14 +4162,17 @@
             // 存储每条搜索结果对应的首个命中段落文本（key: rule绝对索引）
             const _ruleFirstMatchPara = {};
 
-            // 根据当前关键词，找规章中第一个所有关键词同时命中的段落原文
+            // 根据当前关键词，找规章中第一个命中的段落原文
             function _getRuleFirstMatchPara(rule) {
                 const keywords = getKeywords().filter(k => k.trim() !== '');
                 if (keywords.length === 0) return null;
-                const paragraphs = rule.content.split(/\r?\n/).filter(p => p.trim() !== '');
+                const matchMode = getMatchMode();
+                const paragraphs = smartSplitParagraphs(rule.content);
                 const lowerKws = keywords.map(k => k.toLowerCase());
+                
                 for (let i = 0; i < paragraphs.length; i++) {
                     const lp = paragraphs[i].toLowerCase();
+                    // AND模式：第一个包含所有关键词的段落
                     if (lowerKws.every(kw => lp.includes(kw))) return paragraphs[i];
                 }
                 return null;
@@ -3203,7 +4190,7 @@
                 { bg: '#fde8f8', text: '#805ad5', border: '#d6bcfa' }
             ];
 
-            window.ruleViewFullText = function(idx) {
+            window.ruleViewFullText = async function(idx) {
                 const rule = rules[idx];
                 if (!rule) return;
                 const keywords = getKeywords().filter(k => k.trim() !== '');
@@ -3211,37 +4198,87 @@
                 // 填入标题与专业
                 document.getElementById('rule-fullViewTitle').textContent = rule.title;
                 document.getElementById('rule-fullViewTrade').textContent = rule.trade;
-                document.getElementById('rule-fullViewLength').textContent = rule.content.length + ' 字';
+                const contentLength = (rule.searchText || rule.content || '').length;
+                document.getElementById('rule-fullViewLength').textContent = contentLength + ' 字';
 
                 const bodyEl = document.getElementById('rule-fullContentBody');
                 _fvHighlights = [];
                 _fvCurHl = -1;
 
-                if (keywords.length > 0) {
-                    // ---------- 构建带高亮的全文HTML ----------
-                    // 1. 按行拆分，同时记录每行在全文中的"行号"（含空行用于位置对应）
-                    const lines = rule.content.split(/\n/);
+                // 获取要显示的内容：优先使用 contentHtml，否则使用 content
+                const hasHtml = rule.contentHtml && rule.contentHtml.trim().length > 0;
+                const contentToShow = hasHtml ? rule.contentHtml : (rule.content || '');
 
-                    // 2. 对每行进行 HTML 转义后多关键词高亮（每个kw用独立data-kw-idx）
-                    //    每行用 <span data-line="N"> 包裹，供后续定位使用
-                    const hlParts = lines.map((line, lineIdx) => {
-                        if (!line.trim()) return '<span data-line="' + lineIdx + '"></span>';
-                        let escaped = escapeHtml(line);
+                if (keywords.length > 0) {
+                    // ---------- 富文本模式（有 contentHtml）----------
+                    if (hasHtml) {
+                        // 1. 渲染 HTML 并替换图片占位符
+                        let html = await renderRuleHtml(contentToShow);
+                        
+                        // 2. 注入关键词高亮（在文本节点中）
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+                        
+                        function highlightNode(node, kwIdx) {
+                            if (node.nodeType === Node.TEXT_NODE) {
+                                const text = node.textContent;
+                                const kw = keywords[kwIdx];
+                                const regex = new RegExp('(' + escapeRegExp(kw) + ')', 'gi');
+                                if (regex.test(text)) {
+                                    const span = document.createElement('span');
+                                    span.innerHTML = text.replace(regex, (match) => {
+                                        const color = KW_COLORS[kwIdx % KW_COLORS.length];
+                                        return `<mark class="rule-fv-hl" data-kw-idx="${kwIdx}" style="background:${color.bg};color:${color.text};font-weight:600;padding:1px 3px;border-radius:3px;border:1px solid ${color.border};">${match}</mark>`;
+                                    });
+                                    return span;
+                                }
+                            } else if (node.nodeType === Node.ELEMENT_NODE && node.childNodes) {
+                                const children = Array.from(node.childNodes);
+                                children.forEach((child, i) => {
+                                    const replaced = highlightNode(child, kwIdx);
+                                    if (replaced !== child) {
+                                        node.replaceChild(replaced, child);
+                                    }
+                                });
+                            }
+                            return node;
+                        }
+                        
+                        // 对每个关键词进行高亮
                         keywords.forEach((kw, kwIdx) => {
                             if (!kw) return;
-                            const color = KW_COLORS[kwIdx % KW_COLORS.length];
-                            const regex = new RegExp('(' + escapeRegExp(escapeHtml(kw)) + ')', 'gi');
-                            escaped = escaped.replace(regex,
-                                `<mark class="rule-fv-hl" data-kw-idx="${kwIdx}" data-line="${lineIdx}" style="background:${color.bg};color:${color.text};font-weight:600;padding:1px 3px;border-radius:3px;border:1px solid ${color.border};">$1</mark>`
-                            );
+                            highlightNode(tempDiv, kwIdx);
                         });
-                        return '<span data-line="' + lineIdx + '">' + escaped + '</span>';
-                    });
-                    bodyEl.innerHTML = hlParts.join('<br>');
-
-                    // 3. 收集所有高亮元素（按文档顺序）
-                    _fvHighlights = Array.from(bodyEl.querySelectorAll('.rule-fv-hl'));
-                    _fvCurHl = _fvHighlights.length > 0 ? 0 : -1;
+                        
+                        bodyEl.innerHTML = tempDiv.innerHTML;
+                        // 富文本模式使用normal，让HTML标签（如<p>）控制换行
+                        bodyEl.style.whiteSpace = 'normal';
+                        
+                        // 收集高亮元素
+                        _fvHighlights = Array.from(bodyEl.querySelectorAll('.rule-fv-hl'));
+                        _fvCurHl = _fvHighlights.length > 0 ? 0 : -1;
+                    } else {
+                        // ---------- 纯文本模式（无 contentHtml，使用旧 content）----------
+                        const lines = contentToShow.split(/\n/);
+                        const hlParts = lines.map((line, lineIdx) => {
+                            if (!line.trim()) return '<span data-line="' + lineIdx + '"></span>';
+                            let escaped = escapeHtml(line);
+                            keywords.forEach((kw, kwIdx) => {
+                                if (!kw) return;
+                                const color = KW_COLORS[kwIdx % KW_COLORS.length];
+                                const regex = new RegExp('(' + escapeRegExp(escapeHtml(kw)) + ')', 'gi');
+                                escaped = escaped.replace(regex,
+                                    `<mark class="rule-fv-hl" data-kw-idx="${kwIdx}" data-line="${lineIdx}" style="background:${color.bg};color:${color.text};font-weight:600;padding:1px 3px;border-radius:3px;border:1px solid ${color.border};">$1</mark>`
+                                );
+                            });
+                            return '<span data-line="' + lineIdx + '">' + escaped + '</span>';
+                        });
+                        bodyEl.innerHTML = hlParts.join('<br>');
+                        bodyEl.style.whiteSpace = 'pre-wrap';
+                        
+                        _fvHighlights = Array.from(bodyEl.querySelectorAll('.rule-fv-hl'));
+                        _fvCurHl = _fvHighlights.length > 0 ? 0 : -1;
+                    }
 
                     // ---------- 统计各关键词命中数 ----------
                     const kwHitCount = new Array(keywords.length).fill(0);
@@ -3278,13 +4315,11 @@
                     }
 
                     // ---------- 确定初始定位目标 ----------
-                    // 优先定位到搜索结果中展示的首个命中段落（与摘要同一段），
-                    // 找该段落中第一个高亮元素的位置
                     const anchorPara = _ruleFirstMatchPara[idx] || null;
-                    let anchorHlIdx = 0; // 默认第一个高亮
+                    let anchorHlIdx = 0;
                     if (anchorPara && _fvHighlights.length > 0) {
-                        // 找全文中与 anchorPara 对应行号的第一个高亮
-                        const lines2 = rule.content.split(/\n/);
+                        const searchText = rule.searchText || rule.content || '';
+                        const lines2 = searchText.split(/\n/);
                         const anchorLineIdx = lines2.findIndex(l => l === anchorPara);
                         if (anchorLineIdx >= 0) {
                             const found = _fvHighlights.findIndex(el =>
@@ -3296,8 +4331,19 @@
                     _fvCurHl = anchorHlIdx;
 
                 } else {
-                    // 无关键词：直接显示纯文本，回到顶部
-                    bodyEl.textContent = rule.content;
+                    // ---------- 无关键词模式 ----------
+                    if (hasHtml) {
+                        // 富文本模式
+                        const html = await renderRuleHtml(contentToShow);
+                        bodyEl.innerHTML = html;
+                        bodyEl.style.whiteSpace = 'normal';
+                    } else {
+                        // 纯文本模式
+                        const plainText = rule.searchText || rule.content || '';
+                        const lines = plainText.split(/\n/);
+                        bodyEl.innerHTML = lines.map(line => escapeHtml(line)).join('<br>');
+                        bodyEl.style.whiteSpace = 'pre-wrap';
+                    }
                     _fvHighlights = [];
                     _fvCurHl = -1;
                     document.getElementById('rule-fullViewHlBar').style.display = 'none';
@@ -3310,6 +4356,187 @@
                 if (_fvHighlights.length > 0) {
                     setTimeout(() => ruleFvScrollToHl(_fvCurHl), 150);
                 }
+                
+                // 绑定图片点击放大功能
+                setTimeout(() => {
+                    const images = bodyEl.querySelectorAll('img');
+                    images.forEach(img => {
+                        img.addEventListener('click', function() {
+                            this.classList.toggle('zoomed');
+                        });
+                    });
+                }, 200);
+            };
+
+            // 点击搜索结果段落时打开全文并滚动到对应位置
+            window.ruleViewFullTextAndScroll = async function(ruleIdx, paraIdx) {
+                const rule = rules[ruleIdx];
+                if (!rule) return;
+                const keywords = getKeywords().filter(k => k.trim() !== '');
+
+                // 填入标题与专业
+                document.getElementById('rule-fullViewTitle').textContent = rule.title;
+                document.getElementById('rule-fullViewTrade').textContent = rule.trade;
+                const contentLength = (rule.searchText || rule.content || '').length;
+                document.getElementById('rule-fullViewLength').textContent = contentLength + ' 字';
+
+                const bodyEl = document.getElementById('rule-fullContentBody');
+                _fvHighlights = [];
+                _fvCurHl = -1;
+
+                // 使用与搜索时相同的智能段落切分逻辑
+                const allParagraphs = smartSplitParagraphs(rule.content);
+                
+                // paraIdx 是过滤后的索引，直接使用
+                const targetPara = allParagraphs[paraIdx] || '';
+                const targetLineIdx = paraIdx;
+
+                // 优先使用 contentHtml（富文本模式）
+                const hasHtml = rule.contentHtml && rule.contentHtml.trim().length > 0;
+                const contentToShow = hasHtml ? rule.contentHtml : (rule.content || '');
+
+                if (keywords.length > 0) {
+                    if (hasHtml) {
+                        // ---------- 富文本模式（有 contentHtml）----------
+                        let html = await renderRuleHtml(contentToShow);
+                        
+                        // 注入关键词高亮（在文本节点中）
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+                        
+                        function highlightNode(node, kwIdx) {
+                            if (node.nodeType === Node.TEXT_NODE) {
+                                const text = node.textContent;
+                                const kw = keywords[kwIdx];
+                                const regex = new RegExp('(' + escapeRegExp(kw) + ')', 'gi');
+                                if (regex.test(text)) {
+                                    const span = document.createElement('span');
+                                    span.innerHTML = text.replace(regex, (match) => {
+                                        const color = KW_COLORS[kwIdx % KW_COLORS.length];
+                                        return `<mark class="rule-fv-hl" data-kw-idx="${kwIdx}" style="background:${color.bg};color:${color.text};font-weight:600;padding:1px 3px;border-radius:3px;border:1px solid ${color.border};">${match}</mark>`;
+                                    });
+                                    return span;
+                                }
+                            } else if (node.nodeType === Node.ELEMENT_NODE && node.childNodes) {
+                                const children = Array.from(node.childNodes);
+                                children.forEach((child, i) => {
+                                    const replaced = highlightNode(child, kwIdx);
+                                    if (replaced !== child) {
+                                        node.replaceChild(replaced, child);
+                                    }
+                                });
+                            }
+                            return node;
+                        }
+                        
+                        // 对每个关键词进行高亮
+                        keywords.forEach((kw, kwIdx) => {
+                            if (!kw) return;
+                            highlightNode(tempDiv, kwIdx);
+                        });
+                        
+                        bodyEl.innerHTML = tempDiv.innerHTML;
+                        bodyEl.style.whiteSpace = 'pre-wrap';
+                        
+                        // 收集高亮元素
+                        _fvHighlights = Array.from(bodyEl.querySelectorAll('.rule-fv-hl'));
+                        _fvCurHl = _fvHighlights.length > 0 ? 0 : -1;
+                    } else {
+                        // ---------- 纯文本模式（无 contentHtml，使用旧 content）----------
+                        const lines = contentToShow.split(/\n/);
+                        const hlParts = lines.map((line, lineIdx) => {
+                            if (!line.trim()) return '<span data-line="' + lineIdx + '"></span>';
+                            let escaped = escapeHtml(line);
+                            keywords.forEach((kw, kwIdx) => {
+                                if (!kw) return;
+                                const color = KW_COLORS[kwIdx % KW_COLORS.length];
+                                const regex = new RegExp('(' + escapeRegExp(escapeHtml(kw)) + ')', 'gi');
+                                escaped = escaped.replace(regex,
+                                    `<mark class="rule-fv-hl" data-kw-idx="${kwIdx}" data-line="${lineIdx}" style="background:${color.bg};color:${color.text};font-weight:600;padding:1px 3px;border-radius:3px;border:1px solid ${color.border};">$1</mark>`
+                                );
+                            });
+                            return '<span data-line="' + lineIdx + '">' + escaped + '</span>';
+                        });
+                        bodyEl.innerHTML = hlParts.join('<br>');
+                        bodyEl.style.whiteSpace = 'pre-wrap';
+                        
+                        _fvHighlights = Array.from(bodyEl.querySelectorAll('.rule-fv-hl'));
+                        _fvCurHl = _fvHighlights.length > 0 ? 0 : -1;
+                    }
+
+                    // 统计关键词命中数
+                    const kwHitCount = new Array(keywords.length).fill(0);
+                    _fvHighlights.forEach(el => {
+                        const ki = parseInt(el.getAttribute('data-kw-idx'));
+                        if (!isNaN(ki)) kwHitCount[ki] = (kwHitCount[ki] || 0) + 1;
+                    });
+                    const totalHits = _fvHighlights.length;
+
+                    // 顶部提示栏
+                    const hlBar = document.getElementById('rule-fullViewHlBar');
+                    const hlTotal = document.getElementById('rule-fullViewHlTotal');
+                    const hlKwTags = document.getElementById('rule-fullViewHlKwTags');
+                    const hlBarText = document.getElementById('rule-fullViewHlBarText');
+
+                    if (totalHits > 0) {
+                        hlBar.style.display = 'flex';
+                        hlBarText.textContent = '已找到';
+                        hlTotal.textContent = totalHits;
+                        let tagsHtml = '';
+                        keywords.forEach((kw, ki) => {
+                            const c = KW_COLORS[ki % KW_COLORS.length];
+                            tagsHtml += `<span class="fv-kw-tag" style="background:${c.bg};color:${c.text};border:1px solid ${c.border};">"${escapeHtml(kw)}" ${kwHitCount[ki]} 处</span>`;
+                        });
+                        hlKwTags.innerHTML = tagsHtml;
+                    } else {
+                        hlBar.style.display = 'none';
+                        hlKwTags.innerHTML = '';
+                    }
+                } else {
+                    // ---------- 无关键词模式 ----------
+                    if (hasHtml) {
+                        // 富文本模式
+                        const html = await renderRuleHtml(contentToShow);
+                        bodyEl.innerHTML = html;
+                        bodyEl.style.whiteSpace = 'normal';
+                    } else {
+                        // 纯文本模式
+                        const plainText = rule.searchText || rule.content || '';
+                        const lines = plainText.split(/\n/);
+                        bodyEl.innerHTML = lines.map(line => escapeHtml(line)).join('<br>');
+                        bodyEl.style.whiteSpace = 'pre-wrap';
+                    }
+                    _fvHighlights = [];
+                    _fvCurHl = -1;
+                    document.getElementById('rule-fullViewHlBar').style.display = 'none';
+                    document.getElementById('rule-fullViewHlKwTags').innerHTML = '';
+                    bodyEl.scrollTop = 0;
+                }
+
+                openModal('rule-fullViewModal');
+                
+                // 延迟滚动到目标段落
+                setTimeout(() => {
+                    if (_fvHighlights.length > 0) {
+                        ruleFvScrollToHl(_fvCurHl);
+                    } else if (targetLineIdx >= 0) {
+                        // 无高亮时直接滚动到目标行
+                        const targetEl = bodyEl.querySelector('[data-line="' + targetLineIdx + '"]');
+                        if (targetEl) {
+                            targetEl.scrollIntoView({ behavior: 'auto', block: 'center' });
+                        }
+                    }
+                }, 300);
+                
+                // 绑定图片点击放大功能
+                setTimeout(() => {
+                    const images = bodyEl.querySelectorAll('img');
+                    images.forEach(img => {
+                        img.addEventListener('click', function() {
+                            this.classList.toggle('zoomed');
+                        });
+                    });
+                }, 350);
             };
 
             function ruleFvScrollToHl(idx) {
@@ -4580,31 +5807,198 @@
                 document.getElementById('handbook-jsonFile').click();
             });
 
-            document.getElementById('handbook-jsonFile').addEventListener('change', function(e) {
+            document.getElementById('handbook-jsonFile').addEventListener('change', async function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    try {
-                        const imported = JSON.parse(ev.target.result);
-                        if (!Array.isArray(imported)) throw new Error('数据必须是JSON数组');
-                        if (imported.length > 0 && !imported[0].chapter) throw new Error('缺少必要字段 chapter');
-                        const modal = document.getElementById('handbook-importModal');
-                        document.getElementById('handbook-importMessage').innerText = `将导入 ${imported.length} 条记录（四级结构），确定覆盖现有数据吗？`;
-                        modal.classList.add('active');
-                        document.getElementById('handbook-confirmImport').onclick = () => {
-                            handbookData = imported;
-                            rebuildMaps();
-                            renderChapterSelect();
-                            hideFrom(2);
-                            saveToStorage();
-                            closeModal('handbook-importModal');
-                        };
-                    } catch (err) { alert('解析失败：' + err.message); }
-                };
-                reader.readAsText(file);
+                
+                const fileName = file.name.toLowerCase();
+                
+                if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+                    // DOCX导入
+                    await importHandbookFromDocx(file);
+                } else {
+                    // JSON导入
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        try {
+                            const imported = JSON.parse(ev.target.result);
+                            if (!Array.isArray(imported)) throw new Error('数据必须是JSON数组');
+                            if (imported.length > 0 && !imported[0].chapter) throw new Error('缺少必要字段 chapter');
+                            const modal = document.getElementById('handbook-importModal');
+                            document.getElementById('handbook-importMessage').innerText = `将导入 ${imported.length} 条记录（四级结构），确定覆盖现有数据吗？`;
+                            modal.classList.add('active');
+                            document.getElementById('handbook-confirmImport').onclick = () => {
+                                handbookData = imported;
+                                rebuildMaps();
+                                renderChapterSelect();
+                                hideFrom(2);
+                                saveToStorage();
+                                closeModal('handbook-importModal');
+                            };
+                        } catch (err) { alert('解析失败：' + err.message); }
+                    };
+                    reader.readAsText(file);
+                }
                 e.target.value = '';
             });
+
+            // DOCX导入功能：解析四级目录结构
+            async function importHandbookFromDocx(file) {
+                if (typeof mammoth === 'undefined') {
+                    alert('mammoth 库未加载，请检查网络连接');
+                    return;
+                }
+                
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.convertToHtml({ arrayBuffer });
+                    const html = result.value;
+                    
+                    // 解析HTML提取四级结构
+                    const parsedData = parseHandbookHtml(html);
+                    
+                    if (parsedData.length === 0) {
+                        alert('未能从DOCX中解析出有效的四级结构数据');
+                        return;
+                    }
+                    
+                    const modal = document.getElementById('handbook-importModal');
+                    document.getElementById('handbook-importMessage').innerText = 
+                        `成功解析 ${parsedData.length} 条记录（四级结构），确定导入并覆盖现有数据吗？`;
+                    modal.classList.add('active');
+                    document.getElementById('handbook-confirmImport').onclick = () => {
+                        handbookData = parsedData;
+                        rebuildMaps();
+                        renderChapterSelect();
+                        hideFrom(2);
+                        saveToStorage();
+                        closeModal('handbook-importModal');
+                        alert(`成功导入 ${parsedData.length} 条检查手册记录`);
+                    };
+                } catch (err) {
+                    console.error('DOCX导入失败:', err);
+                    alert('DOCX导入失败: ' + err.message);
+                }
+            }
+
+            // 解析检查手册HTML为四级/五级结构数据
+            function parseHandbookHtml(html) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const data = [];
+                
+                let currentChapter = '';
+                let currentSection = '';
+                let currentItem = '';
+                let currentSubItem = '';
+                let currentContent = '';
+                
+                // 获取所有段落和标题元素，保持文档顺序
+                const allElements = Array.from(doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li'));
+                
+                // 辅助函数：保存当前记录
+                function saveRecord() {
+                    if (currentChapter && currentSection) {
+                        data.push({
+                            chapter: currentChapter,
+                            section: currentSection,
+                            item: currentItem || '检查项点',
+                            subitem: currentSubItem,
+                            content: currentContent.trim()
+                        });
+                    }
+                }
+                
+                allElements.forEach(el => {
+                    const text = el.textContent.trim();
+                    if (!text) return;
+                    
+                    const tagName = el.tagName.toLowerCase();
+                    const style = el.getAttribute('style') || '';
+                    const className = el.className || '';
+                    
+                    // 检测标题级别：支持 h1-h5 标签和 style3-7 类名
+                    const isH1 = tagName === 'h1' || className.includes('style3');
+                    const isH2 = tagName === 'h2' || className.includes('style4');
+                    const isH3 = tagName === 'h3' || className.includes('style5');
+                    const isH4 = tagName === 'h4' || className.includes('style6');
+                    const isH5 = tagName === 'h5' || className.includes('style7');
+                    
+                    // 同时检测文本模式作为备选
+                    const isLevel1Pattern = /^第[一二三四五六七八九十]+章/.test(text);
+                    const isLevel2Pattern = /^[一二三四五六七八九十]+、/.test(text);
+                    const isLevel3Pattern = /^[（(][一二三四五六七八九十]+[)）]/.test(text);
+                    const isLevel4Pattern = /^\d+\./.test(text);
+                    const isLevel5Pattern = /^[（(]\d+[)）]/.test(text);
+                    
+                    // 第1级：第一章、第二章... 或 h1/style3 -> 系统专业(chapter)
+                    if (isH1 || (isLevel1Pattern && text.length < 50)) {
+                        saveRecord();
+                        // 保留完整标题（包括序号）
+                        currentChapter = text.trim();
+                        currentSection = '';
+                        currentItem = '';
+                        currentSubItem = '';
+                        currentContent = '';
+                    }
+                    // 第2级：一、二、三... 或 h2/style4 -> 专业分类(section)
+                    else if (isH2 || (isLevel2Pattern && text.length < 100) ||
+                             (/^第[一二三四五六七八九十]+节/.test(text) && text.length < 100)) {
+                        saveRecord();
+                        // 保留完整标题（包括序号）
+                        currentSection = text.trim();
+                        currentItem = '';
+                        currentSubItem = '';
+                        currentContent = '';
+                    }
+                    // 第3级：(一)、(二)... 或 h3/style5 -> 检查项点(item)
+                    else if (isH3 || (isLevel3Pattern && text.length < 150)) {
+                        saveRecord();
+                        currentItem = text;
+                        currentSubItem = '';
+                        currentContent = '';
+                    }
+                    // 第4级：1. 2. ... 或 h4/style6 -> 检查子项(subitem)
+                    else if (isH4 || (isLevel4Pattern && text.length < 200)) {
+                        saveRecord();
+                        currentSubItem = text;
+                        currentContent = '';
+                    }
+                    // 第5级：(1) (2)... 或 h5/style7 -> 内容(content)
+                    else if (isH5 || isLevel5Pattern) {
+                        currentContent += (currentContent ? '\n' : '') + text;
+                    }
+                    // 普通内容
+                    else {
+                        currentContent += (currentContent ? '\n' : '') + text;
+                    }
+                });
+                
+                // 保存最后一条记录
+                saveRecord();
+                
+                // 如果没有解析出结构，尝试按段落简单分割
+                if (data.length === 0) {
+                    const paragraphs = doc.body.querySelectorAll('p');
+                    let tempChapter = '通用系统专业';
+                    let tempSection = '通用专业分类';
+                    
+                    paragraphs.forEach((p, idx) => {
+                        const text = p.textContent.trim();
+                        if (text) {
+                            data.push({
+                                chapter: tempChapter,
+                                section: tempSection,
+                                item: `检查项点${idx + 1}`,
+                                subitem: '',
+                                content: text
+                            });
+                        }
+                    });
+                }
+                
+                return data;
+            }
 
             loadFromStorage();
         })();
@@ -4683,6 +6077,43 @@
                 else if (activePanel.id === 'panel-phone') phoneDoSearch();
             }
         });
+
+        // [DEBUG] 规章制度搜索调试工具
+        setTimeout(function() {
+            // 检查 rules 数据
+            if (typeof rules !== 'undefined') {
+                console.log('[DEBUG] rules总数:', rules.length);
+                rules.forEach(function(r, i) {
+                    console.log('[DEBUG] rule[' + i + ']:', {
+                        title: r.title,
+                        trade: r.trade,
+                        contentLen: (r.content || '').length,
+                        contentHtmlLen: (r.contentHtml || '').length,
+                        searchTextLen: (r.searchText || '').length,
+                        contentPreview: (r.content || '').substring(0, 80),
+                        isHtml: (r.content || '').indexOf('<') > -1
+                    });
+                });
+                // 在页面底部显示调试信息面板
+                var debugDiv = document.createElement('div');
+                debugDiv.id = 'rule-debug-panel';
+                debugDiv.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1e293b;color:#e2e8f0;padding:12px;font-size:12px;font-family:monospace;z-index:99999;max-height:200px;overflow-y:auto;border-top:2px solid #f59e0b;';
+                var info = '<b style="color:#f59e0b;">🔍 规章搜索调试面板</b> | rules总数: ' + rules.length;
+                rules.forEach(function(r, i) {
+                    var cl = (r.content || '').length;
+                    var chl = (r.contentHtml || '').length;
+                    var sl = (r.searchText || '').length;
+                    info += '<br>[' + i + '] <b>' + (r.title || '无标题') + '</b> (' + (r.trade || '') + ') | content:' + cl + '字 | contentHtml:' + chl + '字 | searchText:' + sl + '字 | isHtml:' + ((r.content || '').indexOf('<') > -1);
+                });
+                debugDiv.innerHTML = info;
+                // 点击关闭
+                debugDiv.title = '点击关闭';
+                debugDiv.onclick = function() { debugDiv.remove(); };
+                document.body.appendChild(debugDiv);
+            } else {
+                console.log('[DEBUG] rules 变量未定义（可能在闭包内）');
+            }
+        }, 3000);
 
         window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
