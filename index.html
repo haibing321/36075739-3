@@ -3349,39 +3349,44 @@
                 return result;
             }
 
-            // 智能段落切分：先按换行分割，再对超长行按条目编号模式二次分割
+            // 智能段落切分：先按换行分割，再对超长行按句号等标点二次分割
             function smartSplitParagraphs(text) {
                 if (!text) return [];
                 let rawParagraphs = text.split(/\r?\n/).filter(p => p.trim() !== '');
                 const paragraphs = [];
-                // 条目编号模式匹配
+                // 条目编号模式匹配（用于在长段落中识别独立条目）
                 const itemPatterns = [
                     /^(?:附表\s*\d+|附件\s*\d+)/,
                     /^第[一二三四五六七八九十百千\d]+[章节条款款项]/,
                     /^(?:^|\s)\d+[\.、]/,
                     /^[（(]\d+[)）]/
                 ];
+                const MAX_PARA_LEN = 300; // 每段最大字符数
                 rawParagraphs.forEach(para => {
-                    if (para.length > 200) {
-                        // 对长段落按条目边界二次分割
-                        let lastSplit = 0;
-                        const lines = para.split(/(?<=[。；！？\n])/);
-                        const parts = [];
-                        lines.forEach(line => {
-                            if (parts.length === 0) {
-                                parts.push(line);
-                            } else if (itemPatterns.some(p => p.test(line.trim()))) {
-                                parts.push(line);
-                            } else {
-                                parts[parts.length - 1] += line;
-                            }
-                        });
-                        parts.forEach(p => {
-                            if (p.trim()) paragraphs.push(p.trim());
-                        });
-                    } else {
+                    if (para.length <= MAX_PARA_LEN) {
                         paragraphs.push(para);
+                        return;
                     }
+                    // 对长段落按句号等标点分割成句子
+                    const sentences = para.split(/(?<=[。；！？])/).filter(s => s.trim() !== '');
+                    let currentPart = '';
+                    sentences.forEach(sentence => {
+                        const trimmed = sentence.trim();
+                        if (!trimmed) return;
+                        // 如果当前句子以条目编号开头，且当前已有内容，先断开
+                        if (currentPart && itemPatterns.some(p => p.test(trimmed))) {
+                            paragraphs.push(currentPart.trim());
+                            currentPart = trimmed;
+                        } else if (currentPart.length + trimmed.length > MAX_PARA_LEN) {
+                            // 超过最大长度，断开
+                            if (currentPart) paragraphs.push(currentPart.trim());
+                            currentPart = trimmed;
+                        } else {
+                            // 合并到当前段落
+                            currentPart += trimmed;
+                        }
+                    });
+                    if (currentPart.trim()) paragraphs.push(currentPart.trim());
                 });
                 return paragraphs.length > 0 ? paragraphs : rawParagraphs;
             }
@@ -3960,12 +3965,14 @@
                                             imageIds = item.imageIds;
                                         }
                                         const dupIdx = rules.findIndex(r => r.title.toLowerCase().trim() === item.title.toLowerCase().trim() && r.trade === itemTrade);
+                                        // 判断是否有真正的HTML内容（包含HTML标签）
+                                        const hasRealHtml = item.contentHtml && /<[a-z][\s\S]*>/i.test(item.contentHtml);
                                         const ruleData = { 
                                             trade: itemTrade, 
                                             title: item.title, 
                                             content: item.content || stripHtml(item.contentHtml),
-                                            contentHtml: item.contentHtml || item.content,
-                                            searchText: item.searchText || item.content || stripHtml(item.contentHtml),
+                                            contentHtml: hasRealHtml ? item.contentHtml : '',
+                                            searchText: item.searchText || normalizeSearchText(item.content || stripHtml(item.contentHtml)),
                                             imageIds: item.imageIds || []
                                         };
                                         if (dupIdx !== -1) rules[dupIdx] = ruleData;
@@ -4005,19 +4012,26 @@
                 if (exportRules.length === 0) { alert('所选专业暂无规章'); return; }
                 
                 if (format === 'zip') {
-                    // ZIP导出（包含图片）
-                    await exportToZipWithSelection(selectedTrade, exportRules);
-                } else {
-                    // JSON导出
-                    const dataStr = JSON.stringify(exportRules, null, 2);
-                    const blob = new Blob([dataStr], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = selectedTrade ? '铁路规章_' + selectedTrade + '_' + new Date().toISOString().slice(0, 10) + '.json' : '铁路规章_全部_' + new Date().toISOString().slice(0, 10) + '.json';
-                    a.click();
-                    URL.revokeObjectURL(url);
+                    // 检查JSZip是否可用
+                    if (typeof JSZip === 'undefined') {
+                        alert('JSZip 库未加载（可能网络问题），将自动使用 JSON 格式导出。\n\n提示：如需包含图片的完整备份，请确保网络正常后重试。');
+                        format = 'json';
+                    } else {
+                        // ZIP导出（包含图片）
+                        await exportToZipWithSelection(selectedTrade, exportRules);
+                        closeModal('rule-exportModal');
+                        return;
+                    }
                 }
+                // JSON导出
+                const dataStr = JSON.stringify(exportRules, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = selectedTrade ? '铁路规章_' + selectedTrade + '_' + new Date().toISOString().slice(0, 10) + '.json' : '铁路规章_全部_' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
                 closeModal('rule-exportModal');
             }
 
@@ -4554,7 +4568,8 @@
                 _fvCurHl = -1;
 
                 // 获取要显示的内容：优先使用 contentHtml，否则使用 content
-                const hasHtml = rule.contentHtml && rule.contentHtml.trim().length > 0;
+                // 判断是否有真正的HTML内容（排除纯文本被误存为contentHtml的情况）
+                const hasHtml = rule.contentHtml && /<[a-z][\s\S]*>/i.test(rule.contentHtml);
                 const contentToShow = hasHtml ? rule.contentHtml : (rule.content || '');
 
                 if (keywords.length > 0) {
@@ -4608,10 +4623,11 @@
                         _fvCurHl = _fvHighlights.length > 0 ? 0 : -1;
                     } else {
                         // ---------- 纯文本模式（无 contentHtml，使用旧 content）----------
-                        const lines = contentToShow.split(/\n/);
-                        const hlParts = lines.map((line, lineIdx) => {
-                            if (!line.trim()) return '<span data-line="' + lineIdx + '"></span>';
-                            let escaped = escapeHtml(line);
+                        // 使用 smartSplitParagraphs 智能分段，兼容旧数据无换行的情况
+                        const paragraphs = smartSplitParagraphs(contentToShow);
+                        const hlParts = paragraphs.map((para, lineIdx) => {
+                            if (!para.trim()) return '<span data-line="' + lineIdx + '"></span>';
+                            let escaped = escapeHtml(para);
                             keywords.forEach((kw, kwIdx) => {
                                 if (!kw) return;
                                 const color = KW_COLORS[kwIdx % KW_COLORS.length];
@@ -4725,11 +4741,11 @@
                         bodyEl.style.whiteSpace = 'normal';
                         setupLazyImageObserver(bodyEl);
                     } else {
-                        // 纯文本模式
-                        const plainText = rule.searchText || rule.content || '';
-                        const lines = plainText.split(/\n/);
-                        bodyEl.innerHTML = lines.map(line => escapeHtml(line)).join('<br>');
-                        bodyEl.style.whiteSpace = 'pre-wrap';
+                        // 纯文本模式：使用 content，通过 smartSplitParagraphs 智能分段（兼容旧数据无换行）
+                        const plainText = rule.content || contentToShow || '';
+                        const paragraphs = smartSplitParagraphs(plainText);
+                        bodyEl.innerHTML = paragraphs.map(para => '<p style="margin:4px 0;line-height:1.6;">' + escapeHtml(para) + '</p>').join('');
+                        bodyEl.style.whiteSpace = 'normal';
                     }
                     _fvHighlights = [];
                     _fvCurHl = -1;
@@ -4779,8 +4795,8 @@
                 const targetPara = allParagraphs[paraIdx] || '';
                 const targetLineIdx = paraIdx;
 
-                // 优先使用 contentHtml（富文本模式）
-                const hasHtml = rule.contentHtml && rule.contentHtml.trim().length > 0;
+                // 优先使用 contentHtml（富文本模式），检测是否含真正的HTML标签
+                const hasHtml = rule.contentHtml && /<[a-z][\s\S]*>/i.test(rule.contentHtml);
                 const contentToShow = hasHtml ? rule.contentHtml : (rule.content || '');
 
                 if (keywords.length > 0) {
@@ -4832,10 +4848,11 @@
                         _fvCurHl = _fvHighlights.length > 0 ? 0 : -1;
                     } else {
                         // ---------- 纯文本模式（无 contentHtml，使用旧 content）----------
-                        const lines = contentToShow.split(/\n/);
-                        const hlParts = lines.map((line, lineIdx) => {
-                            if (!line.trim()) return '<span data-line="' + lineIdx + '"></span>';
-                            let escaped = escapeHtml(line);
+                        // 使用 smartSplitParagraphs 智能分段，兼容旧数据无换行的情况
+                        const paragraphs = smartSplitParagraphs(contentToShow);
+                        const hlParts = paragraphs.map((para, lineIdx) => {
+                            if (!para.trim()) return '<span data-line="' + lineIdx + '"></span>';
+                            let escaped = escapeHtml(para);
                             keywords.forEach((kw, kwIdx) => {
                                 if (!kw) return;
                                 const color = KW_COLORS[kwIdx % KW_COLORS.length];
@@ -4890,11 +4907,11 @@
                         bodyEl.style.whiteSpace = 'normal';
                         setupLazyImageObserver(bodyEl);
                     } else {
-                        // 纯文本模式
-                        const plainText = rule.searchText || rule.content || '';
-                        const lines = plainText.split(/\n/);
-                        bodyEl.innerHTML = lines.map(line => escapeHtml(line)).join('<br>');
-                        bodyEl.style.whiteSpace = 'pre-wrap';
+                        // 纯文本模式：使用 content，通过 smartSplitParagraphs 智能分段（兼容旧数据无换行）
+                        const plainText = rule.content || contentToShow || '';
+                        const paragraphs = smartSplitParagraphs(plainText);
+                        bodyEl.innerHTML = paragraphs.map(para => '<p style="margin:4px 0;line-height:1.6;">' + escapeHtml(para) + '</p>').join('');
+                        bodyEl.style.whiteSpace = 'normal';
                     }
                     _fvHighlights = [];
                     _fvCurHl = -1;
