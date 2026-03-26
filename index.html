@@ -1291,8 +1291,8 @@
         #rule-fullContentBody table {
             width: 100%;
             border-collapse: collapse;
-            margin: 16px 0;
-            font-size: 0.9rem;
+            margin: 10px 0;
+            font-size: 0.85rem;
             background: #fff;
             border-radius: 6px;
             overflow: hidden;
@@ -1304,14 +1304,14 @@
         }
         #rule-fullContentBody table th,
         #rule-fullContentBody table td {
-            padding: 12px 16px;
+            padding: 2px 6px;
             text-align: left;
             border-bottom: 1px solid var(--border);
+            line-height: 1.25;
         }
         #rule-fullContentBody table th {
             font-weight: 600;
-            font-size: 0.85rem;
-            text-transform: uppercase;
+            font-size: 0.8rem;
             letter-spacing: 0.5px;
         }
         #rule-fullContentBody table tbody tr:hover {
@@ -1323,6 +1323,10 @@
         #rule-fullContentBody table td {
             color: var(--text);
             vertical-align: top;
+        }
+        #rule-fullContentBody table p {
+            margin: 0;
+            line-height: 1.25;
         }
 
         /* 图片样式 - 限制最大宽度为60%，点击可放大 */
@@ -1483,7 +1487,47 @@
                 align-items: flex-end;
             }
             #rule-fullContentBody {
-                max-height: 52vh !important;
+                max-height: 65vh !important;
+                padding: 12px !important;
+            }
+            /* 手机端表格更紧凑 */
+            #rule-fullContentBody table {
+                font-size: 0.75rem;
+                margin: 6px 0;
+            }
+            #rule-fullContentBody table th,
+            #rule-fullContentBody table td {
+                padding: 1px 3px;
+                line-height: 1.15;
+            }
+            #rule-fullContentBody table th {
+                font-size: 0.7rem;
+            }
+            #rule-fullContentBody table p {
+                line-height: 1.15;
+            }
+            /* 手机端图片限制宽度，避免撑满屏幕 */
+            #rule-fullContentBody img {
+                max-width: 95%;
+                margin: 6px auto;
+                display: block;
+            }
+            #rule-fullContentBody img.rule-lazy-img {
+                opacity: 0.6;
+                transition: opacity 0.3s ease;
+            }
+            /* 手机端滚动条加宽，方便手指操作 */
+            #rule-fullContentBody::-webkit-scrollbar {
+                width: 8px;
+            }
+            #rule-fullContentBody::-webkit-scrollbar-thumb {
+                background: rgba(0,0,0,0.3);
+                border-radius: 4px;
+                min-height: 40px;
+            }
+            #rule-fullContentBody::-webkit-scrollbar-track {
+                background: rgba(0,0,0,0.05);
+                border-radius: 4px;
             }
         }
 
@@ -2075,18 +2119,8 @@
         </div>
     </div>
 
-    <div id="rule-viewModal" class="modal">
-        <div class="modal-content wide">
-            <div class="modal-header"><div class="modal-title" id="rule-viewTitle">规章详情</div></div>
-            <div class="modal-body">
-                <span class="rule-trade" id="rule-viewTrade"></span>
-                <textarea id="rule-viewContent" class="form-textarea" readonly style="min-height:300px; margin-top:12px; resize:vertical;"></textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('rule-viewModal')">关闭</button>
-            </div>
-        </div>
-    </div>
+
+
 
     <div id="rule-editModal" class="modal">
         <div class="modal-content">
@@ -2256,7 +2290,12 @@
             // }
         };
 
-        window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
+        window.closeModal = function(id) { 
+            document.getElementById(id).classList.remove('active'); 
+            if (id === 'rule-fullViewModal' && _imgLazyObserver) {
+                _imgLazyObserver.disconnect();
+            }
+        };
         window.openModal = function(id) { document.getElementById(id).classList.add('active'); };
 
         window.autoResize = function(textarea) {
@@ -2786,23 +2825,62 @@
                 });
             }
 
-            // 渲染规章 HTML（替换图片占位符）
-            async function renderRuleHtml(html) {
+            // 渲染规章 HTML（替换图片占位符为懒加载 img 标签）
+            function renderRuleHtml(html) {
                 if (!html) return html;
                 const imgIdRegex = /__IMG_ID__([a-zA-Z0-9_-]+)__/g;
                 const matches = html.match(imgIdRegex);
                 if (!matches) return html;
 
+                // 去重
+                const seen = new Set();
                 let renderedHtml = html;
-                for (const match of matches) {
+                matches.forEach(match => {
+                    if (seen.has(match)) return;
+                    seen.add(match);
                     const id = match.replace(/__IMG_ID__/, '').replace(/__$/, '');
-                    const blob = await getImageFromDB(id);
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        renderedHtml = renderedHtml.replace(match, url);
-                    }
-                }
+                    // 占位 img，后续由 IntersectionObserver 懒加载
+                    renderedHtml = renderedHtml.split(match).join(
+                        `<img class="rule-lazy-img" data-img-id="${id}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect fill='%23f0f0f0' width='300' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%23999'%3E%E5%8A%A0%E8%BD%BD%E4%B8%AD...%3C/text%3E%3C/svg%3E" alt="图片" />`
+                    );
+                });
                 return renderedHtml;
+            }
+
+            // IntersectionObserver 懒加载全文查看中的图片
+            let _imgLazyObserver = null;
+            function setupLazyImageObserver(container) {
+                if (_imgLazyObserver) _imgLazyObserver.disconnect();
+                _imgLazyObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            const imgId = img.getAttribute('data-img-id');
+                            if (imgId && !img._loaded) {
+                                img._loaded = true;
+                                getImageFromDB(imgId).then(blob => {
+                                    if (blob) {
+                                        const url = URL.createObjectURL(blob);
+                                        img.src = url;
+                                        img.classList.remove('rule-lazy-img');
+                                        // 高亮定位：图片加载后如果之前定位过，重新定位
+                                        img.onload = () => {
+                                            if (typeof _pendingScrollTarget === 'number' && _fvScrollTarget) {
+                                                scrollToTarget(_fvScrollTarget);
+                                            }
+                                        };
+                                    } else {
+                                        img.alt = '图片加载失败';
+                                    }
+                                });
+                            }
+                            _imgLazyObserver.unobserve(img);
+                        }
+                    });
+                }, { root: container, rootMargin: '200px' });
+                container.querySelectorAll('img[data-img-id]').forEach(img => {
+                    _imgLazyObserver.observe(img);
+                });
             }
 
             // 从 HTML 提取纯文本，保留段落换行
@@ -3924,17 +4002,10 @@
                 let html = '';
                 filtered.forEach((rule, idx) => {
                     const originalIdx = rules.indexOf(rule);
-                    html += '<div class="catalog-item"><div class="catalog-info"><div class="catalog-title" title="' + escapeHtml(rule.title) + '">' + escapeHtml(rule.title) + '</div><div class="catalog-meta"><span class="catalog-trade">' + escapeHtml(rule.trade) + '</span><span>' + rule.content.length + '字</span></div></div><div class="catalog-actions"><button class="btn btn-info btn-small" onclick="viewRule(' + originalIdx + ')">查看</button><button class="btn btn-success btn-small" onclick="editRule(' + originalIdx + ')">编辑</button><button class="btn btn-danger btn-small" onclick="deleteRule(' + originalIdx + ')">删除</button></div></div>';
+                    html += '<div class="catalog-item"><div class="catalog-info"><div class="catalog-title" title="' + escapeHtml(rule.title) + '">' + escapeHtml(rule.title) + '</div><div class="catalog-meta"><span class="catalog-trade">' + escapeHtml(rule.trade) + '</span><span>' + rule.content.length + '字</span></div></div><div class="catalog-actions"><button class="btn btn-info btn-small" onclick="ruleViewFullText(' + originalIdx + ')">查看</button><button class="btn btn-success btn-small" onclick="editRule(' + originalIdx + ')">编辑</button><button class="btn btn-danger btn-small" onclick="deleteRule(' + originalIdx + ')">删除</button></div></div>';
                 });
                 list.innerHTML = html;
             }
-            window.viewRule = function(idx) {
-                const rule = rules[idx];
-                document.getElementById('rule-viewTitle').textContent = rule.title;
-                document.getElementById('rule-viewTrade').textContent = rule.trade;
-                document.getElementById('rule-viewContent').value = rule.content;
-                openModal('rule-viewModal');
-            };
             window.editRule = function(idx) {
                 const rule = rules[idx];
                 currentEditIndex = idx;
@@ -4213,7 +4284,7 @@
                     // ---------- 富文本模式（有 contentHtml）----------
                     if (hasHtml) {
                         // 1. 渲染 HTML 并替换图片占位符
-                        let html = await renderRuleHtml(contentToShow);
+                        let html = renderRuleHtml(contentToShow);
                         
                         // 2. 注入关键词高亮（在文本节点中）
                         const tempDiv = document.createElement('div');
@@ -4251,6 +4322,7 @@
                         });
                         
                         bodyEl.innerHTML = tempDiv.innerHTML;
+                        setupLazyImageObserver(bodyEl);
                         // 富文本模式使用normal，让HTML标签（如<p>）控制换行
                         bodyEl.style.whiteSpace = 'normal';
                         
@@ -4318,15 +4390,52 @@
                     const anchorPara = _ruleFirstMatchPara[idx] || null;
                     let anchorHlIdx = 0;
                     if (anchorPara && _fvHighlights.length > 0) {
-                        const searchText = rule.searchText || rule.content || '';
-                        const lines2 = searchText.split(/\n/);
-                        const anchorLineIdx = lines2.findIndex(l => l === anchorPara);
-                        if (anchorLineIdx >= 0) {
-                            const found = _fvHighlights.findIndex(el =>
-                                parseInt(el.getAttribute('data-line')) === anchorLineIdx
-                            );
-                            if (found >= 0) anchorHlIdx = found;
+                        // 用关键词上下文匹配法：关键词左右各3个字
+                        const lowerAnchorPara = anchorPara.toLowerCase();
+                        let bestIdx = -1;
+                        
+                        for (let i = 0; i < _fvHighlights.length; i++) {
+                            const markEl = _fvHighlights[i];
+                            const parentEl = markEl.closest('p, div, span[data-line], td, li') || markEl.parentElement;
+                            if (!parentEl) continue;
+                            const parentText = parentEl.textContent.toLowerCase();
+                            const markText = markEl.textContent.toLowerCase();
+                            const markOffset = parentText.indexOf(markText);
+                            
+                            if (markOffset >= 0) {
+                                const ctxStart = Math.max(0, markOffset - 3);
+                                const ctxEnd = Math.min(parentText.length, markOffset + markText.length + 3);
+                                const context = parentText.substring(ctxStart, ctxEnd);
+                                
+                                const kwInAnchor = lowerAnchorPara.indexOf(markText);
+                                if (kwInAnchor >= 0) {
+                                    const tCtxStart = Math.max(0, kwInAnchor - 3);
+                                    const tCtxEnd = Math.min(lowerAnchorPara.length, kwInAnchor + markText.length + 3);
+                                    const anchorContext = lowerAnchorPara.substring(tCtxStart, tCtxEnd);
+                                    
+                                    if (context === anchorContext) {
+                                        bestIdx = i;
+                                        break;
+                                    }
+                                }
+                            }
                         }
+                        
+                        // 回退：用段落前20个字匹配
+                        if (bestIdx === -1) {
+                            for (let i = 0; i < _fvHighlights.length; i++) {
+                                const markEl = _fvHighlights[i];
+                                const container = markEl.closest('p, div, span[data-line], td, li') || markEl.parentElement;
+                                if (!container) continue;
+                                const containerText = container.textContent;
+                                if (anchorPara.length > 0 && containerText.includes(anchorPara.substring(0, Math.min(10, anchorPara.length)))) {
+                                    bestIdx = i;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (bestIdx >= 0) anchorHlIdx = bestIdx;
                     }
                     _fvCurHl = anchorHlIdx;
 
@@ -4334,9 +4443,10 @@
                     // ---------- 无关键词模式 ----------
                     if (hasHtml) {
                         // 富文本模式
-                        const html = await renderRuleHtml(contentToShow);
+                        const html = renderRuleHtml(contentToShow);
                         bodyEl.innerHTML = html;
                         bodyEl.style.whiteSpace = 'normal';
+                        setupLazyImageObserver(bodyEl);
                     } else {
                         // 纯文本模式
                         const plainText = rule.searchText || rule.content || '';
@@ -4398,7 +4508,7 @@
                 if (keywords.length > 0) {
                     if (hasHtml) {
                         // ---------- 富文本模式（有 contentHtml）----------
-                        let html = await renderRuleHtml(contentToShow);
+                        let html = renderRuleHtml(contentToShow);
                         
                         // 注入关键词高亮（在文本节点中）
                         const tempDiv = document.createElement('div');
@@ -4437,6 +4547,7 @@
                         
                         bodyEl.innerHTML = tempDiv.innerHTML;
                         bodyEl.style.whiteSpace = 'pre-wrap';
+                        setupLazyImageObserver(bodyEl);
                         
                         // 收集高亮元素
                         _fvHighlights = Array.from(bodyEl.querySelectorAll('.rule-fv-hl'));
@@ -4496,9 +4607,10 @@
                     // ---------- 无关键词模式 ----------
                     if (hasHtml) {
                         // 富文本模式
-                        const html = await renderRuleHtml(contentToShow);
+                        const html = renderRuleHtml(contentToShow);
                         bodyEl.innerHTML = html;
                         bodyEl.style.whiteSpace = 'normal';
+                        setupLazyImageObserver(bodyEl);
                     } else {
                         // 纯文本模式
                         const plainText = rule.searchText || rule.content || '';
@@ -4518,6 +4630,66 @@
                 // 延迟滚动到目标段落
                 setTimeout(() => {
                     if (_fvHighlights.length > 0) {
+                        // 精确定位：在全文高亮中找到与目标段落匹配的高亮元素
+                        let targetHlIdx = 0;
+                        if (targetPara) {
+                            // 从目标段落中提取关键词周围的上下文（左右各延伸3个字）作为匹配锚点
+                            const lowerTargetPara = targetPara.toLowerCase();
+                            let bestIdx = -1;
+                            let bestPos = Infinity;
+                            
+                            for (let i = 0; i < _fvHighlights.length; i++) {
+                                const markEl = _fvHighlights[i];
+                                // 获取高亮元素在全文中的位置（通过向上遍历找包含的文本段落）
+                                const parentEl = markEl.closest('p, div, span[data-line], td, li') || markEl.parentElement;
+                                if (!parentEl) continue;
+                                
+                                // 取父元素的一段文本用于匹配
+                                const parentText = parentEl.textContent.toLowerCase();
+                                // 检查该高亮是否属于目标段落：从高亮位置向左右各取3个字
+                                const markText = markEl.textContent.toLowerCase();
+                                const markOffset = parentText.indexOf(markText);
+                                
+                                if (markOffset >= 0) {
+                                    // 取关键词左右各3个字作为上下文
+                                    const ctxStart = Math.max(0, markOffset - 3);
+                                    const ctxEnd = Math.min(parentText.length, markOffset + markText.length + 3);
+                                    const context = parentText.substring(ctxStart, ctxEnd);
+                                    
+                                    // 在目标段落中也找相同关键词的上下文
+                                    const kwInTarget = lowerTargetPara.indexOf(markText);
+                                    if (kwInTarget >= 0) {
+                                        const tCtxStart = Math.max(0, kwInTarget - 3);
+                                        const tCtxEnd = Math.min(lowerTargetPara.length, kwInTarget + markText.length + 3);
+                                        const targetContext = lowerTargetPara.substring(tCtxStart, tCtxEnd);
+                                        
+                                        if (context === targetContext && i < bestPos) {
+                                            bestPos = i;
+                                            bestIdx = i;
+                                            break; // 找到最靠前的匹配就停止
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // 如果通过上下文没找到匹配，回退到直接文本匹配
+                            if (bestIdx === -1) {
+                                for (let i = 0; i < _fvHighlights.length; i++) {
+                                    const markEl = _fvHighlights[i];
+                                    const container = markEl.closest('p, div, span[data-line], td, li') || markEl.parentElement;
+                                    if (!container) continue;
+                                    const containerText = container.textContent;
+                                    // 检查容器文本是否包含目标段落的前20个字
+                                    if (targetPara.length > 0 && containerText.includes(targetPara.substring(0, Math.min(10, targetPara.length)))) {
+                                        bestIdx = i;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (bestIdx >= 0) targetHlIdx = bestIdx;
+                        }
+                        _fvCurHl = targetHlIdx;
                         ruleFvScrollToHl(_fvCurHl);
                     } else if (targetLineIdx >= 0) {
                         // 无高亮时直接滚动到目标行
