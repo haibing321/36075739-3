@@ -1492,42 +1492,69 @@
             }
             /* 手机端表格更紧凑 */
             #rule-fullContentBody table {
-                font-size: 0.75rem;
-                margin: 6px 0;
+                font-size: 0.68rem;
+                margin: 4px 0;
             }
             #rule-fullContentBody table th,
             #rule-fullContentBody table td {
-                padding: 1px 3px;
-                line-height: 1.15;
+                padding: 1px 2px;
+                line-height: 1.1;
             }
             #rule-fullContentBody table th {
-                font-size: 0.7rem;
+                font-size: 0.65rem;
             }
             #rule-fullContentBody table p {
-                line-height: 1.15;
+                line-height: 1.1;
             }
-            /* 手机端图片限制宽度，避免撑满屏幕 */
+            /* 手机端图片更小 */
             #rule-fullContentBody img {
-                max-width: 95%;
-                margin: 6px auto;
+                max-width: 80%;
+                max-height: 220px;
+                margin: 4px auto;
                 display: block;
             }
             #rule-fullContentBody img.rule-lazy-img {
                 opacity: 0.6;
                 transition: opacity 0.3s ease;
             }
-            /* 手机端滚动条加宽，方便手指操作 */
+            /* 手机端隐藏原生滚动条 */
+            #rule-fullContentBody {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
             #rule-fullContentBody::-webkit-scrollbar {
-                width: 8px;
+                display: none;
             }
-            #rule-fullContentBody::-webkit-scrollbar-thumb {
-                background: rgba(0,0,0,0.3);
-                border-radius: 4px;
-                min-height: 40px;
+            /* 自定义悬浮滚动条容器 */
+            #rule-fvScrollWrap {
+                position: relative;
             }
-            #rule-fullContentBody::-webkit-scrollbar-track {
-                background: rgba(0,0,0,0.05);
-                border-radius: 4px;
+            /* 悬浮滚动条轨道 */
+            #rule-fvScrollbar {
+                position: absolute;
+                right: 3px;
+                top: 0;
+                bottom: 0;
+                width: 6px;
+                pointer-events: none;
+                z-index: 10;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            #rule-fvScrollbar.visible {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            /* 滑块 */
+            #rule-fvScrollThumb {
+                position: absolute;
+                left: 0;
+                width: 100%;
+                min-height: 50px;
+                background: rgba(0,0,0,0.4);
+                border-radius: 3px;
+                cursor: pointer;
+                touch-action: none;
             }
         }
 
@@ -2206,7 +2233,10 @@
                     </div>
                 </div>
                 <!-- 全文内容区 -->
-                <div id="rule-fullContentBody" style="background:#f7fafc;padding:20px;border-radius:10px;border-left:4px solid var(--info);max-height:58vh;overflow-y:auto;font-size:0.95rem;line-height:1.9;color:var(--text);word-break:break-word;"></div>
+                <div id="rule-fvScrollWrap" style="position:relative;">
+                    <div id="rule-fullContentBody" style="background:#f7fafc;padding:20px;border-radius:10px;border-left:4px solid var(--info);max-height:58vh;overflow-y:auto;font-size:0.95rem;line-height:1.9;color:var(--text);word-break:break-word;"></div>
+                    <div id="rule-fvScrollbar"><div id="rule-fvScrollThumb"></div></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('rule-fullViewModal')">关闭</button>
@@ -2297,6 +2327,108 @@
             }
         };
         window.openModal = function(id) { document.getElementById(id).classList.add('active'); };
+
+        // ========== 自定义悬浮滚动条（手机端全文查看）==========
+        (function() {
+            const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
+            let _sbFadeTimer = null;
+
+            function updateThumb() {
+                const body = document.getElementById('rule-fullContentBody');
+                const bar  = document.getElementById('rule-fvScrollbar');
+                const thumb = document.getElementById('rule-fvScrollThumb');
+                if (!body || !bar || !thumb) return;
+                if (!isMobile()) { bar.classList.remove('visible'); return; }
+
+                const trackH  = body.clientHeight;
+                const scrollH = body.scrollHeight;
+                if (scrollH <= trackH) { bar.classList.remove('visible'); return; }
+
+                // 同步轨道高度到内容区（处理 padding 偏移）
+                bar.style.top    = body.offsetTop + 'px';
+                bar.style.height = trackH + 'px';
+
+                const ratio     = trackH / scrollH;
+                const thumbH    = Math.max(50, trackH * ratio);
+                const maxTop    = trackH - thumbH;
+                const thumbTop  = (body.scrollTop / (scrollH - trackH)) * maxTop;
+
+                thumb.style.height = thumbH + 'px';
+                thumb.style.top    = thumbTop + 'px';
+            }
+
+            function showBar() {
+                const bar = document.getElementById('rule-fvScrollbar');
+                if (!bar || !isMobile()) return;
+                const body = document.getElementById('rule-fullContentBody');
+                if (!body || body.scrollHeight <= body.clientHeight) return;
+                bar.classList.add('visible');
+                clearTimeout(_sbFadeTimer);
+                _sbFadeTimer = setTimeout(() => bar.classList.remove('visible'), 1800);
+            }
+
+            // 滚动时同步 + 显示
+            document.addEventListener('DOMContentLoaded', function() {
+                const body  = document.getElementById('rule-fullContentBody');
+                const thumb = document.getElementById('rule-fvScrollThumb');
+                if (!body || !thumb) return;
+
+                body.addEventListener('scroll', function() {
+                    updateThumb();
+                    showBar();
+                });
+
+                // 内容变化后重算（图片加载等）
+                const ro = new ResizeObserver(() => updateThumb());
+                ro.observe(body);
+
+                // touch 拖拽滑块
+                let _dragging = false, _startY = 0, _startScrollTop = 0;
+
+                thumb.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    _dragging = true;
+                    _startY = e.touches[0].clientY;
+                    _startScrollTop = body.scrollTop;
+                    clearTimeout(_sbFadeTimer);
+                }, { passive: false });
+
+                document.addEventListener('touchmove', function(e) {
+                    if (!_dragging) return;
+                    e.preventDefault();
+                    const body   = document.getElementById('rule-fullContentBody');
+                    const bar    = document.getElementById('rule-fvScrollbar');
+                    const thumb  = document.getElementById('rule-fvScrollThumb');
+                    if (!body || !bar || !thumb) return;
+                    const trackH  = body.clientHeight;
+                    const scrollH = body.scrollHeight;
+                    const thumbH  = parseFloat(thumb.style.height) || 50;
+                    const maxTop  = trackH - thumbH;
+                    const dy      = e.touches[0].clientY - _startY;
+                    const ratio   = dy / maxTop;
+                    body.scrollTop = _startScrollTop + ratio * (scrollH - trackH);
+                    updateThumb();
+                }, { passive: false });
+
+                document.addEventListener('touchend', function() {
+                    if (_dragging) {
+                        _dragging = false;
+                        _sbFadeTimer = setTimeout(() => {
+                            const bar = document.getElementById('rule-fvScrollbar');
+                            if (bar) bar.classList.remove('visible');
+                        }, 1800);
+                    }
+                });
+            });
+
+            // 每次打开全文弹窗时重算并显示
+            window._fvScrollbarReset = function() {
+                setTimeout(() => {
+                    updateThumb();
+                    showBar();
+                }, 80);
+            };
+        })();
 
         window.autoResize = function(textarea) {
             if (!textarea) return;
@@ -4462,6 +4594,7 @@
                 }
 
                 openModal('rule-fullViewModal');
+                if (typeof _fvScrollbarReset === 'function') _fvScrollbarReset();
                 // 模态框打开后滚动到目标位置（延迟确保DOM渲染完成）
                 if (_fvHighlights.length > 0) {
                     setTimeout(() => ruleFvScrollToHl(_fvCurHl), 150);
@@ -4626,6 +4759,7 @@
                 }
 
                 openModal('rule-fullViewModal');
+                if (typeof _fvScrollbarReset === 'function') _fvScrollbarReset();
                 
                 // 延迟滚动到目标段落
                 setTimeout(() => {
