@@ -6481,6 +6481,12 @@
                 document.getElementById('hb-selectPanel').style.display = view === 'select' ? '' : 'none';
                 const outlineWrap = document.getElementById('hb-outlineWrap');
                 outlineWrap.classList.toggle('active', view === 'outline');
+                // 切换时隐藏内容显示区和重置分级选择下拉框
+                contentDisplay.style.display = 'none';
+                if (view === 'select') {
+                    chapterSelect.value = '';
+                    hideFrom(2);
+                }
                 if (view === 'outline') {
                     hbBuildOutlineTree();
                 }
