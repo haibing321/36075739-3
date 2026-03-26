@@ -1230,6 +1230,129 @@
         }
         
         /* ========== 检查手册模块专用样式（已统一为卡片，仅保留必要布局） ========== */
+        /* 浏览模式切换按钮组 */
+        .hb-view-toggle {
+            display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 16px;
+        }
+        .hb-view-toggle button {
+            padding: 8px 16px; border: none; background: #f1f5f9; cursor: pointer; font-size: 0.85rem;
+            font-weight: 500; color: #64748b; transition: all 0.2s;
+        }
+        .hb-view-toggle button.active {
+            background: var(--primary); color: white;
+        }
+        .hb-view-toggle button:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        /* 大纲树视图容器 */
+        .hb-outline-wrap {
+            display: none;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .hb-outline-wrap.active { display: flex; }
+
+        /* 左侧目录树 */
+        .hb-outline-tree {
+            width: 300px; min-width: 260px; max-width: 40%;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            background: #f8fafc;
+            max-height: 60vh;
+        }
+        .hb-outline-tree::-webkit-scrollbar { width: 5px; }
+        .hb-outline-tree::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+        /* 右侧内容区 */
+        .hb-outline-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            max-height: 60vh;
+        }
+        .hb-outline-content::-webkit-scrollbar { width: 5px; }
+        .hb-outline-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+        /* 树节点样式 */
+        .hb-tree-node {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .hb-tree-node:last-child { border-bottom: none; }
+        .hb-tree-header {
+            display: flex; align-items: center; gap: 6px;
+            padding: 10px 12px; cursor: pointer; user-select: none;
+            transition: background 0.15s;
+        }
+        .hb-tree-header:hover { background: #eef2ff; }
+        .hb-tree-header.selected { background: #dbeafe; }
+        .hb-tree-arrow {
+            font-size: 10px; color: #94a3b8; transition: transform 0.2s;
+            flex-shrink: 0; width: 14px; text-align: center;
+        }
+        .hb-tree-arrow.expanded { transform: rotate(90deg); }
+        .hb-tree-arrow.hidden { visibility: hidden; }
+        .hb-tree-label {
+            flex: 1; font-size: 0.88rem; line-height: 1.4; word-break: break-all;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .hb-tree-count {
+            font-size: 0.72rem; color: #94a3b8; background: #e2e8f0;
+            padding: 1px 7px; border-radius: 10px; flex-shrink: 0;
+        }
+        /* 各级缩进和颜色 */
+        .hb-tree-level-0 > .hb-tree-header { padding-left: 10px; font-weight: 700; font-size: 0.92rem; color: var(--primary); }
+        .hb-tree-level-1 > .hb-tree-header { padding-left: 24px; font-weight: 600; color: #0d9488; }
+        .hb-tree-level-2 > .hb-tree-header { padding-left: 40px; font-weight: 500; color: #475569; }
+        .hb-tree-level-3 > .hb-tree-header { padding-left: 56px; font-weight: 400; color: #64748b; font-size: 0.84rem; }
+
+        /* 子节点容器（折叠） */
+        .hb-tree-children {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease;
+        }
+        .hb-tree-children.expanded {
+            max-height: 5000px;
+        }
+
+        /* 内容展示区样式 */
+        .hb-content-path {
+            display: flex; align-items: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;
+        }
+        .hb-content-path span {
+            padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 500;
+        }
+        .hb-content-path .path-chapter { background: #dbeafe; color: var(--primary); }
+        .hb-content-path .path-section { background: #ccfbf1; color: #0d9488; }
+        .hb-content-path .path-item { background: #fef3c7; color: #92400e; }
+        .hb-content-path .path-subitem { background: #fce7f3; color: #9d174d; }
+        .hb-content-text {
+            background: #f8fafc; padding: 16px 20px; border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            font-size: 0.92rem; line-height: 1.8;
+            white-space: pre-wrap;
+        }
+        .hb-content-placeholder {
+            text-align: center; color: #94a3b8; padding: 40px 20px;
+        }
+
+        /* 手机端大纲视图适配 */
+        @media (max-width: 600px) {
+            .hb-outline-wrap.active { flex-direction: column; }
+            .hb-outline-tree {
+                width: 100%; max-width: 100%; max-height: 35vh;
+                border-right: none; border-bottom: 1px solid var(--border);
+            }
+            .hb-outline-content { max-height: 40vh; padding: 12px; }
+            .hb-tree-level-0 > .hb-tree-header { padding-left: 8px; font-size: 0.85rem; }
+            .hb-tree-level-1 > .hb-tree-header { padding-left: 18px; }
+            .hb-tree-level-2 > .hb-tree-header { padding-left: 30px; }
+            .hb-tree-level-3 > .hb-tree-header { padding-left: 42px; font-size: 0.8rem; }
+        }
+
         .selector-panel {
             background: #f8fafc; border-radius: 12px; padding: 24px; border: 1px solid var(--border); margin-bottom: 24px;
         }
@@ -1740,7 +1863,14 @@
                         </div>
                     </div>
 
-                    <div class="selector-panel">
+                    <!-- 浏览模式切换 -->
+                    <div class="hb-view-toggle">
+                        <button class="active" id="hb-toggleSelect" onclick="hbSwitchView('select')">📋 分级选择</button>
+                        <button id="hb-toggleOutline" onclick="hbSwitchView('outline')">📑 大纲浏览</button>
+                    </div>
+
+                    <!-- 分级选择模式（原有） -->
+                    <div class="selector-panel" id="hb-selectPanel">
                         <div class="selector-row">
                             <div class="selector-item" id="system-selector">
                                 <label>选择系统专业</label>
@@ -1766,6 +1896,16 @@
                                     <option value="">-- 请选择检查子项 --</option>
                                 </select>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- 大纲浏览模式（新增） -->
+                    <div class="hb-outline-wrap" id="hb-outlineWrap">
+                        <div class="hb-outline-tree" id="hb-outlineTree">
+                            <div class="hb-content-placeholder" style="padding:30px 10px;">请先导入DOCX文档</div>
+                        </div>
+                        <div class="hb-outline-content" id="hb-outlineContent">
+                            <div class="hb-content-placeholder">← 点击左侧目录查看内容</div>
                         </div>
                     </div>
 
@@ -5789,6 +5929,12 @@
             function getItemOrder(s) { const m = s.match(/^(\d+)[\.、]/); return m ? parseInt(m[1], 10) : 999; }
             function getSubItemOrder(s) { const m = s.match(/^(\d+)[\.、\)）]/); return m ? parseInt(m[1], 10) : 999; }
 
+            // 本模块用的 HTML 转义
+            function _esc(text) { if (!text) return ''; return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+            // 大纲浏览状态（提前声明，避免 TDZ）
+            let _hbCurrentView = 'select';
+
             function rebuildMaps() {
                 const chapterSet = new Set();
                 const sectionSetByChap = {};
@@ -5842,6 +5988,10 @@
                 });
                 contentMap = contentByKey;
                 updateStats();
+                // 如果大纲视图已激活，自动刷新树
+                if (_hbCurrentView === 'outline') {
+                    try { hbBuildOutlineTree(); } catch(e) { console.error('大纲树刷新失败:', e); }
+                }
             }
 
             function updateStats() {
@@ -6134,12 +6284,22 @@
                             document.getElementById('handbook-importMessage').innerText = `将导入 ${imported.length} 条记录（四级结构），确定覆盖现有数据吗？`;
                             modal.classList.add('active');
                             document.getElementById('handbook-confirmImport').onclick = () => {
-                                handbookData = imported;
-                                rebuildMaps();
-                                renderChapterSelect();
-                                hideFrom(2);
-                                saveToStorage();
-                                closeModal('handbook-importModal');
+                                try {
+                                    handbookData = imported;
+                                    rebuildMaps();
+                                    renderChapterSelect();
+                                    hideFrom(2);
+                                    saveToStorage();
+                                    closeModal('handbook-importModal');
+                                    try { hbSwitchView('outline'); } catch(e2) {
+                                        console.error('大纲视图切换失败:', e2);
+                                        try { hbSwitchView('select'); } catch(e3) {}
+                                    }
+                                } catch(e) {
+                                    console.error('手册导入确认失败:', e);
+                                    closeModal('handbook-importModal');
+                                    alert('导入时出错: ' + e.message);
+                                }
                             };
                         } catch (err) { alert('解析失败：' + err.message); }
                     };
@@ -6173,13 +6333,24 @@
                         `成功解析 ${parsedData.length} 条记录（四级结构），确定导入并覆盖现有数据吗？`;
                     modal.classList.add('active');
                     document.getElementById('handbook-confirmImport').onclick = () => {
-                        handbookData = parsedData;
-                        rebuildMaps();
-                        renderChapterSelect();
-                        hideFrom(2);
-                        saveToStorage();
-                        closeModal('handbook-importModal');
-                        alert(`成功导入 ${parsedData.length} 条检查手册记录`);
+                        try {
+                            handbookData = parsedData;
+                            rebuildMaps();
+                            renderChapterSelect();
+                            hideFrom(2);
+                            saveToStorage();
+                            closeModal('handbook-importModal');
+                            // 切换到大纲浏览（如果失败不影响数据保存）
+                            try { hbSwitchView('outline'); } catch(e2) {
+                                console.error('大纲视图切换失败:', e2);
+                                // 大纲失败时回退到分级选择
+                                try { hbSwitchView('select'); } catch(e3) {}
+                            }
+                        } catch(e) {
+                            console.error('手册导入确认失败:', e);
+                            closeModal('handbook-importModal');
+                            alert('导入时出错: ' + e.message);
+                        }
                     };
                 } catch (err) {
                     console.error('DOCX导入失败:', err);
@@ -6187,123 +6358,289 @@
                 }
             }
 
-            // 解析检查手册HTML为四级/五级结构数据
+            // 解析检查手册HTML为多级结构数据（增强版，支持任意DOCX标题格式）
             function parseHandbookHtml(html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const data = [];
-                
-                let currentChapter = '';
-                let currentSection = '';
-                let currentItem = '';
-                let currentSubItem = '';
-                let currentContent = '';
-                
-                // 获取所有段落和标题元素，保持文档顺序
-                const allElements = Array.from(doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li'));
-                
-                // 辅助函数：保存当前记录
+
+                // 当前层级状态
+                let cur = { chapter: '', section: '', item: '', subitem: '', content: '' };
+
+                // 检测文本标题级别的正则（按优先级排列）
+                const LEVEL_PATTERNS = [
+                    // 第1级：第X章 / 一、/ 1. / 1、/ 第一章 / Part I
+                    { level: 1, re: /^第[一二三四五六七八九十百千\d]+[章节部分篇]\s*/, maxLen: 60 },
+                    { level: 1, re: /^[一二三四五六七八九十]+、/, maxLen: 60 },
+                    { level: 1, re: /^\d+[、.．]\s*/, maxLen: 50 },
+                    // 第2级：第X节 / (一) / 1.1 / 1.1.1（仅当不是第1级时）
+                    { level: 2, re: /^第[一二三四五六七八九十百千\d]+节\s*/, maxLen: 80 },
+                    { level: 2, re: /^[（(][一二三四五六七八九十]+[)）]/, maxLen: 80 },
+                    { level: 2, re: /^\d+\.\d+[\s.、]/, maxLen: 80 },
+                    // 第3级：(一)（如果不是第2级） / 1) / （1）
+                    { level: 3, re: /^\d+[)）]\s*/, maxLen: 100 },
+                    // 第4级：(1) / ① / a. / A.
+                    { level: 4, re: /^[（(]\d+[)）]/, maxLen: 120 },
+                    { level: 4, re: /^[①②③④⑤⑥⑦⑧⑨⑩]/, maxLen: 120 },
+                    { level: 4, re: /^[a-zA-Z][.、．)\）]\s*/, maxLen: 120 },
+                ];
+
+                function detectLevelByPattern(text) {
+                    for (const p of LEVEL_PATTERNS) {
+                        if (p.re.test(text) && text.length <= p.maxLen) return p.level;
+                    }
+                    return 0; // 普通内容
+                }
+
                 function saveRecord() {
-                    if (currentChapter && currentSection) {
+                    if (cur.chapter) {
                         data.push({
-                            chapter: currentChapter,
-                            section: currentSection,
-                            item: currentItem || '检查项点',
-                            subitem: currentSubItem,
-                            content: currentContent.trim()
+                            chapter: cur.chapter,
+                            section: cur.section || '默认分类',
+                            item: cur.item || '检查项点',
+                            subitem: cur.subitem,
+                            content: cur.content.trim()
                         });
                     }
                 }
-                
+
+                function resetBelow(level) {
+                    if (level <= 1) { cur.section = ''; cur.item = ''; cur.subitem = ''; cur.content = ''; }
+                    if (level <= 2) { cur.item = ''; cur.subitem = ''; cur.content = ''; }
+                    if (level <= 3) { cur.subitem = ''; cur.content = ''; }
+                    if (level <= 4) { cur.content = ''; }
+                }
+
+                // 获取所有块级元素，保持文档顺序
+                const allElements = Array.from(doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li'));
+
+                // 检测mammoths生成标题对应的HTML级别
                 allElements.forEach(el => {
                     const text = el.textContent.trim();
                     if (!text) return;
-                    
+
                     const tagName = el.tagName.toLowerCase();
-                    const style = el.getAttribute('style') || '';
                     const className = el.className || '';
-                    
-                    // 检测标题级别：支持 h1-h5 标签和 style3-7 类名
-                    const isH1 = tagName === 'h1' || className.includes('style3');
-                    const isH2 = tagName === 'h2' || className.includes('style4');
-                    const isH3 = tagName === 'h3' || className.includes('style5');
-                    const isH4 = tagName === 'h4' || className.includes('style6');
-                    const isH5 = tagName === 'h5' || className.includes('style7');
-                    
-                    // 同时检测文本模式作为备选
-                    const isLevel1Pattern = /^第[一二三四五六七八九十]+章/.test(text);
-                    const isLevel2Pattern = /^[一二三四五六七八九十]+、/.test(text);
-                    const isLevel3Pattern = /^[（(][一二三四五六七八九十]+[)）]/.test(text);
-                    const isLevel4Pattern = /^\d+\./.test(text);
-                    const isLevel5Pattern = /^[（(]\d+[)）]/.test(text);
-                    
-                    // 第1级：第一章、第二章... 或 h1/style3 -> 系统专业(chapter)
-                    if (isH1 || (isLevel1Pattern && text.length < 50)) {
+
+                    // 通过HTML标签/style类名检测级别
+                    let htmlLevel = 0;
+                    if (tagName === 'h1' || className.includes('style3') || className.includes('MsoTitle')) htmlLevel = 1;
+                    else if (tagName === 'h2' || className.includes('style4') || className.includes('MsoHeading1')) htmlLevel = 2;
+                    else if (tagName === 'h3' || className.includes('style5') || className.includes('MsoHeading2')) htmlLevel = 3;
+                    else if (tagName === 'h4' || className.includes('style6') || className.includes('MsoHeading3')) htmlLevel = 4;
+                    else if (tagName === 'h5' || className.includes('style7') || className.includes('MsoHeading4')) htmlLevel = 5;
+
+                    // 如果HTML标签无法判断，用文本模式
+                    let patternLevel = htmlLevel > 0 ? htmlLevel : detectLevelByPattern(text);
+
+                    if (patternLevel >= 1 && patternLevel <= 4) {
                         saveRecord();
-                        // 保留完整标题（包括序号）
-                        currentChapter = text.trim();
-                        currentSection = '';
-                        currentItem = '';
-                        currentSubItem = '';
-                        currentContent = '';
-                    }
-                    // 第2级：一、二、三... 或 h2/style4 -> 专业分类(section)
-                    else if (isH2 || (isLevel2Pattern && text.length < 100) ||
-                             (/^第[一二三四五六七八九十]+节/.test(text) && text.length < 100)) {
-                        saveRecord();
-                        // 保留完整标题（包括序号）
-                        currentSection = text.trim();
-                        currentItem = '';
-                        currentSubItem = '';
-                        currentContent = '';
-                    }
-                    // 第3级：(一)、(二)... 或 h3/style5 -> 检查项点(item)
-                    else if (isH3 || (isLevel3Pattern && text.length < 150)) {
-                        saveRecord();
-                        currentItem = text;
-                        currentSubItem = '';
-                        currentContent = '';
-                    }
-                    // 第4级：1. 2. ... 或 h4/style6 -> 检查子项(subitem)
-                    else if (isH4 || (isLevel4Pattern && text.length < 200)) {
-                        saveRecord();
-                        currentSubItem = text;
-                        currentContent = '';
-                    }
-                    // 第5级：(1) (2)... 或 h5/style7 -> 内容(content)
-                    else if (isH5 || isLevel5Pattern) {
-                        currentContent += (currentContent ? '\n' : '') + text;
-                    }
-                    // 普通内容
-                    else {
-                        currentContent += (currentContent ? '\n' : '') + text;
+                        resetBelow(patternLevel);
+                        if (patternLevel === 1) cur.chapter = text;
+                        else if (patternLevel === 2) cur.section = text;
+                        else if (patternLevel === 3) cur.item = text;
+                        else if (patternLevel === 4) cur.subitem = text;
+                    } else {
+                        // 普通内容
+                        cur.content += (cur.content ? '\n' : '') + text;
                     }
                 });
-                
-                // 保存最后一条记录
+
                 saveRecord();
-                
-                // 如果没有解析出结构，尝试按段落简单分割
+
+                // 如果没有解析出结构，尝试用XML检测Word大纲级别
                 if (data.length === 0) {
                     const paragraphs = doc.body.querySelectorAll('p');
-                    let tempChapter = '通用系统专业';
-                    let tempSection = '通用专业分类';
-                    
+                    let tempChapter = '未分类文档';
+                    let tempSection = '默认分类';
+
                     paragraphs.forEach((p, idx) => {
                         const text = p.textContent.trim();
                         if (text) {
                             data.push({
                                 chapter: tempChapter,
                                 section: tempSection,
-                                item: `检查项点${idx + 1}`,
+                                item: `段落 ${idx + 1}`,
                                 subitem: '',
                                 content: text
                             });
                         }
                     });
                 }
-                
+
                 return data;
+            }
+
+            // ========== 大纲浏览模式 ==========
+
+            // 切换浏览模式
+            window.hbSwitchView = function(view) {
+                _hbCurrentView = view;
+                document.getElementById('hb-toggleSelect').classList.toggle('active', view === 'select');
+                document.getElementById('hb-toggleOutline').classList.toggle('active', view === 'outline');
+                document.getElementById('hb-selectPanel').style.display = view === 'select' ? '' : 'none';
+                const outlineWrap = document.getElementById('hb-outlineWrap');
+                outlineWrap.classList.toggle('active', view === 'outline');
+                if (view === 'outline') {
+                    hbBuildOutlineTree();
+                }
+            };
+
+            // 构建大纲树
+            function hbBuildOutlineTree() {
+                const treeEl = document.getElementById('hb-outlineTree');
+                const contentEl = document.getElementById('hb-outlineContent');
+                if (handbookData.length === 0) {
+                    treeEl.innerHTML = '<div class="hb-content-placeholder" style="padding:30px 10px;">暂无数据，请先导入DOCX文档</div>';
+                    contentEl.innerHTML = '<div class="hb-content-placeholder">← 点击左侧目录查看内容</div>';
+                    return;
+                }
+
+                // 构建树形结构
+                const tree = [];
+                const chapMap = {};   // chapter -> node index in tree
+                const secMap = {};    // chapter||section -> node index
+                const itemMap = {};   // chapter||section||item -> node index
+
+                handbookData.forEach(entry => {
+                    const c = entry.chapter || '', s = entry.section || '';
+                    const it = entry.item || '', sub = entry.subitem || '';
+                    const cont = entry.content || '';
+
+                    // 确保chapter节点存在
+                    if (c && chapMap[c] === undefined) {
+                        chapMap[c] = tree.length;
+                        tree.push({ level: 0, label: c, children: [], chapter: c, section: '', item: '', subitem: '' });
+                    }
+                    const chapIdx = chapMap[c];
+                    if (!s) {
+                        // 无section，内容挂在chapter下
+                        if (cont) tree[chapIdx].children.push({ level: 3, label: it || '内容', children: [], chapter: c, section: s, item: it, subitem: sub, content: cont });
+                        return;
+                    }
+
+                    const k1 = c + '||' + s;
+                    if (secMap[k1] === undefined) {
+                        secMap[k1] = tree[chapIdx].children.length;
+                        tree[chapIdx].children.push({ level: 1, label: s, children: [], chapter: c, section: s, item: '', subitem: '' });
+                    }
+                    const secIdx = secMap[k1];
+                    const secNode = tree[chapIdx].children[secIdx];
+
+                    if (!it) return;
+
+                    const k2 = k1 + '||' + it;
+                    if (itemMap[k2] === undefined) {
+                        itemMap[k2] = secNode.children.length;
+                        secNode.children.push({ level: 2, label: it, children: [], chapter: c, section: s, item: it, subitem: '' });
+                    }
+                    const itemIdx = itemMap[k2];
+                    const itemNode = secNode.children[itemIdx];
+
+                    if (sub) {
+                        itemNode.children.push({ level: 3, label: sub, children: [], chapter: c, section: s, item: it, subitem: sub, content: cont });
+                    } else if (cont) {
+                        itemNode.content = itemNode.content ? itemNode.content + '\n' + cont : cont;
+                    }
+                });
+
+                // 渲染树
+                function countLeaves(node) {
+                    if (node.children.length === 0) return 1;
+                    return node.children.reduce((sum, c) => sum + countLeaves(c), 0);
+                }
+
+                function renderNode(node) {
+                    const hasChildren = node.children.length > 0;
+                    const leafCount = countLeaves(node);
+                    let html = '<div class="hb-tree-node hb-tree-level-' + node.level + '">';
+
+                    html += '<div class="hb-tree-header" data-chapter="' + _esc(node.chapter) + '" data-section="' + _esc(node.section) + '" data-item="' + _esc(node.item) + '" data-subitem="' + _esc(node.subitem) + '">';
+                    html += '<span class="hb-tree-arrow ' + (hasChildren ? '' : 'hidden') + '">▶</span>';
+                    html += '<span class="hb-tree-label" title="' + _esc(node.label) + '">' + _esc(node.label) + '</span>';
+                    if (hasChildren) html += '<span class="hb-tree-count">' + leafCount + '</span>';
+                    html += '</div>';
+
+                    if (hasChildren) {
+                        html += '<div class="hb-tree-children">';
+                        node.children.forEach(child => { html += renderNode(child); });
+                        html += '</div>';
+                    }
+                    html += '</div>';
+                    return html;
+                }
+
+                let treeHtml = '';
+                tree.forEach(node => { treeHtml += renderNode(node); });
+                treeEl.innerHTML = treeHtml || '<div class="hb-content-placeholder">暂无数据</div>';
+                contentEl.innerHTML = '<div class="hb-content-placeholder">← 点击左侧目录查看内容</div>';
+
+                // 绑定点击事件
+                treeEl.querySelectorAll('.hb-tree-header').forEach(header => {
+                    header.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const node = this.closest('.hb-tree-node');
+
+                        // 折叠/展开
+                        const arrow = this.querySelector('.hb-tree-arrow');
+                        const children = node.querySelector('.hb-tree-children');
+                        if (children) {
+                            const isExpanded = children.classList.contains('expanded');
+                            children.classList.toggle('expanded');
+                            if (arrow) arrow.classList.toggle('expanded');
+                        }
+
+                        // 显示内容
+                        const chapter = this.dataset.chapter;
+                        const section = this.dataset.section;
+                        const item = this.dataset.item;
+                        const subitem = this.dataset.subitem;
+
+                        // 高亮选中
+                        treeEl.querySelectorAll('.hb-tree-header.selected').forEach(h => h.classList.remove('selected'));
+                        this.classList.add('selected');
+
+                        // 查找该节点对应的所有内容
+                        let contents = [];
+                        if (subitem) {
+                            contents = handbookData.filter(d => d.chapter === chapter && d.section === section && d.item === item && d.subitem === subitem);
+                        } else if (item) {
+                            contents = handbookData.filter(d => d.chapter === chapter && d.section === section && d.item === item);
+                        } else if (section) {
+                            contents = handbookData.filter(d => d.chapter === chapter && d.section === section);
+                        } else if (chapter) {
+                            contents = handbookData.filter(d => d.chapter === chapter);
+                        }
+
+                        // 渲染内容
+                        let pathHtml = '';
+                        if (chapter) pathHtml += '<span class="path-chapter">' + _esc(chapter) + '</span>';
+                        if (section) pathHtml += '<span class="path-section">' + _esc(section) + '</span>';
+                        if (item) pathHtml += '<span class="path-item">' + _esc(item) + '</span>';
+                        if (subitem) pathHtml += '<span class="path-subitem">' + _esc(subitem) + '</span>';
+
+                        let bodyHtml = '';
+                        contents.forEach(d => {
+                            if (d.subitem && d.content) {
+                                bodyHtml += '<div style="margin-bottom:12px;"><strong style="color:var(--primary);">' + _esc(d.subitem) + '</strong>\n' + _esc(d.content).replace(/\n/g, '<br>') + '</div>';
+                            } else if (d.content) {
+                                bodyHtml += '<div style="margin-bottom:8px;">' + _esc(d.content).replace(/\n/g, '<br>') + '</div>';
+                            }
+                        });
+
+                        if (!bodyHtml) bodyHtml = '<span style="color:#94a3b8;">（无详细内容，请展开子项查看）</span>';
+
+                        contentEl.innerHTML = '<div class="hb-content-path">' + pathHtml + '</div><div class="hb-content-text">' + bodyHtml + '</div>';
+
+                        // 手机端：点击后自动滚动到内容区
+                        if (window.innerWidth <= 600) {
+                            contentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    });
+                });
+
+                // 默认全部折叠
+
             }
 
             loadFromStorage();
