@@ -1855,7 +1855,7 @@
                             <div class="stat-item"><span class="stat-label">💾 存储</span><span class="stat-value" id="handbook-size">0 KB</span><div class="storage-bar"><div class="storage-fill" id="handbook-storageBar" style="width:0%"></div></div></div>
                         </div>
                         <div class="btn-group">
-                            <button class="btn btn-success" id="handbook-importBtn">📥 导入</button>
+                            <button class="btn btn-success" id="handbook-importBtn">📥 导入文件</button>
                             <!-- 新增导出按钮 -->
                             <button class="btn btn-primary" onclick="exportHandbook()">📤 导出</button>
                             <button class="btn btn-info" onclick="resetHandbookData()">🔄 重置</button>
@@ -1867,6 +1867,7 @@
                     <div class="hb-view-toggle">
                         <button class="active" id="hb-toggleSelect" onclick="hbSwitchView('select')">📋 分级选择</button>
                         <button id="hb-toggleOutline" onclick="hbSwitchView('outline')">📑 大纲浏览</button>
+                        <button id="hb-toggleRules" onclick="hbSwitchView('rules')">📖 规章制度</button>
                     </div>
 
                     <!-- 分级选择模式（原有） -->
@@ -1919,7 +1920,7 @@
                         <div class="content-body" id="displayContent"></div>
                     </div>
 
-                    <input type="file" id="handbook-jsonFile" accept=".json,.docx,.doc" style="display:none;">
+                    <input type="file" id="handbook-jsonFile" accept=".json,.docx,.doc" multiple style="display:none;">
                 </div>
             </div>
         </div>
@@ -2181,7 +2182,7 @@
 
     <footer class="footer">
         <div>铁路安监查询系统 · 开发者：赵海兵</div>
-        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览 · 新增检查手册模块</div>
+        <div style="margin-top:4px;opacity:0.7;">© 2026 支持离线浏览 · 新增规章导入图表功能</div>
     </footer>
 
     <!-- 备忘弹窗 -->
@@ -2391,7 +2392,8 @@
             <div class="modal-body" id="handbook-importMessage">正在处理...</div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('handbook-importModal')">取消</button>
-                <button class="btn btn-primary" id="handbook-confirmImport">确认覆盖</button>
+                <button class="btn btn-primary" id="handbook-confirmImport">✅ 追加合并</button>
+                <button class="btn btn-warning" id="handbook-confirmOverwrite">🔄 覆盖现有</button>
             </div>
         </div>
     </div>
@@ -4326,6 +4328,9 @@
                 }
             };
 
+            // 暴露 rules 给其他模块调用（如检查手册导入）
+            window.getRulesData = function() { return rules; };
+
             // 匹配模式固定为AND（全部包含）
             function getMatchMode() {
                 return 'and';
@@ -6196,9 +6201,18 @@
                             }
                             return rec;
                         });
+
+                        // 自动清理：移除之前通过"导入规章制度"功能导入的数据（section === '规章制度'）
+                        // 现在规章制度已改为直接浏览模式，不再需要导入到检查手册
+                        const beforeLen = handbookData.length;
+                        handbookData = handbookData.filter(d => d.section !== '规章制度');
+                        if (handbookData.length < beforeLen) {
+                            try { localStorage.setItem('handbook_fourlevel_v1', JSON.stringify(handbookData)); } catch(e) {}
+                        }
+
                         // 若修复了数据，回写修正后的版本
                         try {
-                            if (raw4.some((e, i) => (e.subitem !== undefined) !== (handbookData[i].subitem !== undefined))) {
+                            if (raw4.some((e, i) => (e.subitem !== undefined) !== (handbookData[i] && handbookData[i].subitem !== undefined))) {
                                 localStorage.setItem('handbook_fourlevel_v1', JSON.stringify(handbookData));
                             }
                         } catch(e) {}
@@ -6259,103 +6273,120 @@
                 URL.revokeObjectURL(url);
             };
 
+            // ========== 导入确认通用函数 ==========
+            function _showImportConfirm(count, importedData) {
+                const modal = document.getElementById('handbook-importModal');
+                document.getElementById('handbook-importMessage').innerText =
+                    `成功解析 ${count} 条记录。\n当前已有 ${handbookData.length} 条。\n可选择「追加合并」或「覆盖现有」。`;
+                modal.classList.add('active');
+
+                // 追加合并
+                document.getElementById('handbook-confirmImport').onclick = () => {
+                    try {
+                        handbookData = handbookData.concat(importedData);
+                        rebuildMaps();
+                        renderChapterSelect();
+                        hideFrom(2);
+                        saveToStorage();
+                        closeModal('handbook-importModal');
+                        try { hbSwitchView('outline'); } catch(e2) {
+                            console.error('大纲视图切换失败:', e2);
+                            try { hbSwitchView('select'); } catch(e3) {}
+                        }
+                    } catch(e) {
+                        console.error('手册追加失败:', e);
+                        closeModal('handbook-importModal');
+                        alert('导入失败: ' + e.message);
+                    }
+                };
+                // 覆盖现有
+                document.getElementById('handbook-confirmOverwrite').onclick = () => {
+                    try {
+                        handbookData = importedData;
+                        rebuildMaps();
+                        renderChapterSelect();
+                        hideFrom(2);
+                        saveToStorage();
+                        closeModal('handbook-importModal');
+                        try { hbSwitchView('outline'); } catch(e2) {
+                            console.error('大纲视图切换失败:', e2);
+                            try { hbSwitchView('select'); } catch(e3) {}
+                        }
+                    } catch(e) {
+                        console.error('手册覆盖失败:', e);
+                        closeModal('handbook-importModal');
+                        alert('导入失败: ' + e.message);
+                    }
+                };
+            }
+
             document.getElementById('handbook-importBtn').addEventListener('click', function() {
                 document.getElementById('handbook-jsonFile').click();
             });
 
+
             document.getElementById('handbook-jsonFile').addEventListener('change', async function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const fileName = file.name.toLowerCase();
-                
-                if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
-                    // DOCX导入
-                    await importHandbookFromDocx(file);
-                } else {
-                    // JSON导入
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                const allImported = [];
+                for (const file of files) {
+                    const fileName = file.name.toLowerCase();
+                    if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+                        const parsed = await _parseDocxFile(file);
+                        if (parsed) allImported.push(...parsed);
+                    } else if (fileName.endsWith('.json')) {
+                        const parsed = await _parseJsonFile(file);
+                        if (parsed) allImported.push(...parsed);
+                    }
+                }
+
+                if (allImported.length === 0) return;
+
+                _showImportConfirm(allImported.length, allImported);
+                e.target.value = '';
+            });
+
+            // 解析单个DOCX文件
+            async function _parseDocxFile(file) {
+                if (typeof mammoth === 'undefined') {
+                    alert('mammoth 库未加载，请检查网络连接');
+                    return null;
+                }
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.convertToHtml({ arrayBuffer });
+                    const parsedData = parseHandbookHtml(result.value);
+                    if (parsedData.length === 0) {
+                        alert(`文件 "${file.name}" 未能解析出有效数据，已跳过`);
+                        return null;
+                    }
+                    return parsedData;
+                } catch (err) {
+                    console.error('DOCX解析失败:', file.name, err);
+                    alert(`文件 "${file.name}" 解析失败: ${err.message}`);
+                    return null;
+                }
+            }
+
+            // 解析单个JSON文件
+            function _parseJsonFile(file) {
+                return new Promise(resolve => {
                     const reader = new FileReader();
                     reader.onload = function(ev) {
                         try {
                             const imported = JSON.parse(ev.target.result);
                             if (!Array.isArray(imported)) throw new Error('数据必须是JSON数组');
                             if (imported.length > 0 && !imported[0].chapter) throw new Error('缺少必要字段 chapter');
-                            const modal = document.getElementById('handbook-importModal');
-                            document.getElementById('handbook-importMessage').innerText = `将导入 ${imported.length} 条记录（四级结构），确定覆盖现有数据吗？`;
-                            modal.classList.add('active');
-                            document.getElementById('handbook-confirmImport').onclick = () => {
-                                try {
-                                    handbookData = imported;
-                                    rebuildMaps();
-                                    renderChapterSelect();
-                                    hideFrom(2);
-                                    saveToStorage();
-                                    closeModal('handbook-importModal');
-                                    try { hbSwitchView('outline'); } catch(e2) {
-                                        console.error('大纲视图切换失败:', e2);
-                                        try { hbSwitchView('select'); } catch(e3) {}
-                                    }
-                                } catch(e) {
-                                    console.error('手册导入确认失败:', e);
-                                    closeModal('handbook-importModal');
-                                    alert('导入时出错: ' + e.message);
-                                }
-                            };
-                        } catch (err) { alert('解析失败：' + err.message); }
-                    };
-                    reader.readAsText(file);
-                }
-                e.target.value = '';
-            });
-
-            // DOCX导入功能：解析四级目录结构
-            async function importHandbookFromDocx(file) {
-                if (typeof mammoth === 'undefined') {
-                    alert('mammoth 库未加载，请检查网络连接');
-                    return;
-                }
-                
-                try {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const result = await mammoth.convertToHtml({ arrayBuffer });
-                    const html = result.value;
-                    
-                    // 解析HTML提取四级结构
-                    const parsedData = parseHandbookHtml(html);
-                    
-                    if (parsedData.length === 0) {
-                        alert('未能从DOCX中解析出有效的四级结构数据');
-                        return;
-                    }
-                    
-                    const modal = document.getElementById('handbook-importModal');
-                    document.getElementById('handbook-importMessage').innerText = 
-                        `成功解析 ${parsedData.length} 条记录（四级结构），确定导入并覆盖现有数据吗？`;
-                    modal.classList.add('active');
-                    document.getElementById('handbook-confirmImport').onclick = () => {
-                        try {
-                            handbookData = parsedData;
-                            rebuildMaps();
-                            renderChapterSelect();
-                            hideFrom(2);
-                            saveToStorage();
-                            closeModal('handbook-importModal');
-                            // 切换到大纲浏览（如果失败不影响数据保存）
-                            try { hbSwitchView('outline'); } catch(e2) {
-                                console.error('大纲视图切换失败:', e2);
-                                // 大纲失败时回退到分级选择
-                                try { hbSwitchView('select'); } catch(e3) {}
-                            }
-                        } catch(e) {
-                            console.error('手册导入确认失败:', e);
-                            closeModal('handbook-importModal');
-                            alert('导入时出错: ' + e.message);
+                            resolve(imported);
+                        } catch (err) {
+                            alert(`文件 "${file.name}" 解析失败: ${err.message}`);
+                            resolve(null);
                         }
                     };
-                } catch (err) {
-                    console.error('DOCX导入失败:', err);
-                    alert('DOCX导入失败: ' + err.message);
-                }
+                    reader.onerror = () => { alert(`读取文件 "${file.name}" 失败`); resolve(null); };
+                    reader.readAsText(file);
+                });
             }
 
             // 解析检查手册HTML为多级结构数据（增强版，支持任意DOCX标题格式）
@@ -6478,9 +6509,10 @@
                 _hbCurrentView = view;
                 document.getElementById('hb-toggleSelect').classList.toggle('active', view === 'select');
                 document.getElementById('hb-toggleOutline').classList.toggle('active', view === 'outline');
+                document.getElementById('hb-toggleRules').classList.toggle('active', view === 'rules');
                 document.getElementById('hb-selectPanel').style.display = view === 'select' ? '' : 'none';
                 const outlineWrap = document.getElementById('hb-outlineWrap');
-                outlineWrap.classList.toggle('active', view === 'outline');
+                outlineWrap.classList.toggle('active', view === 'outline' || view === 'rules');
                 // 切换时隐藏内容显示区和重置分级选择下拉框
                 contentDisplay.style.display = 'none';
                 if (view === 'select') {
@@ -6489,6 +6521,9 @@
                 }
                 if (view === 'outline') {
                     hbBuildOutlineTree();
+                }
+                if (view === 'rules') {
+                    hbBuildRulesTree();
                 }
             };
 
@@ -6647,6 +6682,126 @@
 
                 // 默认全部折叠
 
+            }
+
+            // 构建规章制度树（直接读取规章制度模块数据，不导入到检查手册）
+            function hbBuildRulesTree() {
+                const treeEl = document.getElementById('hb-outlineTree');
+                const contentEl = document.getElementById('hb-outlineContent');
+
+                // 从规章制度模块获取实时数据
+                const rulesData = (typeof window.getRulesData === 'function') ? window.getRulesData() : [];
+                if (!rulesData || rulesData.length === 0) {
+                    treeEl.innerHTML = '<div class="hb-content-placeholder" style="padding:30px 10px;">规章制度模块中暂无数据，请先在规章制度模块导入文件</div>';
+                    contentEl.innerHTML = '<div class="hb-content-placeholder">← 点击左侧目录查看内容</div>';
+                    return;
+                }
+
+                // 构建树形结构：按 trade 分组，每个 trade 下面是 title 列表
+                const tree = [];
+                const tradeMap = {}; // trade -> node index in tree
+
+                rulesData.forEach((rule, idx) => {
+                    const trade = rule.trade || '未分类';
+                    const title = rule.title || '无标题';
+
+                    if (tradeMap[trade] === undefined) {
+                        tradeMap[trade] = tree.length;
+                        tree.push({ level: 0, label: trade, children: [], trade: trade, ruleIdx: -1 });
+                    }
+                    const tradeIdx = tradeMap[trade];
+                    tree[tradeIdx].children.push({ level: 1, label: title, children: [], trade: trade, ruleIdx: idx, title: title });
+                });
+
+                // 渲染树
+                function countLeaves(node) {
+                    if (node.children.length === 0) return 1;
+                    return node.children.reduce((sum, c) => sum + countLeaves(c), 0);
+                }
+
+                function renderNode(node) {
+                    const hasChildren = node.children.length > 0;
+                    const leafCount = countLeaves(node);
+                    let html = '<div class="hb-tree-node hb-tree-level-' + node.level + '">';
+                    html += '<div class="hb-tree-header" data-trade="' + _esc(node.trade) + '" data-rule-idx="' + node.ruleIdx + '" data-title="' + _esc(node.title || '') + '">';
+                    html += '<span class="hb-tree-arrow ' + (hasChildren ? '' : 'hidden') + '">▶</span>';
+                    html += '<span class="hb-tree-label" title="' + _esc(node.label) + '">' + _esc(node.label) + '</span>';
+                    if (hasChildren) html += '<span class="hb-tree-count">' + leafCount + '</span>';
+                    html += '</div>';
+
+                    if (hasChildren) {
+                        html += '<div class="hb-tree-children">';
+                        node.children.forEach(child => { html += renderNode(child); });
+                        html += '</div>';
+                    }
+                    html += '</div>';
+                    return html;
+                }
+
+                let treeHtml = '';
+                tree.forEach(node => { treeHtml += renderNode(node); });
+                treeEl.innerHTML = treeHtml || '<div class="hb-content-placeholder">暂无数据</div>';
+                contentEl.innerHTML = '<div class="hb-content-placeholder">← 点击左侧目录查看全文</div>';
+
+                // 绑定点击事件
+                treeEl.querySelectorAll('.hb-tree-header').forEach(header => {
+                    header.addEventListener('click', function(e) {
+                        e.stopPropagation();
+
+                        // 折叠/展开
+                        const arrow = this.querySelector('.hb-tree-arrow');
+                        const children = this.parentElement.querySelector('.hb-tree-children');
+                        if (children) {
+                            children.classList.toggle('expanded');
+                            if (arrow) arrow.classList.toggle('expanded');
+                        }
+
+                        // 高亮选中
+                        treeEl.querySelectorAll('.hb-tree-header.selected').forEach(h => h.classList.remove('selected'));
+                        this.classList.add('selected');
+
+                        const ruleIdx = parseInt(this.dataset.ruleIdx);
+                        const trade = this.dataset.trade;
+                        const title = this.dataset.title;
+
+                        // 叶子节点（具体规章）→ 全文查看
+                        if (!isNaN(ruleIdx) && ruleIdx >= 0 && typeof window.ruleViewFullText === 'function') {
+                            // 显示路径
+                            let pathHtml = '<span class="path-chapter">📖 规章制度</span>';
+                            pathHtml += '<span class="path-section">' + _esc(trade) + '</span>';
+                            if (title) pathHtml += '<span class="path-item">' + _esc(title) + '</span>';
+                            contentEl.innerHTML = '<div class="hb-content-path">' + pathHtml + '</div>' +
+                                '<div class="hb-content-text" style="text-align:center;padding:20px;">' +
+                                '<button class="btn btn-info" onclick="ruleViewFullText(' + ruleIdx + ')">📄 查看全文</button>' +
+                                '</div>';
+                        } else {
+                            // 分支节点（trade）→ 显示该专业下所有规章概要
+                            let pathHtml = '<span class="path-chapter">📖 规章制度</span>';
+                            pathHtml += '<span class="path-section">' + _esc(trade) + '</span>';
+
+                            const latestData = (typeof window.getRulesData === 'function') ? window.getRulesData() : [];
+                            const tradeRules = latestData.filter(r => (r.trade || '未分类') === trade);
+
+                            let bodyHtml = '';
+                            tradeRules.forEach((r, i) => {
+                                const origIdx = latestData.indexOf(r);
+                                bodyHtml += '<div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">';
+                                bodyHtml += '<span style="flex:1;color:var(--info);cursor:pointer;text-decoration:underline;" onclick="ruleViewFullText(' + origIdx + ')">' + _esc(r.title || '无标题') + '</span>';
+                                bodyHtml += '<span style="color:#94a3b8;font-size:0.85em;">' + (r.content || '').length + '字</span>';
+                                bodyHtml += '<button class="btn btn-info btn-small" onclick="ruleViewFullText(' + origIdx + ')">📄 查看</button>';
+                                bodyHtml += '</div>';
+                            });
+
+                            if (!bodyHtml) bodyHtml = '<span style="color:#94a3b8;">（无内容）</span>';
+                            contentEl.innerHTML = '<div class="hb-content-path">' + pathHtml + '</div><div class="hb-content-text">' + bodyHtml + '</div>';
+                        }
+
+                        // 手机端：点击后自动滚动到内容区
+                        if (window.innerWidth <= 600) {
+                            contentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    });
+                });
             }
 
             loadFromStorage();
