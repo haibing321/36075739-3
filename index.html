@@ -3141,6 +3141,46 @@
                 });
             }
 
+            // 批量读取图片（单事务，避免每张图片单独开事务）
+            async function getImagesFromDB(ids) {
+                if (!ids || ids.length === 0) return [];
+                const database = await initRuleDB();
+                return new Promise((resolve, reject) => {
+                    const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
+                    const store = tx.objectStore(IMAGE_STORE_NAME);
+                    const results = [];
+                    let done = 0;
+                    ids.forEach(id => {
+                        const request = store.get(id);
+                        request.onsuccess = () => {
+                            if (request.result?.blob) results.push({ id, blob: request.result.blob });
+                            done++;
+                            if (done === ids.length) resolve(results);
+                        };
+                        request.onerror = () => {
+                            done++;
+                            if (done === ids.length) resolve(results);
+                        };
+                    });
+                });
+            }
+
+            // 批量保存图片（单事务）
+            async function saveImagesToDB(imageList) {
+                if (!imageList || imageList.length === 0) return;
+                const database = await initRuleDB();
+                return new Promise((resolve, reject) => {
+                    const tx = database.transaction([IMAGE_STORE_NAME], 'readwrite');
+                    const store = tx.objectStore(IMAGE_STORE_NAME);
+                    let done = 0;
+                    imageList.forEach(({ id, blob }) => {
+                        const request = store.put({ id, blob });
+                        request.onsuccess = () => { done++; if (done === imageList.length) resolve(); };
+                        request.onerror = () => { done++; if (done === imageList.length) resolve(); };
+                    });
+                });
+            }
+
             // 渲染规章 HTML（替换图片占位符为懒加载 img 标签）
             function renderRuleHtml(html) {
                 if (!html) return html;
@@ -3958,31 +3998,21 @@
                     const exportData = [];
                     
                     // 收集所有图片ID
-                    const allImageIds = new Set();
+                    const allImageIds = [];
                     exportRules.forEach(rule => {
                         if (rule.imageIds && rule.imageIds.length > 0) {
-                            rule.imageIds.forEach(id => allImageIds.add(id));
+                            rule.imageIds.forEach(id => { if (!allImageIds.includes(id)) allImageIds.push(id); });
                         }
                     });
                     
-                    // 导出图片到ZIP
-                    if (allImageIds.size > 0) {
-                        const database = await initRuleDB();
-                        const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
-                        const store = tx.objectStore(IMAGE_STORE_NAME);
-                        
-                        for (const imgId of allImageIds) {
-                            try {
-                                const blob = await getImageFromDB(imgId);
-                                if (blob) {
-                                    const ext = blob.type === 'image/png' ? 'png' : 
-                                               blob.type === 'image/gif' ? 'gif' : 'jpg';
-                                    zip.file(`images/${imgId}.${ext}`, blob);
-                                }
-                            } catch (e) {
-                                console.error('导出图片失败:', imgId, e);
-                            }
-                        }
+                    // 批量读取图片（单事务）
+                    if (allImageIds.length > 0) {
+                        const images = await getImagesFromDB(allImageIds);
+                        images.forEach(({ id, blob }) => {
+                            const ext = blob.type === 'image/png' ? 'png' : 
+                                       blob.type === 'image/gif' ? 'gif' : 'jpg';
+                            zip.file('images/' + id + '.' + ext, blob);
+                        });
                     }
                     
                     // 准备导出数据（searchText导入时重算，不导出）
@@ -4002,15 +4032,15 @@
                         version: 2,
                         exportDate: new Date().toISOString(),
                         count: exportRules.length,
-                        hasImages: allImageIds.size > 0
+                        hasImages: allImageIds.length > 0
                     }, null, 2));
                     
-                    // 生成ZIP文件
-                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    // 生成ZIP文件（图片已是压缩格式，用STORE避免重复压缩浪费时间）
+                    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
                     const tradeSuffix = selectedTrade ? '_' + selectedTrade : '_全部';
                     downloadBlob(zipBlob, '铁路规章' + tradeSuffix + '_' + new Date().toISOString().slice(0, 10) + '.zip');
                     
-                    alert('导出成功！共 ' + exportRules.length + ' 条规章' + (allImageIds.size > 0 ? '，包含 ' + allImageIds.size + ' 张图片' : ''));
+                    alert('导出成功！共 ' + exportRules.length + ' 条规章' + (allImageIds.length > 0 ? '，包含 ' + allImageIds.length + ' 张图片' : ''));
                 } catch (err) {
                     console.error('ZIP导出失败:', err);
                     alert('导出失败: ' + err.message);
@@ -4027,35 +4057,24 @@
                     const exportData = [];
                     
                     // 收集所有图片ID
-                    const allImageIds = new Set();
+                    const allImageIds = [];
                     rules.forEach(rule => {
                         if (rule.imageIds && rule.imageIds.length > 0) {
-                            rule.imageIds.forEach(id => allImageIds.add(id));
+                            rule.imageIds.forEach(id => { if (!allImageIds.includes(id)) allImageIds.push(id); });
                         }
                     });
                     
-                    // 导出图片到ZIP
-                    if (allImageIds.size > 0) {
-                        const database = await initRuleDB();
-                        const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
-                        const store = tx.objectStore(IMAGE_STORE_NAME);
-                        
-                        for (const imgId of allImageIds) {
-                            try {
-                                const blob = await getImageFromDB(imgId);
-                                if (blob) {
-                                    // 获取文件扩展名
-                                    const ext = blob.type === 'image/png' ? 'png' : 
-                                               blob.type === 'image/gif' ? 'gif' : 'jpg';
-                                    zip.file(`images/${imgId}.${ext}`, blob);
-                                }
-                            } catch (e) {
-                                console.error('导出图片失败:', imgId, e);
-                            }
-                        }
+                    // 批量读取图片（单事务）
+                    if (allImageIds.length > 0) {
+                        const images = await getImagesFromDB(allImageIds);
+                        images.forEach(({ id, blob }) => {
+                            const ext = blob.type === 'image/png' ? 'png' : 
+                                       blob.type === 'image/gif' ? 'gif' : 'jpg';
+                            zip.file('images/' + id + '.' + ext, blob);
+                        });
                     }
                     
-                    // 准备导出数据（移除Blob，保留imageIds引用；searchText导入时重算，不导出）
+                    // 准备导出数据（searchText导入时重算，不导出）
                     rules.forEach(rule => {
                         exportData.push({
                             trade: rule.trade,
@@ -4075,8 +4094,8 @@
                         hasImages: allImageIds.size > 0
                     }, null, 2));
                     
-                    // 生成ZIP文件
-                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    // 生成ZIP文件（图片已是压缩格式，用STORE避免重复压缩浪费时间）
+                    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
                     downloadBlob(zipBlob, '铁路规章备份_' + new Date().toISOString().slice(0, 10) + '.zip');
                     
                     alert('导出成功！共 ' + rules.length + ' 条规章' + (allImageIds.size > 0 ? '，包含 ' + allImageIds.size + ' 张图片' : ''));
@@ -4116,20 +4135,30 @@
                     let skipCount = 0;
                     let imageCount = 0;
                     
-                    // 导入图片
-                    const imageFiles = Object.keys(zip.files).filter(name => name.startsWith('images/'));
-                    for (const imgPath of imageFiles) {
-                        try {
-                            const imgId = imgPath.replace('images/', '').replace(/\.(jpg|jpeg|png|gif)$/i, '');
-                            const blob = await zip.file(imgPath).async('blob');
-                            await saveImageToDB(imgId, blob);
-                            imageCount++;
-                        } catch (e) {
-                            console.error('导入图片失败:', imgPath, e);
+                    // 批量导入图片：先并行读取所有blob，再单事务写入
+                    const imageFiles = Object.keys(zip.files).filter(name => name.startsWith('images/') && !zip.files[name].dir);
+                    if (imageFiles.length > 0) {
+                        // 并行解压所有图片blob
+                        const imageBlobs = await Promise.all(imageFiles.map(async imgPath => {
+                            try {
+                                const imgId = imgPath.replace('images/', '').replace(/\.(jpg|jpeg|png|gif)$/i, '');
+                                const blob = await zip.file(imgPath).async('blob');
+                                return { id: imgId, blob };
+                            } catch (e) {
+                                console.error('解压图片失败:', imgPath, e);
+                                return null;
+                            }
+                        }));
+                        // 过滤失败的，单事务写入IndexedDB
+                        const validImages = imageBlobs.filter(r => r && r.blob);
+                        if (validImages.length > 0) {
+                            await saveImagesToDB(validImages);
                         }
+                        imageCount = validImages.length;
                     }
                     
-                    // 导入规章
+                    // 导入规章（批量收集旧图片，一次性删除）
+                    const oldImageIdsToDelete = [];
                     for (const item of importRules) {
                         if (item.title && (item.content || item.contentHtml)) {
                             const dupIdx = rules.findIndex(r => 
@@ -4145,10 +4174,10 @@
                                 imageIds: item.imageIds || []
                             };
                             if (dupIdx !== -1) {
-                                // 删除旧图片
+                                // 收集旧图片ID，后面批量删除
                                 const oldRule = rules[dupIdx];
                                 if (oldRule.imageIds && oldRule.imageIds.length > 0) {
-                                    await deleteImagesFromDB(oldRule.imageIds);
+                                    oldImageIdsToDelete.push(...oldRule.imageIds);
                                 }
                                 rules[dupIdx] = ruleData;
                             } else {
@@ -4158,6 +4187,10 @@
                         } else {
                             skipCount++;
                         }
+                    }
+                    // 批量删除旧图片（单事务）
+                    if (oldImageIdsToDelete.length > 0) {
+                        await deleteImagesFromDB(oldImageIdsToDelete);
                     }
                     
                     await saveToStorage();
