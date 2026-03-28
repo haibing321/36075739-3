@@ -1651,33 +1651,58 @@
             /* 自定义悬浮滚动条容器 */
             #rule-fvScrollWrap {
                 position: relative;
+                overflow: hidden;
             }
             /* 悬浮滚动条轨道 */
             #rule-fvScrollbar {
                 position: absolute;
-                right: 3px;
+                right: 0;
                 top: 0;
                 bottom: 0;
-                width: 6px;
+                width: 14px;
                 pointer-events: none;
-                z-index: 10;
+                z-index: 20;
                 opacity: 0;
-                transition: opacity 0.3s ease;
+                transition: opacity 0.35s ease;
+                background: transparent;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                padding: 2px 3px;
+                box-sizing: border-box;
             }
             #rule-fvScrollbar.visible {
                 opacity: 1;
                 pointer-events: auto;
             }
+            /* 轨道背景线 */
+            #rule-fvScrollbar::before {
+                content: '';
+                position: absolute;
+                top: 4px; bottom: 4px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 3px;
+                background: rgba(0,0,0,0.08);
+                border-radius: 2px;
+            }
             /* 滑块 */
             #rule-fvScrollThumb {
                 position: absolute;
-                left: 0;
-                width: 100%;
-                min-height: 50px;
-                background: rgba(0,0,0,0.4);
-                border-radius: 3px;
+                left: 3px;
+                right: 3px;
+                width: auto;
+                min-height: 60px;
+                background: rgba(80,120,200,0.55);
+                border-radius: 4px;
                 cursor: pointer;
                 touch-action: none;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+                transition: background 0.15s;
+            }
+            #rule-fvScrollThumb:active,
+            #rule-fvScrollThumb.dragging {
+                background: rgba(60,100,200,0.78);
             }
         }
 
@@ -2476,37 +2501,45 @@
             let _sbFadeTimer = null;
 
             function updateThumb() {
-                const body = document.getElementById('rule-fullContentBody');
-                const bar  = document.getElementById('rule-fvScrollbar');
+                const body  = document.getElementById('rule-fullContentBody');
+                const bar   = document.getElementById('rule-fvScrollbar');
                 const thumb = document.getElementById('rule-fvScrollThumb');
                 if (!body || !bar || !thumb) return;
                 if (!isMobile()) { bar.classList.remove('visible'); return; }
 
                 const trackH  = body.clientHeight;
                 const scrollH = body.scrollHeight;
-                if (scrollH <= trackH) { bar.classList.remove('visible'); return; }
+                if (scrollH <= trackH + 2) { bar.classList.remove('visible'); return; }
 
-                // 同步轨道高度到内容区（处理 padding 偏移）
-                bar.style.top    = body.offsetTop + 'px';
+                // 轨道跟随内容区，不依赖 offsetTop（弹窗内部可能有误差）
+                bar.style.top    = '0';
                 bar.style.height = trackH + 'px';
 
-                const ratio     = trackH / scrollH;
-                const thumbH    = Math.max(50, trackH * ratio);
-                const maxTop    = trackH - thumbH;
-                const thumbTop  = (body.scrollTop / (scrollH - trackH)) * maxTop;
+                const ratio    = trackH / scrollH;
+                const thumbH   = Math.max(60, Math.round(trackH * ratio));
+                const maxTop   = trackH - thumbH;
+                const thumbTop = Math.round((body.scrollTop / (scrollH - trackH)) * maxTop);
 
                 thumb.style.height = thumbH + 'px';
                 thumb.style.top    = thumbTop + 'px';
             }
 
-            function showBar() {
-                const bar = document.getElementById('rule-fvScrollbar');
+            function showBar(keepMs) {
+                const bar  = document.getElementById('rule-fvScrollbar');
                 if (!bar || !isMobile()) return;
                 const body = document.getElementById('rule-fullContentBody');
-                if (!body || body.scrollHeight <= body.clientHeight) return;
+                if (!body || body.scrollHeight <= body.clientHeight + 2) return;
                 bar.classList.add('visible');
                 clearTimeout(_sbFadeTimer);
-                _sbFadeTimer = setTimeout(() => bar.classList.remove('visible'), 1800);
+                _sbFadeTimer = setTimeout(() => bar.classList.remove('visible'), keepMs || 1800);
+            }
+
+            function hideBarDelayed(ms) {
+                clearTimeout(_sbFadeTimer);
+                _sbFadeTimer = setTimeout(() => {
+                    const bar = document.getElementById('rule-fvScrollbar');
+                    if (bar) bar.classList.remove('visible');
+                }, ms || 1800);
             }
 
             // 滚动时同步 + 显示
@@ -2515,21 +2548,32 @@
                 const thumb = document.getElementById('rule-fvScrollThumb');
                 if (!body || !thumb) return;
 
+                // 内容区滚动时同步滑块位置
                 body.addEventListener('scroll', function() {
                     updateThumb();
-                    showBar();
+                    showBar(1500);
                 });
 
+                // 手指触摸内容区时立即显示滚动条（不等滚动事件）
+                body.addEventListener('touchstart', function() {
+                    updateThumb();
+                    showBar(3000);
+                }, { passive: true });
+
                 // 内容变化后重算（图片加载等）
-                const ro = new ResizeObserver(() => updateThumb());
+                const ro = new ResizeObserver(() => {
+                    updateThumb();
+                });
                 ro.observe(body);
 
-                // touch 拖拽滑块
+                // -------- touch 拖拽滑块 --------
                 let _dragging = false, _startY = 0, _startScrollTop = 0;
 
                 thumb.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
                     e.preventDefault();
                     _dragging = true;
+                    thumb.classList.add('dragging');
                     _startY = e.touches[0].clientY;
                     _startScrollTop = body.scrollTop;
                     clearTimeout(_sbFadeTimer);
@@ -2538,27 +2582,25 @@
                 document.addEventListener('touchmove', function(e) {
                     if (!_dragging) return;
                     e.preventDefault();
-                    const body   = document.getElementById('rule-fullContentBody');
-                    const bar    = document.getElementById('rule-fvScrollbar');
-                    const thumb  = document.getElementById('rule-fvScrollThumb');
-                    if (!body || !bar || !thumb) return;
-                    const trackH  = body.clientHeight;
-                    const scrollH = body.scrollHeight;
-                    const thumbH  = parseFloat(thumb.style.height) || 50;
+                    const b     = document.getElementById('rule-fullContentBody');
+                    const bar   = document.getElementById('rule-fvScrollbar');
+                    const th    = document.getElementById('rule-fvScrollThumb');
+                    if (!b || !bar || !th) return;
+                    const trackH  = b.clientHeight;
+                    const scrollH = b.scrollHeight;
+                    const thumbH  = parseFloat(th.style.height) || 60;
                     const maxTop  = trackH - thumbH;
                     const dy      = e.touches[0].clientY - _startY;
-                    const ratio   = dy / maxTop;
-                    body.scrollTop = _startScrollTop + ratio * (scrollH - trackH);
+                    const ratio   = maxTop > 0 ? dy / maxTop : 0;
+                    b.scrollTop   = _startScrollTop + ratio * (scrollH - trackH);
                     updateThumb();
                 }, { passive: false });
 
                 document.addEventListener('touchend', function() {
                     if (_dragging) {
                         _dragging = false;
-                        _sbFadeTimer = setTimeout(() => {
-                            const bar = document.getElementById('rule-fvScrollbar');
-                            if (bar) bar.classList.remove('visible');
-                        }, 1800);
+                        thumb.classList.remove('dragging');
+                        hideBarDelayed(1800);
                     }
                 });
             });
@@ -2567,7 +2609,7 @@
             window._fvScrollbarReset = function() {
                 setTimeout(() => {
                     updateThumb();
-                    showBar();
+                    showBar(2500);
                 }, 80);
             };
         })();
@@ -3157,6 +3199,24 @@
                 });
             }
 
+            // 通用文件下载函数，兼容Safari/微信/iOS等不支持 a.click() 的浏览器
+            function downloadBlob(blob, filename) {
+                // 方案1: msSaveBlob（IE/旧Edge）
+                if (window.navigator && window.navigator.msSaveBlob) {
+                    window.navigator.msSaveBlob(blob, filename);
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                // 方案2: 标准 a.click()
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }
+
             // 从 HTML 提取纯文本，保留段落换行
             function stripHtml(html) {
                 if (!html) return '';
@@ -3331,8 +3391,10 @@
                 }
                 const catalogFilter = document.getElementById('rule-catalogTradeFilter');
                 if (catalogFilter) {
+                    const catalogValue = catalogFilter.value;
                     catalogFilter.innerHTML = '<option value="">全部专业</option>';
                     sortedTrades.forEach(trade => { const option = document.createElement('option'); option.value = trade; option.textContent = trade; catalogFilter.appendChild(option); });
+                    if (catalogValue && sortedTrades.includes(catalogValue)) catalogFilter.value = catalogValue;
                 }
             }
 
@@ -3661,15 +3723,15 @@
                 input.click();
             }
             
-            // 将DOCX按章节拆分为多个section（保留图片、表格、排版）
-            // 策略：先用mammoth完整转换HTML（保留图片/表格），再按h1/h2标题标签拆分章节
+            // 将DOCX转换为单个section（保留图片、表格、排版）
+            // 不再按章节拆分——一个文件对应一条规章
             async function organizeDocxToSections(arrayBuffer, filename) {
                 const sections = [];
                 
                 try {
                     if (typeof mammoth === 'undefined') throw new Error('mammoth 库未加载');
                     
-                    // ===== 第1步：用mammoth完整转换HTML（保留图片、表格、排版） =====
+                    // 用mammoth完整转换HTML（保留图片、表格、排版）
                     const imageIds = [];
                     const options = {
                         convertImage: mammoth.images.imgElement(function(image) {
@@ -3694,166 +3756,17 @@
                     const fullHtml = cleanHtml(result.value);
                     
                     if (!fullHtml || !fullHtml.trim()) {
-                        console.warn('mammoth转换结果为空，跳过章节拆分');
+                        console.warn('mammoth转换结果为空');
                         return sections;
                     }
                     
-                    // ===== 第2步：解析HTML，按h1/h2标题标签拆分章节 =====
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = fullHtml;
-                    
-                    const allChildren = Array.from(tempDiv.childNodes);
-                    let currentSection = null;
-                    let currentHtmlParts = [];
-                    
-                    // 检测标题元素：优先使用mammoth生成的h1/h2标签
-                    function isHeadingElement(el) {
-                        if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
-                        const tag = el.tagName.toLowerCase();
-                        if (tag === 'h1' || tag === 'h2') return true;
-                        // 同时检查是否有Word样式映射的类名（mammoth可能生成p.style-heading1等）
-                        if (tag === 'p') {
-                            const cls = el.className || '';
-                            if (/heading\s*1|Heading1|style\s*1/i.test(cls)) return true;
-                            if (/heading\s*2|Heading2|style\s*2/i.test(cls)) return true;
-                        }
-                        return false;
-                    }
-                    
-                    function getHeadingLevel(el) {
-                        const tag = (el.tagName || '').toLowerCase();
-                        if (tag === 'h1') return 1;
-                        if (tag === 'h2') return 2;
-                        if (tag === 'p') {
-                            const cls = el.className || '';
-                            if (/heading\s*1|Heading1|style\s*1/i.test(cls)) return 1;
-                            if (/heading\s*2|Heading2|style\s*2/i.test(cls)) return 2;
-                        }
-                        return 2;
-                    }
-                    
-                    function saveCurrentSection() {
-                        if (currentSection && currentHtmlParts.length > 0) {
-                            const sectionHtml = currentHtmlParts.join('\n');
-                            const cleanedSectionHtml = cleanHtml(sectionHtml);
-                            if (cleanedSectionHtml.trim()) {
-                                sections.push({
-                                    title: currentSection,
-                                    content: stripHtml(cleanedSectionHtml),  // 保留换行，用于段落搜索
-                                    searchText: normalizeSearchText(stripHtml(cleanedSectionHtml)),  // 无换行，用于分数计算
-                                    contentHtml: cleanedSectionHtml,
-                                    imageIds: imageIds.slice() // 共享所有图片ID引用
-                                });
-                            }
-                        }
-                    }
-                    
-                    function getElementHtml(el) {
-                        // 获取元素的外部HTML（包含标签本身）
-                        if (el.nodeType === Node.ELEMENT_NODE) return el.outerHTML;
-                        if (el.nodeType === Node.TEXT_NODE) return el.textContent;
-                        return '';
-                    }
-                    
-                    // 遍历所有顶层子节点，遇到h1/h2开始新章节
-                    for (const child of allChildren) {
-                        if (child.nodeType === Node.ELEMENT_NODE && isHeadingElement(child)) {
-                            // 保存之前章节
-                            saveCurrentSection();
-                            
-                            const headingText = child.textContent.trim();
-                            // 只对有实际内容的标题进行拆分，跳过空标题
-                            if (headingText && headingText.length < 200) {
-                                currentSection = headingText;
-                                currentHtmlParts = [];
-                            } else {
-                                // 标题太长，当作普通内容
-                                currentHtmlParts.push(getElementHtml(child));
-                            }
-                        } else {
-                            if (!currentSection) {
-                                // 还没遇到第一个标题，内容归入"前言"
-                                currentSection = filename.replace(/\.[^/.]+$/, '');
-                            }
-                            const html = getElementHtml(child);
-                            if (html && html.trim()) {
-                                currentHtmlParts.push(html);
-                            }
-                        }
-                    }
-                    
-                    // 保存最后一个章节
-                    saveCurrentSection();
-                    
-                    // 如果没有检测到h1/h2标题（可能文档没有用标题样式），
-                    // 尝试从原始XML中检测Word大纲级别来辅助判断
-                    if (sections.length <= 1) {
-                        // 只检测到0或1个章节，说明可能没有使用标题样式
-                        // 尝试用XML辅助检测（仅检查大纲级别，不丢失格式）
-                        try {
-                            const JSZip = window.JSZip;
-                            const zip = await JSZip.loadAsync(arrayBuffer);
-                            const xmlContent = await zip.file('word/document.xml').async('text');
-                            const parser = new DOMParser();
-                            const xmlDoc = parser.parseFromString(xmlContent, 'application/xml');
-                            
-                            // 收集有大纲级别的段落索引
-                            const headingIndices = new Set();
-                            xmlDoc.querySelectorAll('w p').forEach((para, idx) => {
-                                const outlineLvl = para.querySelector('w outlineLvl');
-                                const level = outlineLvl ? parseInt(outlineLvl.getAttribute('w:val')) : -1;
-                                if (level === 0 || level === 1) {
-                                    // 提取文本验证不是空段落
-                                    const texts = [];
-                                    para.querySelectorAll('w t').forEach(t => { if (t.textContent) texts.push(t.textContent); });
-                                    const text = texts.join('').trim();
-                                    if (text && text.length < 200) {
-                                        headingIndices.add(idx);
-                                    }
-                                }
-                            });
-                            
-                            if (headingIndices.size > 1) {
-                                // XML中有多个大纲级别标题，按段落位置重新拆分
-                                sections = [];
-                                const pElements = Array.from(tempDiv.querySelectorAll('p, div, h1, h2, h3, h4, table'));
-                                let pIdx = 0;
-                                currentSection = null;
-                                currentHtmlParts = [];
-                                
-                                for (const el of pElements) {
-                                    if (headingIndices.has(pIdx)) {
-                                        saveCurrentSection();
-                                        currentSection = el.textContent.trim();
-                                        currentHtmlParts = [];
-                                    } else {
-                                        if (!currentSection) {
-                                            currentSection = filename.replace(/\.[^/.]+$/, '');
-                                        }
-                                        currentHtmlParts.push(el.outerHTML);
-                                    }
-                                    pIdx++;
-                                }
-                                saveCurrentSection();
-                            }
-                        } catch (xmlErr) {
-                            console.warn('XML辅助拆分失败，保持原始结果:', xmlErr);
-                        }
-                    }
-                    
-                    // 如果最终只有1个section或0个section，直接返回（processFiles的多章节路径会正常处理）
-                    if (sections.length === 0 && fullHtml && fullHtml.trim()) {
-                        // XML辅助也未拆分成功，将整个文档作为1个section返回
-                        sections.push({
-                            title: filename.replace(/\.[^/.]+$/, ''),
-                            content: stripHtml(fullHtml),
-                            searchText: normalizeSearchText(stripHtml(fullHtml)),
-                            contentHtml: fullHtml,
-                            imageIds: imageIds.slice()
-                        });
-                    }
-                    // 如果sections.length === 1，也直接返回，让processFiles走多章节路径
-                    // 这样避免了processFiles再次调用mammoth导致图片重复存储
+                    // 整个文档作为1个section，文件名作为标题
+                    sections.push({
+                        title: filename.replace(/\.[^/.]+$/, ''),
+                        content: stripHtml(fullHtml),
+                        contentHtml: fullHtml,
+                        imageIds: imageIds.slice()
+                    });
                     
                 } catch (err) {
                     console.error('整理DOCX失败:', err);
@@ -3919,7 +3832,6 @@
                                         title: section.title,
                                         content: section.content,  // 保留换行的纯文本（stripHtml结果）
                                         contentHtml: section.contentHtml,
-                                        searchText: section.searchText || normalizeSearchText(section.content),  // 无换行，用于分数计算
                                         imageIds: section.imageIds || []
                                     };
                                     if (dupIdx !== -1) rules[dupIdx] = ruleData;
@@ -3972,7 +3884,6 @@
                                             title: item.title, 
                                             content: item.content || stripHtml(item.contentHtml),
                                             contentHtml: hasRealHtml ? item.contentHtml : '',
-                                            searchText: item.searchText || normalizeSearchText(item.content || stripHtml(item.contentHtml)),
                                             imageIds: item.imageIds || []
                                         };
                                         if (dupIdx !== -1) rules[dupIdx] = ruleData;
@@ -3992,7 +3903,6 @@
                             title, 
                             content: plainText || searchText,  // 保留换行的纯文本（DOCX用plainText，PDF等用searchText）
                             contentHtml: contentHtml,
-                            searchText: searchText,
                             imageIds: imageIds
                         };
                         if (dupIdx !== -1) rules[dupIdx] = ruleData;
@@ -4023,15 +3933,18 @@
                         return;
                     }
                 }
-                // JSON导出
-                const dataStr = JSON.stringify(exportRules, null, 2);
+                // JSON导出：只保留必要字段（searchText导入时重算，不导出）
+                const exportData = exportRules.map(r => ({
+                    trade: r.trade,
+                    title: r.title,
+                    content: r.content,
+                    contentHtml: r.contentHtml || '',
+                    imageIds: r.imageIds || []
+                }));
+                const dataStr = JSON.stringify(exportData, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = selectedTrade ? '铁路规章_' + selectedTrade + '_' + new Date().toISOString().slice(0, 10) + '.json' : '铁路规章_全部_' + new Date().toISOString().slice(0, 10) + '.json';
-                a.click();
-                URL.revokeObjectURL(url);
+                const filename = selectedTrade ? '铁路规章_' + selectedTrade + '_' + new Date().toISOString().slice(0, 10) + '.json' : '铁路规章_全部_' + new Date().toISOString().slice(0, 10) + '.json';
+                downloadBlob(blob, filename);
                 closeModal('rule-exportModal');
             }
 
@@ -4072,14 +3985,13 @@
                         }
                     }
                     
-                    // 准备导出数据
+                    // 准备导出数据（searchText导入时重算，不导出）
                     exportRules.forEach(rule => {
                         exportData.push({
                             trade: rule.trade,
                             title: rule.title,
                             content: rule.content,
-                            contentHtml: rule.contentHtml,
-                            searchText: rule.searchText,
+                            contentHtml: rule.contentHtml || '',
                             imageIds: rule.imageIds || []
                         });
                     });
@@ -4095,13 +4007,8 @@
                     
                     // 生成ZIP文件
                     const zipBlob = await zip.generateAsync({ type: 'blob' });
-                    const url = URL.createObjectURL(zipBlob);
-                    const a = document.createElement('a');
-                    a.href = url;
                     const tradeSuffix = selectedTrade ? '_' + selectedTrade : '_全部';
-                    a.download = '铁路规章' + tradeSuffix + '_' + new Date().toISOString().slice(0, 10) + '.zip';
-                    a.click();
-                    URL.revokeObjectURL(url);
+                    downloadBlob(zipBlob, '铁路规章' + tradeSuffix + '_' + new Date().toISOString().slice(0, 10) + '.zip');
                     
                     alert('导出成功！共 ' + exportRules.length + ' 条规章' + (allImageIds.size > 0 ? '，包含 ' + allImageIds.size + ' 张图片' : ''));
                 } catch (err) {
@@ -4148,14 +4055,13 @@
                         }
                     }
                     
-                    // 准备导出数据（移除Blob，保留imageIds引用）
+                    // 准备导出数据（移除Blob，保留imageIds引用；searchText导入时重算，不导出）
                     rules.forEach(rule => {
                         exportData.push({
                             trade: rule.trade,
                             title: rule.title,
                             content: rule.content,
-                            contentHtml: rule.contentHtml,
-                            searchText: rule.searchText,
+                            contentHtml: rule.contentHtml || '',
                             imageIds: rule.imageIds || []
                         });
                     });
@@ -4171,12 +4077,7 @@
                     
                     // 生成ZIP文件
                     const zipBlob = await zip.generateAsync({ type: 'blob' });
-                    const url = URL.createObjectURL(zipBlob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = '铁路规章备份_' + new Date().toISOString().slice(0, 10) + '.zip';
-                    a.click();
-                    URL.revokeObjectURL(url);
+                    downloadBlob(zipBlob, '铁路规章备份_' + new Date().toISOString().slice(0, 10) + '.zip');
                     
                     alert('导出成功！共 ' + rules.length + ' 条规章' + (allImageIds.size > 0 ? '，包含 ' + allImageIds.size + ' 张图片' : ''));
                 } catch (err) {
@@ -4235,12 +4136,12 @@
                                 r.title.toLowerCase().trim() === item.title.toLowerCase().trim() && 
                                 r.trade === (item.trade || '通用')
                             );
+                            const hasRealHtml = item.contentHtml && /<[a-z][\s\S]*>/i.test(item.contentHtml);
                             const ruleData = {
                                 trade: item.trade || '通用',
                                 title: item.title,
                                 content: item.content || stripHtml(item.contentHtml),
-                                contentHtml: item.contentHtml || item.content,
-                                searchText: item.searchText || item.content || stripHtml(item.contentHtml),
+                                contentHtml: hasRealHtml ? item.contentHtml : '',
                                 imageIds: item.imageIds || []
                             };
                             if (dupIdx !== -1) {
