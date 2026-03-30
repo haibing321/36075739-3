@@ -6436,18 +6436,31 @@
                 container.style.display = 'block';
             }
             window.selectPhoneSuggestion = function(s) {
-                document.getElementById('phone-searchInput').value = s;
-                document.getElementById('phone-suggestions').style.display = 'none';
-                phoneDoSearch();
+                const searchInput = document.getElementById('phone-searchInput');
+                const suggestionsContainer = document.getElementById('phone-suggestions');
+                if (searchInput) {
+                    searchInput.value = s;
+                    if (suggestionsContainer) suggestionsContainer.style.display = 'none';
+                    phoneDoSearch();
+                }
             };
 
             window.phoneDoSearch = async function() {
-                const keyword = document.getElementById('phone-searchInput').value.trim();
+                const searchInput = document.getElementById('phone-searchInput');
                 const resultsContainer = document.getElementById('phone-results');
+                const resultCountEl = document.getElementById('phone-resultCount');
+                
+                // 安全防护：如果必要元素不存在，则返回
+                if (!searchInput || !resultsContainer || !resultCountEl) {
+                    console.warn('电话模块DOM元素未就绪');
+                    return;
+                }
+                
+                const keyword = searchInput.value.trim();
                 resultsContainer.style.display = 'block';
                 if (phoneData.length === 0) {
                     resultsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>暂无电话数据，请导入Excel</p></div>';
-                    document.getElementById('phone-resultCount').textContent = '0 条';
+                    resultCountEl.textContent = '0 条';
                     return;
                 }
                 let filtered = phoneData;
@@ -6520,8 +6533,11 @@
             };
 
             window.phoneClearSearch = function() {
-                document.getElementById('phone-searchInput').value = '';
-                phoneDoSearch();
+                const searchInput = document.getElementById('phone-searchInput');
+                if (searchInput) {
+                    searchInput.value = '';
+                    phoneDoSearch();
+                }
             };
 
             function escapeHtml(text) { if (!text) return ''; return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -6618,15 +6634,31 @@
                 if (confirm('确定清空所有电话数据吗？此操作不可恢复！')) { phoneData = []; saveToStorage(); phoneDoSearch(); }
             };
 
-            const input = document.getElementById('phone-searchInput');
-            if (input) {
-                // 防抖优化输入事件，减少频繁搜索
-                const handleInput = window._debounce(function() { showPhoneSuggestions(this); }, 200);
-                input.addEventListener('input', handleInput);
-                input.addEventListener('blur', function() { setTimeout(() => { const sugg = document.getElementById('phone-suggestions'); if (sugg) sugg.style.display = 'none'; }, 200); });
+            // 初始化电话模块的函数
+            function initPhoneModule() {
+                const input = document.getElementById('phone-searchInput');
+                if (input) {
+                    // 防抖优化输入事件，减少频繁搜索
+                    const handleInput = window._debounce(function() { showPhoneSuggestions(this); }, 200);
+                    input.addEventListener('input', handleInput);
+                    input.addEventListener('blur', function() { setTimeout(() => { const sugg = document.getElementById('phone-suggestions'); if (sugg) sugg.style.display = 'none'; }, 200); });
+                }
+                
+                const fileInput = document.getElementById('phone-fileInput');
+                if (fileInput) {
+                    fileInput.addEventListener('change', phoneHandleFile);
+                }
+                
+                loadFromStorage();
             }
-            document.getElementById('phone-fileInput').addEventListener('change', phoneHandleFile);
-            loadFromStorage();
+
+            // 当DOM加载完成后初始化电话模块
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initPhoneModule);
+            } else {
+                // DOM已经加载完成，直接初始化
+                setTimeout(initPhoneModule, 0);
+            }
         })();
 
         // ========== 第六模块：检查手册 (四级目录) ==========
