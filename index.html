@@ -8,54 +8,6 @@
     <script>
     (function() {
         'use strict';
-        
-        // ================================================================================
-        // 事件防抖工具函数（优化resize/scroll等频繁事件）
-        // ================================================================================
-        window._debounce = function(func, wait, immediate) {
-            let timeout;
-            return function executedFunction() {
-                const context = this;
-                const args = arguments;
-                const later = function() {
-                    timeout = null;
-                    if (!immediate) func.apply(context, args);
-                };
-                const callNow = immediate && !timeout;
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-                if (callNow) func.apply(context, args);
-            };
-        };
-        
-        window._throttle = function(func, limit) {
-            let inThrottle;
-            return function() {
-                const args = arguments;
-                const context = this;
-                if (!inThrottle) {
-                    func.apply(context, args);
-                    inThrottle = true;
-                    setTimeout(() => inThrottle = false, limit);
-                }
-            };
-        };
-        
-        // 全局HTML转义函数（所有模块共用）
-        window.escapeHtml = function(text) {
-            if (typeof text !== 'string') text = String(text);
-            return text.replace(/&/g, '&amp;')
-                       .replace(/</g, '&lt;')
-                       .replace(/>/g, '&gt;')
-                       .replace(/"/g, '&quot;')
-                       .replace(/'/g, '&#039;');
-        };
-        
-        // 全局正则表达式转义函数
-        window.escapeRegExp = function(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        };
-        
         // 退出提示 DOM 和样式创建（等待 DOM 加载完成后执行）
         function initExitHint() {
             // 注入退出提示样式
@@ -136,105 +88,13 @@
         }
     })();
     </script>
-    <!-- 第三方库 - 优化加载 -->
-    <!-- 基础库：使用 defer，不阻塞渲染 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.6.2/fuse.min.js" defer></script>
+    <!-- 第三方库 (不变) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.6.2/fuse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin/2.11.0/pinyin.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    
-    <!-- 按需动态加载的库（将在功能模块中动态加载） -->
-    <script>
-        // 动态脚本加载工具函数
-        window._dynamicLoad = {
-            loaded: {},
-            
-            // 加载单个脚本
-            loadScript: function(src, id) {
-                if (this.loaded[src]) {
-                    return Promise.resolve();
-                }
-                
-                return new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = src;
-                    if (id) script.id = id;
-                    script.onload = () => {
-                        this.loaded[src] = true;
-                        console.log('✅ 已加载:', src);
-                        resolve();
-                    };
-                    script.onerror = reject;
-                    document.head.appendChild(script);
-                });
-            },
-            
-            // 批量加载脚本
-            loadScripts: function(sources) {
-                return Promise.all(sources.map(src => this.loadScript(src)));
-            },
-            
-            // 检查是否已加载
-            isLoaded: function(src) {
-                return !!this.loaded[src];
-            }
-        };
-        
-        // 按需加载配置
-        window._dynamicLibs = {
-            xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-            mammoth: 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js',
-            pinyin: 'https://cdnjs.cloudflare.com/ajax/libs/pinyin/2.11.0/pinyin.min.js',
-            jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
-        };
-        
-        // 按需加载函数
-        window._loadLibrary = {
-            // 加载拼音库（用于搜索）
-            pinyin: async function() {
-                if (typeof pinyin !== 'undefined') return Promise.resolve();
-                console.log('📦 正在动态加载拼音库...');
-                return window._dynamicLoad.loadScript(window._dynamicLibs.pinyin, 'pinyin-lib');
-            },
-            
-            // 加载Excel库（用于导入导出）
-            xlsx: async function() {
-                if (typeof XLSX !== 'undefined') return Promise.resolve();
-                console.log('📦 正在动态加载Excel库...');
-                return window._dynamicLoad.loadScript(window._dynamicLibs.xlsx, 'xlsx-lib');
-            },
-            
-            // 加载Mammoth库（用于DOCX导入）
-            mammoth: async function() {
-                if (typeof mammoth !== 'undefined') return Promise.resolve();
-                console.log('📦 正在动态加载Mammoth库...');
-                return window._dynamicLoad.loadScript(window._dynamicLibs.mammoth, 'mammoth-lib');
-            },
-            
-            // 加载JSZip库（用于ZIP导出） - 简单直接的加载
-            jszip: async function() {
-                if (typeof JSZip !== 'undefined') {
-                    console.log('✅ JSZip已加载');
-                    return Promise.resolve();
-                }
-                
-                console.log('📦 正在加载JSZip库...');
-                const jsZipUrl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-                return window._dynamicLoad.loadScript(jsZipUrl, 'jszip-lib');
-            },
-            
-            // 批量加载
-            all: async function() {
-                console.log('📦 批量加载所有按需库...');
-                await Promise.all([
-                    this.pinyin(),
-                    this.xlsx(),
-                    this.mammoth(),
-                    this.jszip()
-                ]);
-                console.log('✅ 所有按需库加载完成');
-            }
-        };
-    </script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -242,7 +102,7 @@
     <style>
         /* ========== 全局变量 & 基础样式 (完全保留原样式) ========== */
         :root {
-            --primary: #0d2137;
+            --primary: #1e3a5f;
             --primary-light: #2d5a87;
             --primary-dark: #0f1f33;
             --accent: #dc3545;
@@ -262,30 +122,6 @@
             --gradient-primary: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        /* ========== CSS优化：通用工具类（减少重复样式） ========== */
-        .flex-center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .flex-between {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .flex-start {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-        }
-        .flex-column {
-            display: flex;
-            flex-direction: column;
-        }
-        .flex-shrink-0 {
-            flex-shrink: 0;
-        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(180deg, #f0f2f5 0%, #e8ecf1 100%);
@@ -323,8 +159,6 @@
         .logo-icon {
             width: 44px;
             height: 44px;
-            min-width: 44px;
-            min-height: 44px;
             background: rgba(255,255,255,0.15);
             border-radius: 10px;
             display: flex;
@@ -332,20 +166,10 @@
             justify-content: center;
             font-size: 24px;
             backdrop-filter: blur(10px);
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-        
-        .logo-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 8px;
-        }
         }
         .logo-text { color: white; }
-        .logo-title { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; color: #ffffff; }
-        .logo-subtitle { font-size: 0.75rem; opacity: 0.9; margin-top: 2px; color: #ffffff; }
+        .logo-title { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
+        .logo-subtitle { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
         
         /* 汉堡菜单按钮 (仅移动端显示) */
         .nav-toggle {
@@ -492,7 +316,7 @@
             gap: 8px;
         }
         .stat-label { font-size: 0.875rem; color: var(--text-secondary); }
-        .stat-value { font-size: 0.95rem; font-weight: 600; color: #0d2137; }
+        .stat-value { font-size: 0.95rem; font-weight: 600; color: var(--primary); }
         .storage-bar {
             width: 120px;
             height: 8px;
@@ -545,68 +369,6 @@
         .btn-small { padding: 6px 12px; font-size: 0.75rem; border-radius: 6px; }
         .btn-tiny { padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; }
         
-        /* ========== CSS动画性能优化 ========== */
-        /* 添加will-change提示浏览器预优化动画元素 */
-        .btn, .modal-content, #rule-fullContentBody img, .nav-toggle {
-            will-change: transform, opacity;
-        }
-        /* 对于频繁使用的动画元素，添加特定的优化提示 */
-        .btn:hover {
-            will-change: transform, box-shadow;
-        }
-        #rule-fullContentBody img:hover {
-            will-change: transform;
-        }
-        
-        /* ========== 无限滚动加载样式 ========== */
-        .load-more-container {
-            padding: 20px;
-            text-align: center;
-            background: #f8fafc;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            margin: 20px 0;
-            transition: all 0.3s ease;
-        }
-        
-        .load-more-container:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-        
-        .load-more-container button {
-            padding: 12px 24px;
-            font-size: 1rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .load-more-container button:hover:not(:disabled) {
-            background: linear-gradient(135deg, #1d4ed8, #1e40af);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-        
-        .load-more-container button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .all-results-loaded {
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
         /* ========== 搜索框区域 ========== */
         .search-box {
             background: linear-gradient(to right, #ebf8ff, #f0fff4);
@@ -625,7 +387,7 @@
         .keyword-row label {
             width: 70px;
             font-weight: 500;
-            color: #0d2137;
+            color: var(--primary);
             font-size: 0.875rem;
         }
         .keyword-row input {
@@ -820,7 +582,7 @@
             transition: all 0.2s;
         }
         .rule-card-item:hover { box-shadow: var(--shadow-lg); border-color: #90cdf4; }
-        .rule-title { font-size: 1.1rem; font-weight: 600; color: #0d2137; margin-bottom: 10px; white-space: normal; word-break: break-all; word-wrap: break-word; }
+        .rule-title { font-size: 1.1rem; font-weight: 600; color: var(--primary); margin-bottom: 10px; white-space: normal; word-break: break-all; word-wrap: break-word; }
         .rule-trade {
             display: inline-block;
             background: linear-gradient(135deg, #ebf8ff, #e6fffa);
@@ -852,16 +614,6 @@
         .rule-highlight { background: #fef3c7; color: var(--accent); font-weight: 500; padding: 1px 4px; border-radius: 3px; }
         .rule-context { color: var(--text-secondary); }
         .rule-ellipsis { color: var(--text-secondary); font-style: italic; }
-        /* 搜索结果段落样式 - 紧凑版 */
-        .rule-match-para, .rule-matched-paragraph {
-            line-height: 1.5;
-            margin: 0;
-            padding: 0;
-        }
-        .rule-snippet p {
-            margin: 6px 0;
-            line-height: 1.5;
-        }
         
         /* ========== 工作日志专用 ========== */
         /* 备忘弹窗 */
@@ -1404,9 +1156,8 @@
             word-wrap: break-word;
             overflow-wrap: break-word;
             font-size: 0.95rem;
-            line-height: 1.4;
+            line-height: 1.5;
             display: block;
-            margin-bottom: 2px;
         }
         .catalog-meta {
             font-size: 0.75rem;
@@ -1441,29 +1192,17 @@
             .catalog-item {
                 flex-direction: column;
                 align-items: stretch;
-                padding: 10px;
-                margin-bottom: 8px;
+                padding: 12px;
             }
-            .catalog-info { margin-right: 0; margin-bottom: 8px; }
-            .catalog-title {
-                font-size: 0.9rem;
-                line-height: 1.3;
-                margin-bottom: 1px;
-            }
-            .catalog-meta {
-                font-size: 0.7rem;
-                margin-top: 4px;
-            }
+            .catalog-info { margin-right: 0; margin-bottom: 10px; }
             .catalog-actions {
                 flex-direction: row;
                 justify-content: flex-end;
                 width: 100%;
-                gap: 4px;
             }
             .catalog-actions .btn {
                 flex: 1;
-                padding: 6px 4px;
-                font-size: 0.7rem;
+                padding: 8px 6px;
             }
         }
         
@@ -1491,27 +1230,6 @@
         }
         
         /* ========== 检查手册模块专用样式（已统一为卡片，仅保留必要布局） ========== */
-        /* 图片懒加载样式 */
-        .hb-lazy-img {
-            background-color: #f1f5f9;
-            border-radius: 6px;
-            opacity: 0.8;
-            transition: opacity 0.3s ease;
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 8px auto;
-        }
-        .hb-loaded-img {
-            opacity: 1;
-        }
-        @media (max-width: 600px) {
-            .hb-lazy-img {
-                max-width: 95%;
-                margin: 4px auto;
-            }
-        }
-        
         /* 浏览模式切换按钮组 */
         .hb-view-toggle {
             display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 16px;
@@ -1589,8 +1307,6 @@
         .hb-tree-level-1 > .hb-tree-header { padding-left: 24px; font-weight: 600; color: #0d9488; }
         .hb-tree-level-2 > .hb-tree-header { padding-left: 40px; font-weight: 500; color: #475569; }
         .hb-tree-level-3 > .hb-tree-header { padding-left: 56px; font-weight: 400; color: #64748b; font-size: 0.84rem; }
-        .hb-tree-level-4 > .hb-tree-header { padding-left: 72px; font-weight: 400; color: #94a3b8; font-size: 0.82rem; }
-        .hb-tree-level-5 > .hb-tree-header { padding-left: 88px; font-weight: 400; color: #cbd5e1; font-size: 0.8rem; }
 
         /* 子节点容器（折叠） */
         .hb-tree-children {
@@ -1613,7 +1329,6 @@
         .hb-content-path .path-section { background: #ccfbf1; color: #0d9488; }
         .hb-content-path .path-item { background: #fef3c7; color: #92400e; }
         .hb-content-path .path-subitem { background: #fce7f3; color: #9d174d; }
-        .hb-content-path .path-subsubitem { background: #e2e8f0; color: #334155; font-size: 0.9em; }
         .hb-content-text {
             background: #f8fafc; padding: 16px 20px; border-radius: 8px;
             border-left: 4px solid var(--primary);
@@ -1636,8 +1351,6 @@
             .hb-tree-level-1 > .hb-tree-header { padding-left: 18px; }
             .hb-tree-level-2 > .hb-tree-header { padding-left: 30px; }
             .hb-tree-level-3 > .hb-tree-header { padding-left: 42px; font-size: 0.8rem; }
-            .hb-tree-level-4 > .hb-tree-header { padding-left: 54px; font-size: 0.78rem; }
-            .hb-tree-level-5 > .hb-tree-header { padding-left: 66px; font-size: 0.76rem; }
         }
 
         .selector-panel {
@@ -1665,7 +1378,7 @@
             border-left: 6px solid var(--info); margin-top: 20px;
         }
         .content-header {
-            display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
         }
         .content-chapter {
             background: #ebf8ff; color: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
@@ -1677,8 +1390,8 @@
             background: #fef3c7; color: #744210; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
         }
         .content-body {
-            background: #f7fafc; padding: 16px; border-radius: 8px; font-size: 0.93rem; line-height: 1.7;
-            white-space: normal; border-left: 4px solid var(--info);
+            background: #f7fafc; padding: 20px; border-radius: 8px; font-size: 0.95rem; line-height: 1.8;
+            white-space: pre-wrap; border-left: 4px solid var(--info);
         }
 
         /* 规章全文模态框内容区域 */
@@ -1779,7 +1492,7 @@
 
         /* 段落样式 */
         #rule-fullContentBody p {
-            margin: 8px 0;
+            margin: 12px 0;
             text-align: justify;
         }
 
@@ -1789,7 +1502,7 @@
         #rule-fullContentBody h3,
         #rule-fullContentBody h4 {
             color: var(--primary);
-            margin: 16px 0 8px 0;
+            margin: 20px 0 12px 0;
             font-weight: 600;
         }
         #rule-fullContentBody h1 { font-size: 1.5rem; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
@@ -1899,19 +1612,6 @@
             #rule-fullContentBody {
                 max-height: 65vh !important;
                 padding: 12px !important;
-                line-height: 1.5 !important;
-            }
-            /* 手机端段落更紧凑 */
-            #rule-fullContentBody p {
-                margin: 6px 0 !important;
-                line-height: 1.5 !important;
-            }
-            #rule-fullContentBody h1,
-            #rule-fullContentBody h2,
-            #rule-fullContentBody h3,
-            #rule-fullContentBody h4 {
-                margin: 12px 0 6px 0 !important;
-                line-height: 1.4 !important;
             }
             /* 手机端表格更紧凑 */
             #rule-fullContentBody table {
@@ -2114,23 +1814,10 @@
             .form-input, .form-select { padding: 10px 12px; font-size: 0.85rem; }
         }
         
-        /* 平板设备 */
-        @media (max-width: 1024px) {
-            .logo-icon { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
-            .logo-title { font-size: 1.3rem; }
-        }
-        
-        /* 手机设备 */
-        @media (max-width: 768px) {
-            .logo-icon { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
-            .logo-title { font-size: 1.1rem; }
-            .logo-subtitle { font-size: 0.7rem; }
-        }
-        
         @media (max-width: 480px) {
             .header { padding: 8px 0; }
             .logo { padding: 10px 0; }
-            .logo-icon { width: 32px; height: 32px; min-width: 32px; min-height: 32px; }
+            .logo-icon { width: 36px; height: 36px; font-size: 18px; }
             .card { border-radius: 8px; }
             .modal-content { max-width: 100%; border-radius: 8px; }
             .stats-bar { flex-direction: column; gap: 10px; }
@@ -2147,14 +1834,12 @@
         ::selection { background: rgba(30, 58, 95, 0.2); }
 
     </style>
-    
-
 </head>
 <body>
     <header class="header">
         <div class="header-inner">
             <div class="logo">
-                <div class="logo-icon"><img src="App_icon_design__A_blue_shield_2026-04-03T02-37-10.png" alt="铁路安监查询系统" style="width:100%;height:100%;object-fit:contain;border-radius:8px;"></div>
+                <div class="logo-icon"><svg viewBox="0 0 100 100" style="width:100%;height:100%;"><defs><linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:1" /><stop offset="100%" style="stop-color:#2d5a87;stop-opacity:1" /></linearGradient></defs><path d="M50 5 L90 20 L90 50 Q90 75 50 95 Q10 75 10 50 L10 20 Z" fill="url(#shieldGrad)" stroke="#fff" stroke-width="2"/><path d="M30 40 L70 40 M30 50 L70 50 M30 60 L70 60" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M35 35 L35 65 M50 35 L50 65 M65 35 L65 65" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></div>
                 <div class="logo-text">
                     <div class="logo-title">铁路安监查询系统</div>
                     <div class="logo-subtitle">SAFETY INSPECTION QUERY SYSTEM</div>
@@ -2237,12 +1922,6 @@
                                     <option value="">-- 请选择检查子项 --</option>
                                 </select>
                             </div>
-                            <div class="selector-item" id="subsubitem-selector" style="display: none;">
-                                <label>选择检查细则</label>
-                                <select id="subSubItemSelect" onchange="onSubSubItemChange()">
-                                    <option value="">-- 请选择检查细则 --</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
 
@@ -2262,7 +1941,6 @@
                             <span class="content-section" id="displaySection"></span>
                             <span class="content-item" id="displayItem"></span>
                             <span class="content-item" id="displaySubItem" style="background:linear-gradient(135deg,#e67e22,#f39c12);"></span>
-                            <span class="content-item" id="displaySubSubItem" style="background:linear-gradient(135deg,#16a085,#1abc9c);"></span>
                         </div>
                         <div class="content-body" id="displayContent"></div>
                     </div>
@@ -2722,7 +2400,7 @@
                 </div>
                 <!-- 全文内容区 -->
                 <div id="rule-fvScrollWrap" style="position:relative;">
-                    <div id="rule-fullContentBody" style="background:#f7fafc;padding:20px;border-radius:10px;border-left:4px solid var(--info);max-height:58vh;overflow-y:auto;font-size:0.95rem;line-height:1.6;color:var(--text);word-break:break-word;"></div>
+                    <div id="rule-fullContentBody" style="background:#f7fafc;padding:20px;border-radius:10px;border-left:4px solid var(--info);max-height:58vh;overflow-y:auto;font-size:0.95rem;line-height:1.9;color:var(--text);word-break:break-word;"></div>
                     <div id="rule-fvScrollbar"><div id="rule-fvScrollThumb"></div></div>
                 </div>
             </div>
@@ -2775,16 +2453,6 @@
         // ===== 模块切换历史记录（最近5次）=====
         const TAB_ORDER = ['handbook','issue','rule','diary','phone','doubao'];
         const _tabHistory = []; // 最近5次切换记录 [{from, to, label}]
-        
-        // 模块初始化状态记录
-        const _moduleInitialized = {
-            handbook: true,    // 默认激活模块，已初始化
-            issue: false,      // 非首屏模块，延迟初始化
-            rule: false,
-            diary: false,
-            phone: false,
-            doubao: false
-        };
 
         window.switchTab = function(tab, fromSwipe) {
             // 记录历史（侧滑或手动切换都记录）
@@ -2798,24 +2466,13 @@
                 _tabHistory.push({ from: prevTab, to: tab, label: TAB_LABELS[tab] || tab });
                 if (_tabHistory.length > 5) _tabHistory.shift();
             }
-            
-            // 延迟初始化检查
-            if (!_moduleInitialized[tab]) {
-                console.log(`⏳ 延迟初始化模块: ${tab}`);
-                _initializeModule(tab);
-                _moduleInitialized[tab] = true;
-            }
-            
-            // 切换面板
             document.querySelectorAll('.nav-btn').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             document.getElementById('panel-' + tab).classList.add('active');
-            
             // 更新移动端当前Tab标签
             const labelEl = document.getElementById('navCurrentLabel');
             if (labelEl) labelEl.textContent = TAB_LABELS[tab] || '';
-            
             // 切换后自动收起导航菜单（移动端）
             const nav = document.getElementById('mainNav');
             const toggle = document.getElementById('navToggle');
@@ -2824,60 +2481,11 @@
                 toggle.classList.remove('open');
                 toggle.setAttribute('aria-label', '展开导航菜单');
             }
+            // 侧滑时不再显示 Toast 记录框
+            // if (fromSwipe) {
+            //     _showSwipeToast(tab);
+            // }
         };
-        
-        // 模块延迟初始化函数
-        function _initializeModule(moduleName) {
-            switch(moduleName) {
-                case 'issue':
-                    // 检查信息模块初始化逻辑
-                    console.log('初始化检查信息模块...');
-                    // 这里可以调用模块特定的初始化函数
-                    if (typeof window.issueLoadData === 'function') {
-                        window.issueLoadData().catch(console.error);
-                    }
-                    break;
-                    
-                case 'rule':
-                    // 规章制度模块初始化逻辑
-                    console.log('初始化规章制度模块...');
-                    // 加载规章制度数据
-                    if (typeof window.loadRulesFromDB === 'function') {
-                        window.loadRulesFromDB().catch(console.error);
-                    }
-                    break;
-                    
-                case 'diary':
-                    // 工作日志模块初始化逻辑
-                    console.log('初始化工作日志模块...');
-                    // 加载工作日志数据
-                    if (typeof window.diaryLoadData === 'function') {
-                        window.diaryLoadData().catch(console.error);
-                    }
-                    break;
-                    
-                case 'phone':
-                    // 车站电话模块初始化逻辑
-                    console.log('初始化车站电话模块...');
-                    // 加载电话数据
-                    if (typeof window.phoneLoadFromStorage === 'function') {
-                        window.phoneLoadFromStorage().catch(console.error);
-                    }
-                    break;
-                    
-                case 'doubao':
-                    // 智能助手模块初始化逻辑
-                    console.log('初始化智能助手模块...');
-                    // 智能助手模块初始化
-                    if (typeof window.doubaoInitialize === 'function') {
-                        window.doubaoInitialize().catch(console.error);
-                    }
-                    break;
-                    
-                default:
-                    console.log(`模块 ${moduleName} 无需特殊初始化`);
-            }
-        }
 
         window.closeModal = function(id) { 
             document.getElementById(id).classList.remove('active'); 
@@ -2940,13 +2548,11 @@
                 const thumb = document.getElementById('rule-fvScrollThumb');
                 if (!body || !thumb) return;
 
-                // 内容区滚动时同步滑块位置（使用防抖优化）
-                const handleScroll = window._throttle(function() {
+                // 内容区滚动时同步滑块位置
+                body.addEventListener('scroll', function() {
                     updateThumb();
                     showBar(1500);
-                }, 16); // 60fps限制，约16ms
-                
-                body.addEventListener('scroll', handleScroll, { passive: true });
+                });
 
                 // 手指触摸内容区时立即显示滚动条（不等滚动事件）
                 body.addEventListener('touchstart', function() {
@@ -3015,30 +2621,18 @@
             textarea.style.height = Math.max(40, textarea.scrollHeight) + 'px';
         };
 
-        // 防抖优化resize事件
-        const handleResize = window._debounce(function() {
-            document.querySelectorAll('.diary-issue-input, .diary-textarea').forEach(function(el) {
-                autoResize(el);
-            });
-        }, 150);
-        
-        window.addEventListener('resize', handleResize);
+        window.addEventListener('resize', function() {
+            setTimeout(function() {
+                document.querySelectorAll('.diary-issue-input, .diary-textarea').forEach(function(el) {
+                    autoResize(el);
+                });
+            }, 100);
+        });
 
-        async function pinyinMatch(text, keyword) {
+        function pinyinMatch(text, keyword) {
             if (!text || !keyword) return false;
             const lowerText = text.toLowerCase();
             if (lowerText.includes(keyword.toLowerCase())) return true;
-            
-            // 动态加载拼音库（如果尚未加载）
-            if (typeof pinyin === 'undefined') {
-                try {
-                    await window._loadLibrary.pinyin();
-                } catch (e) {
-                    console.warn('拼音库加载失败，跳过拼音搜索:', e);
-                    return false;
-                }
-            }
-            
             try {
                 const pinyinFull = pinyin(text, { style: pinyin.STYLE_NORMAL, heteronym: false }).flat().join('').toLowerCase();
                 if (pinyinFull.includes(keyword.toLowerCase())) return true;
@@ -3080,45 +2674,24 @@
 
             async function saveData(dataArray) {
                 if (!db) await initDB();
+                await clearAllData();
+                const batchSize = 500;
+                for (let i = 0; i < dataArray.length; i += batchSize) {
+                    await insertBatch(dataArray.slice(i, i + batchSize));
+                }
                 dataCache = dataArray;
-                
+            }
+
+            function insertBatch(batch) {
                 return new Promise((resolve, reject) => {
                     const transaction = db.transaction([STORE_NAME], 'readwrite');
                     const store = transaction.objectStore(STORE_NAME);
-                    
-                    // 清空存储
-                    store.clear();
-                    
-                    // 批量插入数据
                     let count = 0;
-                    const batchSize = 1000; // 更大的批处理大小
-                    
-                    // 使用request.onsuccess回调确保所有操作完成
-                    transaction.oncomplete = () => {
-                        console.log(`✅ IndexedDB保存完成：${dataArray.length}条记录`);
-                        resolve();
-                    };
-                    
-                    transaction.onerror = () => reject(transaction.error);
-                    
-                    // 分批次插入，避免阻塞主线程太久
-                    function insertNextBatch(startIndex) {
-                        const endIndex = Math.min(startIndex + batchSize, dataArray.length);
-                        
-                        for (let i = startIndex; i < endIndex; i++) {
-                            store.put(dataArray[i]);
-                        }
-                        
-                        count = endIndex;
-                        
-                        // 如果还有数据，继续插入（使用setTimeout避免阻塞）
-                        if (endIndex < dataArray.length) {
-                            setTimeout(() => insertNextBatch(endIndex), 0);
-                        }
-                    }
-                    
-                    // 开始插入
-                    insertNextBatch(0);
+                    batch.forEach(item => {
+                        const request = store.put(item);
+                        request.onsuccess = () => { count++; if (count === batch.length) resolve(); };
+                        request.onerror = () => reject(request.error);
+                    });
                 });
             }
 
@@ -3400,30 +2973,7 @@
                 const file = e.target.files[0]; if (!file) return;
                 openModal('issue-importModal');
                 try {
-                    const data = await file.arrayBuffer();
-                    let jsonData;
-                    
-                    // 使用Web Worker解析Excel（如果可用）
-                    if (typeof window.FileParserWorker !== 'undefined') {
-                        try {
-                            const result = await window.FileParserWorker.parseFile('parse-excel', data);
-                            jsonData = result.data;
-                        } catch (workerError) {
-                            console.warn('Excel Worker解析失败，回退到主线程:', workerError);
-                            // 降级到主线程解析
-                            if (typeof XLSX === 'undefined') throw new Error('XLSX库未加载');
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                            jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                        }
-                    } else {
-                        // 没有Web Worker支持，直接使用主线程
-                        if (typeof XLSX === 'undefined') throw new Error('XLSX库未加载');
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                    }
-                    
+                    const data = await file.arrayBuffer(), workbook = XLSX.read(data, { type: 'array' }), firstSheet = workbook.Sheets[workbook.SheetNames[0]], jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                     if (jsonData.length < 2) throw new Error('Excel文件数据不足');
                     const headers = jsonData[0].map(h => String(h).trim());
                     const findCol = (names) => { for (let i = 0; i < headers.length; i++) { const header = headers[i].toLowerCase().replace(/\s/g, ''); for (let name of names) { if (header === name.toLowerCase() || header.includes(name.toLowerCase())) return i; } } return -1; };
@@ -3525,8 +3075,6 @@
             let pendingFiles = [], isProcessing = false, currentEditIndex = null;
             const ruleSearchMode = 'paragraph'; // 固定段落模式
             let rulePage = 1, rulePageSize = 10, ruleTotalPages = 1, ruleAllResults = [];
-            let ruleCurrentMaxResults = 10; // 当前显示的最大结果数（用于无限滚动）
-            let ruleIsLoadingMore = false; // 防止重复加载标志
 
             // IndexedDB 封装
             const DB_NAME = 'RailwayRuleDB', STORE_NAME = 'ruleCollection', IMAGE_STORE_NAME = 'rule_images', DB_VERSION = 2;
@@ -3593,63 +3141,12 @@
                 });
             }
 
-            // 批量读取图片（单事务，避免每张图片单独开事务）
-            async function getImagesFromDB(ids) {
-                if (!ids || ids.length === 0) return [];
-                const database = await initRuleDB();
-                return new Promise((resolve, reject) => {
-                    const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
-                    const store = tx.objectStore(IMAGE_STORE_NAME);
-                    const results = [];
-                    let done = 0;
-                    ids.forEach(id => {
-                        const request = store.get(id);
-                        request.onsuccess = () => {
-                            if (request.result?.blob) results.push({ id, blob: request.result.blob });
-                            done++;
-                            if (done === ids.length) resolve(results);
-                        };
-                        request.onerror = () => {
-                            done++;
-                            if (done === ids.length) resolve(results);
-                        };
-                    });
-                });
-            }
-
-            // 批量保存图片（单事务）
-            async function saveImagesToDB(imageList) {
-                if (!imageList || imageList.length === 0) return;
-                const database = await initRuleDB();
-                return new Promise((resolve, reject) => {
-                    const tx = database.transaction([IMAGE_STORE_NAME], 'readwrite');
-                    const store = tx.objectStore(IMAGE_STORE_NAME);
-                    let done = 0;
-                    imageList.forEach(({ id, blob }) => {
-                        const request = store.put({ id, blob });
-                        request.onsuccess = () => { done++; if (done === imageList.length) resolve(); };
-                        request.onerror = () => { done++; if (done === imageList.length) resolve(); };
-                    });
-                });
-            }
-
             // 渲染规章 HTML（替换图片占位符为懒加载 img 标签）
             function renderRuleHtml(html) {
                 if (!html) return html;
-                
-                // 增强的正则表达式：处理可能被空格或换行拆分的占位符
-                // 匹配 __IMG_ID__ 开头，中间是字母数字下划线短横线，以 __ 结尾
-                // \s* 允许占位符内部有空格（处理被拆分的占位符）
-                const imgIdRegex = /__IMG_ID__\s*([a-zA-Z0-9_-]+)\s*__/g;
+                const imgIdRegex = /__IMG_ID__([a-zA-Z0-9_-]+)__/g;
                 const matches = html.match(imgIdRegex);
-                if (!matches) {
-                    // 也尝试查找不完整的占位符（可能被拆分成多个部分）
-                    const partialMatches = html.match(/__IMG_ID__|img_[a-zA-Z0-9_-]+/g);
-                    if (partialMatches) {
-                        console.warn('找到不完整的图片占位符片段:', partialMatches);
-                    }
-                    return html;
-                }
+                if (!matches) return html;
 
                 // 去重
                 const seen = new Set();
@@ -3657,13 +3154,7 @@
                 matches.forEach(match => {
                     if (seen.has(match)) return;
                     seen.add(match);
-                    // 移除占位符中的空格，提取纯净的ID
-                    const cleanMatch = match.replace(/\s+/g, '');
-                    const id = cleanMatch.replace(/__IMG_ID__/, '').replace(/__$/, '');
-                    if (!id) {
-                        console.warn('无法从占位符提取ID:', match);
-                        return;
-                    }
+                    const id = match.replace(/__IMG_ID__/, '').replace(/__$/, '');
                     // 占位 img，后续由 IntersectionObserver 懒加载
                     renderedHtml = renderedHtml.split(match).join(
                         `<img class="rule-lazy-img" data-img-id="${id}" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect fill='%23f0f0f0' width='300' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%23999'%3E%E5%8A%A0%E8%BD%BD%E4%B8%AD...%3C/text%3E%3C/svg%3E" alt="图片" />`
@@ -3771,12 +3262,8 @@
                     return '><';
                 });
                 
-                // 6. 压缩表格单元格内的空格（但要保护图片占位符）
+                // 6. 压缩表格单元格内的空格
                 cleaned = cleaned.replace(/<td[^>]*>(.*?)<\/td>/gi, (match, content) => {
-                    // 如果包含图片占位符，不修改内容，避免破坏占位符
-                    if (content.includes('__IMG_ID__')) {
-                        return match; // 保持原样
-                    }
                     const trimmed = content.replace(/\s+/g, ' ').trim();
                     return `<td>${trimmed}</td>`;
                 });
@@ -3844,91 +3331,31 @@
             async function saveToStorage() {
                 try {
                     await saveRulesToDB(rules);
-                    // 强制刷新存储信息
-                    refreshStorageInfo();
+                    updateStorageInfo();
                     return true;
                 } catch (e) {
                     alert('保存失败：' + e.message);
                     return false;
                 }
             }
-            // 存储估算缓存
-            let _storageCache = {
-                lastUpdate: 0,
-                lastSize: 0,
-                lastRuleCount: 0,
-                estimate: { usage: 0, quota: 500 * 1024 * 1024 } // 默认500MB
-            };
-            const STORAGE_CACHE_TTL = 60000; // 缓存60秒
-            
-            async function updateStorageInfo() {
+            function updateStorageInfo() {
                 try {
-                    const now = Date.now();
-                    const bar = document.getElementById('rule-storageBar');
-                    const text = document.getElementById('rule-storageText');
-                    
-                    // 检查缓存是否有效（60秒内且规则数量未变）
-                    if (now - _storageCache.lastUpdate < STORAGE_CACHE_TTL && 
-                        _storageCache.lastRuleCount === rules.length) {
-                        // 使用缓存值
-                        const percent = Math.min(100, (_storageCache.estimate.usage / MAX_STORAGE_SIZE) * 100);
-                        if (bar) bar.style.width = percent + '%';
-                        if (text) text.textContent = (_storageCache.estimate.usage / 1024 / 1024).toFixed(2) + '/500MB';
-                        updateBarColor(bar, percent);
-                        return;
-                    }
-                    
-                    // 尝试使用现代浏览器的存储估算API（更高效）
-                    if (navigator.storage && navigator.storage.estimate) {
-                        try {
-                            const estimate = await navigator.storage.estimate();
-                            _storageCache.estimate.usage = estimate.usage || 0;
-                            _storageCache.estimate.quota = estimate.quota || (500 * 1024 * 1024);
-                        } catch (estimateError) {
-                            console.warn('存储估算API不可用，回退到传统方法:', estimateError);
-                            // 回退到传统方法
-                            const jsonStr = JSON.stringify(rules);
-                            _storageCache.estimate.usage = new Blob([jsonStr]).size;
-                        }
-                    } else {
-                        // 传统浏览器：使用JSON.stringify但仅当规则变化时计算
-                        if (_storageCache.lastRuleCount !== rules.length) {
-                            const jsonStr = JSON.stringify(rules);
-                            _storageCache.estimate.usage = new Blob([jsonStr]).size;
-                        }
-                    }
-                    
-                    // 更新缓存
-                    _storageCache.lastUpdate = now;
-                    _storageCache.lastRuleCount = rules.length;
-                    _storageCache.lastSize = _storageCache.estimate.usage;
-                    
-                    // 显示结果
-                    const size = _storageCache.estimate.usage;
+                    const jsonStr = JSON.stringify(rules);
+                    const size = new Blob([jsonStr]).size;
                     const percent = Math.min(100, (size / MAX_STORAGE_SIZE) * 100);
+                    const bar = document.getElementById('rule-storageBar');
                     if (bar) bar.style.width = percent + '%';
+                    const text = document.getElementById('rule-storageText');
                     if (text) text.textContent = (size / 1024 / 1024).toFixed(2) + '/500MB';
-                    updateBarColor(bar, percent);
-                    
+                    if (bar) {
+                        bar.classList.remove('warning', 'danger');
+                        if (percent > 80) bar.classList.add('danger');
+                        else if (percent > 60) bar.classList.add('warning');
+                    }
                 } catch (e) {
-                    console.warn('更新存储信息失败:', e);
                     const text = document.getElementById('rule-storageText');
                     if (text) text.textContent = '未知';
                 }
-            }
-            
-            function updateBarColor(bar, percent) {
-                if (bar) {
-                    bar.classList.remove('warning', 'danger');
-                    if (percent > 80) bar.classList.add('danger');
-                    else if (percent > 60) bar.classList.add('warning');
-                }
-            }
-            
-            // 强制刷新存储信息（绕过缓存）
-            function refreshStorageInfo() {
-                _storageCache.lastUpdate = 0;
-                updateStorageInfo();
             }
             function updateTotalBadge() {
                 const badge = document.getElementById('rule-totalBadge');
@@ -3971,44 +3398,17 @@
                 }
             }
 
-            const escapeHtml = window.escapeHtml;
-            const escapeRegExp = window.escapeRegExp;
+            function escapeHtml(unsafe) { return unsafe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
+            function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
             function highlightKeywords(text, keywords) {
                 if (!keywords || keywords.length === 0) return escapeHtml(text);
-                
-                // 优化：先转义HTML，然后使用单个正则表达式一次性高亮所有关键词
-                const escapedText = escapeHtml(text);
-                
-                // 过滤并转义关键词
-                const validKeywords = keywords
-                    .filter(kw => kw.trim())
-                    .map(kw => escapeRegExp(kw))
-                    .filter(kw => kw.length > 0);
-                
-                if (validKeywords.length === 0) return escapedText;
-                
-                try {
-                    // 使用单个正则表达式，按长度降序排序（先匹配长的关键词）
-                    const sortedKeywords = validKeywords.sort((a, b) => b.length - a.length);
-                    const pattern = sortedKeywords.join('|');
-                    const regex = new RegExp(`(${pattern})`, 'gi');
-                    
-                    // 一次性替换所有关键词
-                    return escapedText.replace(regex, '<span class="rule-highlight">$1</span>');
-                } catch (e) {
-                    console.warn('关键词高亮正则表达式错误，使用备用方法:', e);
-                    // 备用方法：逐个处理
-                    let result = escapedText;
-                    for (const kw of validKeywords) {
-                        try {
-                            const regex = new RegExp(`(${kw})`, 'gi');
-                            result = result.replace(regex, '<span class="rule-highlight">$1</span>');
-                        } catch (innerErr) {
-                            console.warn(`跳过关键词 "${kw}" 的高亮处理:`, innerErr);
-                        }
-                    }
-                    return result;
-                }
+                let result = escapeHtml(text);
+                keywords.forEach(kw => {
+                    if (!kw.trim()) return;
+                    const regex = new RegExp('(' + escapeRegExp(kw) + ')', 'gi');
+                    result = result.replace(regex, '<span class="rule-highlight">$1</span>');
+                });
+                return result;
             }
 
             // 智能段落切分：先按换行分割，再对超长行按句号等标点二次分割
@@ -4353,14 +3753,6 @@
                     };
                     
                     const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-                    // 调试：记录原始HTML以分析图片处理问题
-                    console.log('mammoth原始HTML（前500字符）:', result.value.substring(0, 500));
-                    // 查找图片占位符
-                    const imgPlaceholderMatches = result.value.match(/__IMG_ID__[a-zA-Z0-9_-]+__/g);
-                    if (imgPlaceholderMatches) {
-                        console.log('找到图片占位符:', imgPlaceholderMatches);
-                    }
-                    
                     const fullHtml = cleanHtml(result.value);
                     
                     if (!fullHtml || !fullHtml.trim()) {
@@ -4401,13 +3793,6 @@
                 isProcessing = true;
                 const btn = document.getElementById('rule-importBtn');
                 let successCount = 0, skipCount = 0;
-                
-                // 预加载需要的库（按需动态加载，离线环境会失败但不崩溃）
-                const hasDocx = files.some(f => /\.(docx|doc)$/i.test(f.name));
-                if (hasDocx && typeof mammoth === 'undefined') {
-                    try { await window._loadLibrary.mammoth(); } catch(e) { console.warn('mammoth加载失败:', e); }
-                }
-                
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     const ext = file.name.split('.').pop().toLowerCase();
@@ -4419,42 +3804,16 @@
                         let imageIds = [];
                         
                         if (ext === 'pdf') {
-                            try {
-                                const arrayBuffer = await file.arrayBuffer();
-                                
-                                // 使用Web Worker解析PDF（如果可用）
-                                let pdfResult;
-                                if (typeof window.FileParserWorker !== 'undefined') {
-                                    try {
-                                        pdfResult = await window.FileParserWorker.parseFile('parse-pdf', arrayBuffer);
-                                        searchText = pdfResult.text;
-                                    } catch (workerError) {
-                                        console.warn('PDF Worker解析失败，回退到主线程:', workerError);
-                                        // 降级到主线程解析
-                                        if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js 库未加载');
-                                        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                                        for (let p = 1; p <= pdf.numPages; p++) {
-                                            const page = await pdf.getPage(p);
-                                            const content = await page.getTextContent();
-                                            searchText += content.items.map(item => item.str).join(' ') + '\n';
-                                        }
-                                    }
-                                } else {
-                                    // 没有Web Worker支持，直接使用主线程
-                                    if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js 库未加载');
-                                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                                    for (let p = 1; p <= pdf.numPages; p++) {
-                                        const page = await pdf.getPage(p);
-                                        const content = await page.getTextContent();
-                                        searchText += content.items.map(item => item.str).join(' ') + '\n';
-                                    }
-                                }
-                                
-                                plainText = searchText;  // PDF文本自带换行，直接用作content
-                                contentHtml = '<pre style="white-space:pre-wrap;word-break:break-word;">' + escapeHtml(searchText) + '</pre>';
-                            } catch (error) {
-                                throw new Error('PDF解析失败: ' + error.message);
+                            if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js 库未加载');
+                            const arrayBuffer = await file.arrayBuffer();
+                            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                            for (let p = 1; p <= pdf.numPages; p++) {
+                                const page = await pdf.getPage(p);
+                                const content = await page.getTextContent();
+                                searchText += content.items.map(item => item.str).join(' ') + '\n';
                             }
+                            plainText = searchText;  // PDF文本自带换行，直接用作content
+                            contentHtml = '<pre style="white-space:pre-wrap;word-break:break-word;">' + escapeHtml(searchText) + '</pre>';
                         } else if (ext === 'docx' || ext === 'doc') {
                             if (typeof mammoth === 'undefined') throw new Error('mammoth 库未加载');
                             const arrayBuffer = await file.arrayBuffer();
@@ -4503,14 +3862,6 @@
                             };
                             
                             const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-                            // 调试：记录原始HTML以分析图片处理问题
-                            console.log('processFiles mammoth原始HTML（前500字符）:', result.value.substring(0, 500));
-                            // 查找图片占位符
-                            const imgPlaceholderMatches = result.value.match(/__IMG_ID__[a-zA-Z0-9_-]+__/g);
-                            if (imgPlaceholderMatches) {
-                                console.log('processFiles找到图片占位符:', imgPlaceholderMatches);
-                            }
-                            
                             contentHtml = cleanHtml(result.value);
                             const plainText = stripHtml(contentHtml);  // 保留换行的纯文本
                             searchText = normalizeSearchText(plainText);  // 无换行，用于分数计算
@@ -4607,21 +3958,31 @@
                     const exportData = [];
                     
                     // 收集所有图片ID
-                    const allImageIds = [];
+                    const allImageIds = new Set();
                     exportRules.forEach(rule => {
                         if (rule.imageIds && rule.imageIds.length > 0) {
-                            rule.imageIds.forEach(id => { if (!allImageIds.includes(id)) allImageIds.push(id); });
+                            rule.imageIds.forEach(id => allImageIds.add(id));
                         }
                     });
                     
-                    // 批量读取图片（单事务）
-                    if (allImageIds.length > 0) {
-                        const images = await getImagesFromDB(allImageIds);
-                        images.forEach(({ id, blob }) => {
-                            const ext = blob.type === 'image/png' ? 'png' : 
-                                       blob.type === 'image/gif' ? 'gif' : 'jpg';
-                            zip.file('images/' + id + '.' + ext, blob);
-                        });
+                    // 导出图片到ZIP
+                    if (allImageIds.size > 0) {
+                        const database = await initRuleDB();
+                        const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
+                        const store = tx.objectStore(IMAGE_STORE_NAME);
+                        
+                        for (const imgId of allImageIds) {
+                            try {
+                                const blob = await getImageFromDB(imgId);
+                                if (blob) {
+                                    const ext = blob.type === 'image/png' ? 'png' : 
+                                               blob.type === 'image/gif' ? 'gif' : 'jpg';
+                                    zip.file(`images/${imgId}.${ext}`, blob);
+                                }
+                            } catch (e) {
+                                console.error('导出图片失败:', imgId, e);
+                            }
+                        }
                     }
                     
                     // 准备导出数据（searchText导入时重算，不导出）
@@ -4641,26 +4002,20 @@
                         version: 2,
                         exportDate: new Date().toISOString(),
                         count: exportRules.length,
-                        hasImages: allImageIds.length > 0
+                        hasImages: allImageIds.size > 0
                     }, null, 2));
                     
-                    // 生成ZIP文件（DEFLATE压缩，确保各平台兼容性）
-                    const zipBlob = await zip.generateAsync({
-                        type: 'blob',
-                        compression: 'DEFLATE',
-                        compressionOptions: { level: 6 }
-                    });
+                    // 生成ZIP文件
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
                     const tradeSuffix = selectedTrade ? '_' + selectedTrade : '_全部';
                     downloadBlob(zipBlob, '铁路规章' + tradeSuffix + '_' + new Date().toISOString().slice(0, 10) + '.zip');
                     
-                    alert('导出成功！共 ' + exportRules.length + ' 条规章' + (allImageIds.length > 0 ? '，包含 ' + allImageIds.length + ' 张图片' : ''));
+                    alert('导出成功！共 ' + exportRules.length + ' 条规章' + (allImageIds.size > 0 ? '，包含 ' + allImageIds.size + ' 张图片' : ''));
                 } catch (err) {
                     console.error('ZIP导出失败:', err);
                     alert('导出失败: ' + err.message);
                 }
             };
-
-
 
             // ========== ZIP 导出/导入功能 ==========
             window.exportToZip = async function() {
@@ -4672,24 +4027,35 @@
                     const exportData = [];
                     
                     // 收集所有图片ID
-                    const allImageIds = [];
+                    const allImageIds = new Set();
                     rules.forEach(rule => {
                         if (rule.imageIds && rule.imageIds.length > 0) {
-                            rule.imageIds.forEach(id => { if (!allImageIds.includes(id)) allImageIds.push(id); });
+                            rule.imageIds.forEach(id => allImageIds.add(id));
                         }
                     });
                     
-                    // 批量读取图片（单事务）
-                    if (allImageIds.length > 0) {
-                        const images = await getImagesFromDB(allImageIds);
-                        images.forEach(({ id, blob }) => {
-                            const ext = blob.type === 'image/png' ? 'png' : 
-                                       blob.type === 'image/gif' ? 'gif' : 'jpg';
-                            zip.file('images/' + id + '.' + ext, blob);
-                        });
+                    // 导出图片到ZIP
+                    if (allImageIds.size > 0) {
+                        const database = await initRuleDB();
+                        const tx = database.transaction([IMAGE_STORE_NAME], 'readonly');
+                        const store = tx.objectStore(IMAGE_STORE_NAME);
+                        
+                        for (const imgId of allImageIds) {
+                            try {
+                                const blob = await getImageFromDB(imgId);
+                                if (blob) {
+                                    // 获取文件扩展名
+                                    const ext = blob.type === 'image/png' ? 'png' : 
+                                               blob.type === 'image/gif' ? 'gif' : 'jpg';
+                                    zip.file(`images/${imgId}.${ext}`, blob);
+                                }
+                            } catch (e) {
+                                console.error('导出图片失败:', imgId, e);
+                            }
+                        }
                     }
                     
-                    // 准备导出数据（searchText导入时重算，不导出）
+                    // 准备导出数据（移除Blob，保留imageIds引用；searchText导入时重算，不导出）
                     rules.forEach(rule => {
                         exportData.push({
                             trade: rule.trade,
@@ -4706,18 +4072,14 @@
                         version: 2,
                         exportDate: new Date().toISOString(),
                         count: rules.length,
-                        hasImages: allImageIds.length > 0
+                        hasImages: allImageIds.size > 0
                     }, null, 2));
                     
-                    // 生成ZIP文件（DEFLATE压缩，确保各平台兼容性）
-                    const zipBlob = await zip.generateAsync({
-                        type: 'blob',
-                        compression: 'DEFLATE',
-                        compressionOptions: { level: 6 }
-                    });
+                    // 生成ZIP文件
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
                     downloadBlob(zipBlob, '铁路规章备份_' + new Date().toISOString().slice(0, 10) + '.zip');
                     
-                    alert('导出成功！共 ' + rules.length + ' 条规章' + (allImageIds.length > 0 ? '，包含 ' + allImageIds.length + ' 张图片' : ''));
+                    alert('导出成功！共 ' + rules.length + ' 条规章' + (allImageIds.size > 0 ? '，包含 ' + allImageIds.size + ' 张图片' : ''));
                 } catch (err) {
                     console.error('ZIP导出失败:', err);
                     alert('导出失败: ' + err.message);
@@ -4754,32 +4116,22 @@
                     let skipCount = 0;
                     let imageCount = 0;
                     
-                    // 批量导入图片：先并行读取所有blob，再单事务写入
-                    const imageFiles = Object.keys(zip.files).filter(name => name.startsWith('images/') && !zip.files[name].dir);
-                    if (imageFiles.length > 0) {
-                        // 并行解压所有图片blob
-                        const imageBlobs = await Promise.all(imageFiles.map(async imgPath => {
-                            try {
-                                const imgId = imgPath.replace('images/', '').replace(/\.(jpg|jpeg|png|gif)$/i, '');
-                                const blob = await zip.file(imgPath).async('blob');
-                                return { id: imgId, blob };
-                            } catch (e) {
-                                console.error('解压图片失败:', imgPath, e);
-                                return null;
-                            }
-                        }));
-                        // 过滤失败的，单事务写入IndexedDB
-                        const validImages = imageBlobs.filter(r => r && r.blob);
-                        if (validImages.length > 0) {
-                            await saveImagesToDB(validImages);
+                    // 导入图片
+                    const imageFiles = Object.keys(zip.files).filter(name => name.startsWith('images/'));
+                    for (const imgPath of imageFiles) {
+                        try {
+                            const imgId = imgPath.replace('images/', '').replace(/\.(jpg|jpeg|png|gif)$/i, '');
+                            const blob = await zip.file(imgPath).async('blob');
+                            await saveImageToDB(imgId, blob);
+                            imageCount++;
+                        } catch (e) {
+                            console.error('导入图片失败:', imgPath, e);
                         }
-                        imageCount = validImages.length;
                     }
                     
-                    // 导入规章（批量收集旧图片，一次性删除）
-                    const oldImageIdsToDelete = [];
+                    // 导入规章
                     for (const item of importRules) {
-                        if (item.title) {
+                        if (item.title && (item.content || item.contentHtml)) {
                             const dupIdx = rules.findIndex(r => 
                                 r.title.toLowerCase().trim() === item.title.toLowerCase().trim() && 
                                 r.trade === (item.trade || '通用')
@@ -4788,15 +4140,15 @@
                             const ruleData = {
                                 trade: item.trade || '通用',
                                 title: item.title,
-                                content: item.content || (hasRealHtml ? stripHtml(item.contentHtml) : ''),
+                                content: item.content || stripHtml(item.contentHtml),
                                 contentHtml: hasRealHtml ? item.contentHtml : '',
                                 imageIds: item.imageIds || []
                             };
                             if (dupIdx !== -1) {
-                                // 收集旧图片ID，后面批量删除
+                                // 删除旧图片
                                 const oldRule = rules[dupIdx];
                                 if (oldRule.imageIds && oldRule.imageIds.length > 0) {
-                                    oldImageIdsToDelete.push(...oldRule.imageIds);
+                                    await deleteImagesFromDB(oldRule.imageIds);
                                 }
                                 rules[dupIdx] = ruleData;
                             } else {
@@ -4806,10 +4158,6 @@
                         } else {
                             skipCount++;
                         }
-                    }
-                    // 批量删除旧图片（单事务）
-                    if (oldImageIdsToDelete.length > 0) {
-                        await deleteImagesFromDB(oldImageIdsToDelete);
                     }
                     
                     await saveToStorage();
@@ -4978,9 +4326,6 @@
                 ruleAllResults = results;
                 ruleTotalPages = Math.ceil(results.length / rulePageSize) || 1;
                 rulePage = 1;
-                ruleCurrentMaxResults = Math.min(rulePageSize, results.length); // 初始显示第一页数量的结果
-                // 清除DOM缓存，因为搜索结果已更新
-                Object.keys(_ruleCardCache).forEach(key => delete _ruleCardCache[key]);
                 console.log('[renderResults] 最终结果数:', results.length, 'results详情:', results.map(r => ({title:r.rule.title, snippetLen:r.snippetHtml.length})));
                 displayRulePage();
                 if (resultCount) resultCount.textContent = results.length + ' 项';
@@ -5003,20 +4348,13 @@
                 return allMatch ? keywords.length : 0;
             }
 
-            function displayRulePage(loadMore = false) {
+            function displayRulePage() {
                 const resultsList = document.getElementById('rule-resultsList');
                 if (!resultsList) return;
-                
-                // 如果是加载更多，增加显示数量
-                if (loadMore && !ruleIsLoadingMore && ruleCurrentMaxResults < ruleAllResults.length) {
-                    ruleIsLoadingMore = true;
-                    ruleCurrentMaxResults = Math.min(ruleCurrentMaxResults + rulePageSize, ruleAllResults.length);
-                }
-                
-                // 使用当前显示的最大结果数
-                const visibleResults = ruleAllResults.slice(0, ruleCurrentMaxResults);
-                
-                if (visibleResults.length === 0) {
+                const start = (rulePage - 1) * rulePageSize;
+                const pageResults = ruleAllResults.slice(start, start + rulePageSize);
+
+                if (pageResults.length === 0) {
                     resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>未找到匹配结果</p></div>';
                     return;
                 }
@@ -5029,107 +4367,20 @@
                 // 获取原始关键词用于显示
                 const rawKeywords = getRawKeywords();
                 
-                // 使用DocumentFragment批量添加DOM节点，减少重排重绘
-                const fragment = document.createDocumentFragment();
-                const container = document.createElement('div');
-                container.className = 'result-list';
-                fragment.appendChild(container);
+                let html = '<div class="result-list">';
                 
                 // 添加搜索提示
                 if (hasKeywords) {
-                    const searchHint = document.createElement('div');
-                    searchHint.style.cssText = 'margin-bottom:16px;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:0.9rem;color:#0369a1;';
-                    
-                    const strong = document.createElement('strong');
-                    strong.textContent = '🔍 搜索条件：';
-                    searchHint.appendChild(strong);
-                    
-                    const modeSpan = document.createElement('span');
-                    modeSpan.style.cssText = 'margin-left:8px;padding:4px 10px;background:#fff;border-radius:4px;border:1px solid #7dd3fc;';
-                    modeSpan.textContent = '全部包含';
-                    searchHint.appendChild(modeSpan);
-                    
-                    const keywordSpan = document.createElement('span');
-                    keywordSpan.style.cssText = 'margin-left:8px;';
-                    keywordSpan.innerHTML = `关键词：${rawKeywords.map(kw => `<span style="padding:2px 8px;background:#e0f2fe;border-radius:4px;margin-right:4px;">${escapeHtml(kw)}</span>`).join('')}`;
-                    searchHint.appendChild(keywordSpan);
-                    
-                    container.appendChild(searchHint);
+                    html += `<div style="margin-bottom:16px;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:0.9rem;color:#0369a1;">
+                        <strong>🔍 搜索条件：</strong>
+                        <span style="margin-left:8px;padding:4px 10px;background:#fff;border-radius:4px;border:1px solid #7dd3fc;">全部包含</span>
+                        <span style="margin-left:8px;">关键词：${rawKeywords.map(kw => `<span style="padding:2px 8px;background:#e0f2fe;border-radius:4px;margin-right:4px;">${escapeHtml(kw)}</span>`).join('')}</span>
+                    </div>`;
                 }
                 
-                // 缓存DOM创建函数，避免重复定义
-                function createRuleCard(item, absIdx, useCache = true) {
-                    // 检查缓存
-                    if (useCache && _ruleCardCache[absIdx]) {
-                        return _ruleCardCache[absIdx].cloneNode(true);
-                    }
-                    
-                    const card = document.createElement('div');
-                    card.className = 'rule-card-item';
-                    
-                    // 设置数据属性便于识别
-                    card.dataset.ruleIndex = absIdx;
-                    card.dataset.ruleId = item.rule.title + '|' + item.rule.trade;
-                    
-                    // 标题部分
-                    const titleDiv = document.createElement('div');
-                    titleDiv.className = 'rule-title';
-                    titleDiv.style.cssText = 'cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;';
-                    titleDiv.onclick = () => ruleViewFullText(absIdx);
-                    
-                    const titleSpan = document.createElement('span');
-                    titleSpan.style.cssText = 'flex:1;word-break:break-all;white-space:normal;color:var(--info);text-decoration:underline;text-underline-offset:3px;';
-                    titleSpan.title = escapeHtml(item.rule.title);
-                    titleSpan.textContent = item.rule.title;
-                    titleDiv.appendChild(titleSpan);
-                    
-                    const viewBtn = document.createElement('button');
-                    viewBtn.className = 'btn btn-info btn-small';
-                    viewBtn.style.flexShrink = '0';
-                    viewBtn.textContent = '📄 查看全文';
-                    viewBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        ruleViewFullText(absIdx);
-                    };
-                    titleDiv.appendChild(viewBtn);
-                    
-                    card.appendChild(titleDiv);
-                    
-                    // 专业标签
-                    const tradeSpan = document.createElement('span');
-                    tradeSpan.className = 'rule-trade';
-                    tradeSpan.textContent = item.rule.trade;
-                    card.appendChild(tradeSpan);
-                    
-                    // 添加匹配信息提示
-                    if (hasKeywords) {
-                        const matchInfo = document.createElement('div');
-                        matchInfo.className = 'rule-match-info';
-                        matchInfo.style.cssText = 'font-size:0.8rem;color:#64748b;margin-bottom:8px;padding:4px 8px;background:#f1f5f9;border-radius:4px;display:inline-block;';
-                        matchInfo.textContent = `✓ 匹配 ${item.matchCount} 个段落`;
-                        card.appendChild(matchInfo);
-                    }
-                    
-                    // 内容片段
-                    const snippetDiv = document.createElement('div');
-                    snippetDiv.className = 'rule-snippet';
-                    snippetDiv.innerHTML = item.snippetHtml;
-                    card.appendChild(snippetDiv);
-                    
-                    // 缓存卡片（存储模板，不是实际DOM节点）
-                    if (useCache) {
-                        const template = card.cloneNode(true);
-                        _ruleCardCache[absIdx] = template;
-                    }
-                    
-                    return card;
-                }
-                
-                // 批量添加卡片
-                visibleResults.forEach(item => {
+                pageResults.forEach(item => {
                     const ruleIdx = ruleAllResults.indexOf(item);
                     const absIdx = rules.indexOf(item.rule);
-                    
                     // 计算首个命中段落，供全文定位使用
                     const firstParaText = _getRuleFirstMatchPara(item.rule);
                     if (firstParaText !== null) {
@@ -5137,102 +4388,42 @@
                     } else {
                         delete _ruleFirstMatchPara[absIdx];
                     }
+                    html += '<div class="rule-card-item">';
+                    // 文件名改为可点击链接
+                    html += '<div class="rule-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;" onclick="ruleViewFullText(' + absIdx + ')">';
+                    html += '<span style="flex:1;word-break:break-all;white-space:normal;color:var(--info);text-decoration:underline;text-underline-offset:3px;" title="' + escapeHtml(item.rule.title) + '">' + escapeHtml(item.rule.title) + '</span>';
+                    html += '<button class="btn btn-info btn-small" style="flex-shrink:0;" onclick="event.stopPropagation();ruleViewFullText(' + absIdx + ')">📄 查看全文</button>';
+                    html += '</div>';
+                    html += '<span class="rule-trade">' + escapeHtml(item.rule.trade) + '</span>';
                     
-                    const card = createRuleCard(item, absIdx);
-                    container.appendChild(card);
-                });
-                
-                // 添加"加载更多"按钮（如果还有更多结果）
-                if (ruleCurrentMaxResults < ruleAllResults.length) {
-                    const loadMoreDiv = document.createElement('div');
-                    loadMoreDiv.style.cssText = 'margin-top:16px; display:flex; flex-direction:column; gap:12px; justify-content:center; align-items:center;';
-                    loadMoreDiv.className = 'load-more-container';
-                    
-                    const loadMoreBtn = document.createElement('button');
-                    loadMoreBtn.className = 'btn btn-secondary';
-                    loadMoreBtn.textContent = '加载更多 (' + (ruleAllResults.length - ruleCurrentMaxResults) + ' 条剩余)';
-                    loadMoreBtn.onclick = () => {
-                        ruleIsLoadingMore = false; // 重置状态
-                        displayRulePage(true);
-                    };
-                    loadMoreDiv.appendChild(loadMoreBtn);
-                    
-                    // 添加滚动加载提示
-                    const scrollHint = document.createElement('div');
-                    scrollHint.style.cssText = 'font-size:0.8rem; color:#64748b; margin-top:4px;';
-                    scrollHint.textContent = '向下滚动或点击加载更多结果';
-                    loadMoreDiv.appendChild(scrollHint);
-                    
-                    fragment.appendChild(loadMoreDiv);
-                } else if (ruleAllResults.length > 0) {
-                    // 所有结果已加载完毕
-                    const allLoadedDiv = document.createElement('div');
-                    allLoadedDiv.style.cssText = 'margin-top:16px; padding:12px; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; text-align:center;';
-                    allLoadedDiv.className = 'all-results-loaded';
-                    
-                    const checkIcon = document.createElement('span');
-                    checkIcon.textContent = '✅ ';
-                    allLoadedDiv.appendChild(checkIcon);
-                    
-                    const textSpan = document.createElement('span');
-                    textSpan.textContent = '已显示全部 ' + ruleAllResults.length + ' 条结果';
-                    allLoadedDiv.appendChild(textSpan);
-                    
-                    fragment.appendChild(allLoadedDiv);
-                }
-                
-                // 重置加载状态
-                ruleIsLoadingMore = false;
-                
-                // 批量添加到DOM，减少重排
-                resultsList.innerHTML = '';
-                resultsList.appendChild(fragment);
-                
-                // 设置Intersection Observer来检测"加载更多"按钮是否进入视口
-                setTimeout(() => {
-                    const loadMoreBtn = resultsList.querySelector('.load-more-container button');
-                    if (loadMoreBtn && typeof IntersectionObserver !== 'undefined') {
-                        // 清除现有的Observer
-                        if (window._loadMoreObserver) {
-                            window._loadMoreObserver.disconnect();
-                        }
-                        
-                        // 创建新的Observer
-                        window._loadMoreObserver = new IntersectionObserver((entries) => {
-                            entries.forEach(entry => {
-                                if (entry.isIntersecting && !ruleIsLoadingMore && ruleCurrentMaxResults < ruleAllResults.length) {
-                                    // 按钮进入视口，自动加载更多
-                                    console.log('滚动检测到加载更多按钮，自动加载...');
-                                    ruleIsLoadingMore = false;
-                                    displayRulePage(true);
-                                }
-                            });
-                        }, {
-                            root: null, // 相对于视口
-                            rootMargin: '100px', // 提前100px触发
-                            threshold: 0.1 // 10%可见时触发
-                        });
-                        
-                        window._loadMoreObserver.observe(loadMoreBtn);
+                    // 添加匹配信息提示
+                    if (hasKeywords) {
+                        const matchInfoText = `✓ 匹配 ${item.matchCount} 个段落`;
+                        html += `<div class="rule-match-info" style="font-size:0.8rem;color:#64748b;margin-bottom:8px;padding:4px 8px;background:#f1f5f9;border-radius:4px;display:inline-block;">${matchInfoText}</div>`;
                     }
-                }, 100);
+                    
+                    html += '<div class="rule-snippet">' + item.snippetHtml + '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+
+                html += `<div class="pagination" style="margin-top:16px; display:flex; gap:12px; justify-content:center; align-items:center;">
+                    <button class="btn btn-secondary" ${rulePage === 1 ? 'disabled' : ''} onclick="changeRulePage(${rulePage - 1})">上一页</button>
+                    <span>第 ${rulePage} 页 / 共 ${ruleTotalPages} 页</span>
+                    <button class="btn btn-secondary" ${rulePage === ruleTotalPages ? 'disabled' : ''} onclick="changeRulePage(${rulePage + 1})">下一页</button>
+                </div>`;
+
+                resultsList.innerHTML = html;
             }
 
-            // 兼容性函数，保留但不使用传统分页
             window.changeRulePage = function(page) {
-                console.warn('传统分页函数已弃用，系统现在使用无限滚动');
-                // 如果有必要，这里可以重新启用分页逻辑
                 if (page < 1 || page > ruleTotalPages) return;
                 rulePage = page;
-                ruleCurrentMaxResults = Math.min(page * rulePageSize, ruleAllResults.length);
                 displayRulePage();
             };
 
             // 存储每条搜索结果对应的首个命中段落文本（key: rule绝对索引）
             const _ruleFirstMatchPara = {};
-            
-            // DOM缓存：存储已创建的卡片元素（key: rule绝对索引）
-            const _ruleCardCache = {};
 
             // 根据当前关键词，找规章中第一个命中的段落原文
             function _getRuleFirstMatchPara(rule) {
@@ -5747,8 +4938,7 @@
                 await loadRulesFromDB();
                 refreshTradeSelect();
                 updateTotalBadge();
-                // 使用刷新函数，确保获取最新存储信息
-                refreshStorageInfo();
+                updateStorageInfo();
                 document.getElementById('rule-resultsList').style.display = 'none';
                 document.querySelector('#panel-rule .results-header').style.display = 'none';
                 addKeywordInput();
@@ -6038,7 +5228,7 @@
                     renderDateDetail(date);
                 }
             };
-            const escapeHtml = window.escapeHtml;
+            function escapeHtml(text) { return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
             // 更新记录数显示
             function updateDiaryCount() {
@@ -6337,7 +5527,9 @@
                 }).join('');
             }
 
-            const escapeHtmlMemo = window.escapeHtml;
+            function escapeHtmlMemo(str) {
+                return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
 
             // 对外接口
             window.openMemoModal = function() {
@@ -6466,7 +5658,7 @@
                 phoneDoSearch();
             };
 
-            window.phoneDoSearch = async function() {
+            window.phoneDoSearch = function() {
                 const keyword = document.getElementById('phone-searchInput').value.trim();
                 const resultsContainer = document.getElementById('phone-results');
                 resultsContainer.style.display = 'block';
@@ -6479,41 +5671,15 @@
                 if (keyword) {
                     const lowerKeyword = keyword.toLowerCase();
                     const digitsKeyword = extractDigits(keyword);
-                    
-                    // 如果需要拼音搜索，确保拼音库已加载
-                    const needsPinyinSearch = keyword && !keyword.match(/^[0-9]+$/);
-                    if (needsPinyinSearch && typeof pinyin === 'undefined') {
-                        try {
-                            await window._loadLibrary.pinyin();
-                        } catch (e) {
-                            console.warn('拼音库加载失败，仅使用文本搜索:', e);
-                        }
-                    }
-                    
-                    // 异步过滤数据
-                    filtered = [];
-                    for (const item of phoneData) {
+                    filtered = phoneData.filter(item => {
                         const fields = [item.单位, item.线名, item.站名, item.备注].map(s => (s || '').toLowerCase());
-                        if (fields.some(f => f.includes(lowerKeyword))) {
-                            filtered.push(item);
-                            continue;
-                        }
-                        
-                        // 异步拼音匹配
-                        if (needsPinyinSearch) {
-                            const pinyinMatchStation = await pinyinMatch(item.站名, keyword);
-                            const pinyinMatchUnit = await pinyinMatch(item.单位, keyword);
-                            if (pinyinMatchStation || pinyinMatchUnit) {
-                                filtered.push(item);
-                                continue;
-                            }
-                        }
-                        
+                        if (fields.some(f => f.includes(lowerKeyword))) return true;
+                        if (pinyinMatch(item.站名, keyword)) return true;
+                        if (pinyinMatch(item.单位, keyword)) return true;
                         const phoneFields = [item.路电, item.市电].map(s => extractDigits(s));
-                        if (digitsKeyword && phoneFields.some(p => p.includes(digitsKeyword))) {
-                            filtered.push(item);
-                        }
-                    }
+                        if (digitsKeyword && phoneFields.some(p => p.includes(digitsKeyword))) return true;
+                        return false;
+                    });
                 }
                 document.getElementById('phone-resultCount').textContent = filtered.length + ' 条';
                 if (filtered.length === 0) {
@@ -6645,9 +5811,7 @@
 
             const input = document.getElementById('phone-searchInput');
             if (input) {
-                // 防抖优化输入事件，减少频繁搜索
-                const handleInput = window._debounce(function() { showPhoneSuggestions(this); }, 200);
-                input.addEventListener('input', handleInput);
+                input.addEventListener('input', function() { showPhoneSuggestions(this); });
                 input.addEventListener('blur', function() { setTimeout(() => { const sugg = document.getElementById('phone-suggestions'); if (sugg) sugg.style.display = 'none'; }, 200); });
             }
             document.getElementById('phone-fileInput').addEventListener('change', phoneHandleFile);
@@ -6661,20 +5825,17 @@
             let sectionsMap = {};
             let itemsMap = {};
             let subItemsMap = {};
-            let subSubItemsMap = {}; // 第五级映射
             let contentMap = {};
 
             const chapterSelect = document.getElementById('chapterSelect');
             const sectionSelect = document.getElementById('sectionSelect');
             const itemSelect = document.getElementById('itemSelect');
             const subItemSelect = document.getElementById('subItemSelect');
-            const subSubItemSelect = document.getElementById('subSubItemSelect');
             const contentDisplay = document.getElementById('contentDisplay');
             const displayChapter = document.getElementById('displayChapter');
             const displaySection = document.getElementById('displaySection');
             const displayItem = document.getElementById('displayItem');
             const displaySubItem = document.getElementById('displaySubItem');
-            const displaySubSubItem = document.getElementById('displaySubSubItem'); // 需要添加到HTML中
             const displayContent = document.getElementById('displayContent');
             const totalSpan = document.getElementById('handbook-total');
             const sizeSpan = document.getElementById('handbook-size');
@@ -6691,8 +5852,8 @@
             function getItemOrder(s) { const m = s.match(/^(\d+)[\.、]/); return m ? parseInt(m[1], 10) : 999; }
             function getSubItemOrder(s) { const m = s.match(/^(\d+)[\.、\)）]/); return m ? parseInt(m[1], 10) : 999; }
 
-            // 使用全局的 HTML 转义函数
-            const _esc = window.escapeHtml;
+            // 本模块用的 HTML 转义
+            function _esc(text) { if (!text) return ''; return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
             // 大纲浏览状态（提前声明，避免 TDZ）
             let _hbCurrentView = 'select';
@@ -6702,7 +5863,6 @@
                 const sectionSetByChap = {};
                 const itemSetByChapSec = {};
                 const subItemSetByKey = {};
-                const subSubItemSetByKey = {}; // 新增第五级映射
                 const contentByKey = {};
 
                 handbookData.forEach(entry => {
@@ -6710,8 +5870,7 @@
                     const sect = entry.section || '';
                     const it   = entry.item    || '';
                     const sub  = entry.subitem || '';
-                    const subsub = entry.subsubitem || ''; // 第五级
-                    const cont = entry.content || entry.contentHtml || '';
+                    const cont = entry.content || '';
 
                     if (chap) chapterSet.add(chap);
                     if (chap && sect) {
@@ -6723,30 +5882,11 @@
                         if (!itemSetByChapSec[k2]) itemSetByChapSec[k2] = new Set();
                         itemSetByChapSec[k2].add(it);
                     }
-                    
-                    // 处理第五级数据
-                    if (chap && sect && it && sub && subsub) {
-                        const k3 = chap + '||' + sect + '||' + it;
-                        const k4 = k3 + '||' + sub;
-                        
-                        // 添加第四级
-                        if (!subItemSetByKey[k3]) subItemSetByKey[k3] = new Set();
-                        subItemSetByKey[k3].add(sub);
-                        
-                        // 添加第五级
-                        if (!subSubItemSetByKey[k4]) subSubItemSetByKey[k4] = new Set();
-                        subSubItemSetByKey[k4].add(subsub);
-                        
-                        // 内容映射到第五级
-                        contentByKey[k4 + '||' + subsub] = cont;
-                        
-                    } else if (chap && sect && it && sub && !subsub) {
-                        // 只有第四级，没有第五级
+                    if (chap && sect && it && sub) {
                         const k3 = chap + '||' + sect + '||' + it;
                         if (!subItemSetByKey[k3]) subItemSetByKey[k3] = new Set();
                         subItemSetByKey[k3].add(sub);
                         contentByKey[k3 + '||' + sub] = cont;
-                        
                     } else if (chap && sect && it && !sub && cont) {
                         // 兼容旧三级数据：item 直接有 content，无 subitem
                         const k3 = chap + '||' + sect + '||' + it;
@@ -6769,10 +5909,6 @@
                 Object.keys(subItemSetByKey).forEach(k => {
                     subItemsMap[k] = Array.from(subItemSetByKey[k]).sort((a,b) => getSubItemOrder(a) - getSubItemOrder(b));
                 });
-                subSubItemsMap = {}; // 声明第五级映射
-                Object.keys(subSubItemSetByKey).forEach(k => {
-                    subSubItemsMap[k] = Array.from(subSubItemSetByKey[k]).sort();
-                });
                 contentMap = contentByKey;
                 updateStats();
                 // 如果大纲视图已激活，自动刷新树
@@ -6791,22 +5927,11 @@
             }
 
             function hideFrom(level) {
-                // level: 2=隐藏分类及以下, 3=隐藏项点及以下, 4=隐藏子项, 5=隐藏细则, 6=隐藏内容
-                if (level <= 2) { 
-                    document.getElementById('category-selector').style.display = 'none'; 
-                }
-                if (level <= 3) { 
-                    document.getElementById('checkpoint-selector').style.display = 'none'; 
-                }
-                if (level <= 4) { 
-                    document.getElementById('subitem-selector').style.display = 'none'; 
-                }
-                if (level <= 5) { 
-                    document.getElementById('subsubitem-selector').style.display = 'none'; 
-                }
-                if (level <= 6) { 
-                    contentDisplay.style.display = 'none'; 
-                }
+                // level: 2=隐藏分类及以下, 3=隐藏项点及以下, 4=隐藏子项, 5=隐藏内容
+                if (level <= 2) { document.getElementById('category-selector').style.display = 'none'; }
+                if (level <= 3) { document.getElementById('checkpoint-selector').style.display = 'none'; }
+                if (level <= 4) { document.getElementById('subitem-selector').style.display = 'none'; }
+                if (level <= 5) { contentDisplay.style.display = 'none'; }
             }
 
             function renderChapterSelect() {
@@ -6884,89 +6009,19 @@
                 const sec  = sectionSelect.value;
                 const it   = itemSelect.value;
                 const sub  = subItemSelect.value;
-                if (!chap || !sec || !it || !sub) { 
-                    hideFrom(5);
-                    contentDisplay.style.display = 'none'; 
-                    return; 
-                }
-                
-                const k4 = chap + '||' + sec + '||' + it + '||' + sub;
-                const subsubs = subSubItemsMap[k4] || [];
-                
-                if (subsubs.length > 0) {
-                    // 有第五级子项，按照要求：选择倒数第二级就显示最后一级全部内容
-                    // 隐藏第五级选择器（如果之前显示）
-                    document.getElementById('subsubitem-selector').style.display = 'none';
-                    subSubItemSelect.value = '';
-                    
-                    // 收集所有第五级内容
-                    let allSubSubContent = '<div class="all-subsub-content">';
-                    subsubs.forEach((subsub, index) => {
-                        const key = k4 + '||' + subsub;
-                        const content = contentMap[key] || '';
-                        // content通常已包含subsub文本（如"(1) 检查..."），避免重复显示
-                        const hasLabelInContent = content.includes(subsub) || subsub.startsWith(content.substring(0, Math.min(20, content.length)));
-                        const isLast = index === subsubs.length - 1;
-                        allSubSubContent += '<div class="subsub-item" style="margin-bottom:' + (isLast ? '2px' : '6px') + '; padding-bottom:' + (isLast ? '0' : '6px') + '; border-bottom:' + (isLast ? 'none' : '1px dashed #eee') + ';">';
-                        if (!hasLabelInContent && subsub) {
-                            allSubSubContent += '<div style="font-weight:600; color:#1e3a5f; margin-bottom:2px;">' + subsub + '</div>';
-                        }
-                        allSubSubContent += '<div style="color:#444; line-height:1.7;">' + content.replace(/\n/g, '<br>') + '</div>';
-                        allSubSubContent += '</div>';
-                    });
-                    allSubSubContent += '</div>';
-                    
-                    // 显示第四级和所有第五级内容
-                    displayChapter.textContent = chap;
-                    displaySection.textContent = sec;
-                    displayItem.textContent = it;
-                    displaySubItem.textContent = sub;
-                    displaySubItem.style.display = '';
-                    displaySubSubItem.textContent = `共 ${subsubs.length} 条检查细则`;
-                    displaySubSubItem.style.display = 'block';
-                    displayContent.innerHTML = allSubSubContent;
-                    contentDisplay.style.display = 'block';
-                } else {
-                    // 没有第五级，直接显示第四级内容
-                    const content = contentMap[k4] || '暂无内容';
-                    displayChapter.textContent = chap;
-                    displaySection.textContent = sec;
-                    displayItem.textContent = it;
-                    displaySubItem.textContent = sub;
-                    displaySubItem.style.display = '';
-                    displaySubSubItem.textContent = '';
-                    displaySubSubItem.style.display = 'none';
-                    displayContent.innerHTML = content.replace(/\n/g, '<br>');
-                    contentDisplay.style.display = 'block';
-                }
-            };
-
-            // 第五级选择器处理函数
-            window.onSubSubItemChange = function() {
-                const chap = chapterSelect.value;
-                const sec  = sectionSelect.value;
-                const it   = itemSelect.value;
-                const sub  = subItemSelect.value;
-                const subsub = subSubItemSelect.value;
-                if (!chap || !sec || !it || !sub || !subsub) { 
-                    contentDisplay.style.display = 'none'; 
-                    return; 
-                }
-                
-                const key = chap + '||' + sec + '||' + it + '||' + sub + '||' + subsub;
+                if (!chap || !sec || !it || !sub) { contentDisplay.style.display = 'none'; return; }
+                const key = chap + '||' + sec + '||' + it + '||' + sub;
                 const content = contentMap[key] || '暂无内容';
                 displayChapter.textContent = chap;
                 displaySection.textContent = sec;
                 displayItem.textContent = it;
                 displaySubItem.textContent = sub;
                 displaySubItem.style.display = '';
-                displaySubSubItem.textContent = subsub;
-                displaySubSubItem.style.display = '';
                 displayContent.innerHTML = content.replace(/\n/g, '<br>');
                 contentDisplay.style.display = 'block';
             };
 
-            // 四级结构示例数据（扩展支持第五级）
+            // 四级结构示例数据
             function loadSampleData() {
                 const sample = [
                     {
@@ -6989,22 +6044,6 @@
                         item: '1. \u201c四会\u201d制度建立落实情况',
                         subitem: '1.3 事故故障分析整改',
                         content: '检查事故、故障分析（一事一档），安全信息闭环整改情况；检查安全监察指令书、通知书、意见书等指出问题是否件件专题分析整改及考核追责；检查上级检查指出典型问题是否分析整改。'
-                    },
-                    {
-                        chapter: '第一章 通用及专项部分',
-                        section: '第一节 安全基础管理',
-                        item: '2. 安全双重预防机制落实',
-                        subitem: '2.1 安全风险库建立',
-                        subsubitem: 'a) 年度风险评估',
-                        content: '检查年初是否组织年度安全风险评估会议，形成评估报告；检查会议纪要是否完整，参会人员是否齐全；检查风险评估是否覆盖所有专业和关键环节。'
-                    },
-                    {
-                        chapter: '第一章 通用及专项部分',
-                        section: '第一节 安全基础管理',
-                        item: '2. 安全双重预防机制落实',
-                        subitem: '2.1 安全风险库建立',
-                        subsubitem: 'b) 风险分级管控',
-                        content: '检查是否建立风险分级管控清单，明确重大、较大、一般风险等级；检查各级风险是否有明确的管控措施和责任部门；检查风险管控措施是否得到有效执行。'
                     },
                     {
                         chapter: '第一章 通用及专项部分',
@@ -7226,65 +6265,16 @@
                 e.target.value = '';
             });
 
-            // 解析单个DOCX文件（增强版，支持图片懒加载）
+            // 解析单个DOCX文件
             async function _parseDocxFile(file) {
-                // 按需加载mammoth库（如未加载则动态加载）
-                if (typeof mammoth === 'undefined') {
-                    try {
-                        await window._loadLibrary.mammoth();
-                    } catch(e) {
-                        alert('mammoth 库加载失败，请检查网络连接后重试');
-                        return null;
-                    }
-                }
                 if (typeof mammoth === 'undefined') {
                     alert('mammoth 库未加载，请检查网络连接');
                     return null;
                 }
                 try {
                     const arrayBuffer = await file.arrayBuffer();
-                    
-                    // 使用mammoth完整转换HTML（支持图片）
-                    const options = {
-                        convertImage: mammoth.images.imgElement(function(image) {
-                            return image.read("base64").then(async function(imageBuffer) {
-                                const imgId = 'hb_img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                                const contentType = image.contentType;
-                                const base64Data = imageBuffer.toString('base64');
-                                const byteCharacters = atob(base64Data);
-                                const byteNumbers = new Array(byteCharacters.length);
-                                for (let i = 0; i < byteCharacters.length; i++) {
-                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                }
-                                const byteArray = new Uint8Array(byteNumbers);
-                                const blob = new Blob([byteArray], { type: contentType });
-                                
-                                // 保存到IndexedDB（如果可用）
-                                if (typeof saveImageToDB === 'function') {
-                                    await saveImageToDB(imgId, blob);
-                                    return { src: '__HB_IMG_ID__' + imgId + '__' };
-                                } else {
-                                    // 如果IndexedDB不可用，使用base64
-                                    return { src: `data:${contentType};base64,${base64Data}` };
-                                }
-                            });
-                        })
-                    };
-                    
-                    const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-                    let html = result.value;
-                    
-                    // 替换图片占位符为懒加载格式
-                    html = html.replace(/__HB_IMG_ID__([^_]+)__/g, (match, imgId) => {
-                        return `<img class="hb-lazy-img" 
-                                data-img-id="${imgId}" 
-                                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='80' viewBox='0 0 100 80'%3E%3Crect width='100' height='80' fill='%23f1f5f9'/%3E%3Ctext x='50' y='40' text-anchor='middle' font-size='12' fill='%2394a3b8'%3E正在加载...%3C/text%3E%3C/svg%3E"
-                                style="max-width:100%;height:auto;display:block;margin:8px auto;"
-                                alt="图片" />`;
-                    });
-                    
-                    // 解析HTML为结构数据，保留图片
-                    const parsedData = parseHandbookHtmlWithImages(html);
+                    const result = await mammoth.convertToHtml({ arrayBuffer });
+                    const parsedData = parseHandbookHtml(result.value);
                     if (parsedData.length === 0) {
                         alert(`文件 "${file.name}" 未能解析出有效数据，已跳过`);
                         return null;
@@ -7297,7 +6287,7 @@
                 }
             }
 
-            // 解析单个JSON文件 - 增强版，支持提取第5级内容到subsubitem
+            // 解析单个JSON文件
             function _parseJsonFile(file) {
                 return new Promise(resolve => {
                     const reader = new FileReader();
@@ -7306,57 +6296,7 @@
                             const imported = JSON.parse(ev.target.result);
                             if (!Array.isArray(imported)) throw new Error('数据必须是JSON数组');
                             if (imported.length > 0 && !imported[0].chapter) throw new Error('缺少必要字段 chapter');
-                            
-                            // 增强处理：如果content中包含第5级内容，将其提取到subsubitem
-                            const enhanced = imported.map(entry => {
-                                const newEntry = { ...entry };
-                                
-                                // 确保所有字段都存在
-                                newEntry.chapter = newEntry.chapter || '';
-                                newEntry.section = newEntry.section || '';
-                                newEntry.item = newEntry.item || '';
-                                newEntry.subitem = newEntry.subitem || '';
-                                newEntry.subsubitem = newEntry.subsubitem || '';
-                                newEntry.content = newEntry.content || '';
-                                newEntry.contentHtml = newEntry.contentHtml || '';
-                                newEntry.contentText = newEntry.contentText || '';
-                                
-                                // 如果没有subsubitem，但content中包含第5级格式，尝试提取
-                                if (!newEntry.subsubitem && newEntry.content) {
-                                    const lines = newEntry.content.split('\n');
-                                    let extractedLines = [];
-                                    let remainingLines = [];
-                                    let foundFifthLevel = false;
-                                    
-                                    for (const line of lines) {
-                                        const trimmed = line.trim();
-                                        // 检测第5级模式：小写字母加括号、罗马数字等，增加阿拉伯数字支持
-                                        const fifthLevelPattern = /^(?:\([a-z]\)|[a-z]\)|\([A-Z]\)|[A-Z]\)|\([ⅰ-ⅻ]\)|[ⅰ-ⅻ]\)|\([i-xii]\)|[i-xii]\)|[a-z]\.|[A-Z]\.|[i-xii]\.|[I-XII]\.|\(\d+\)|\d+[)）\.])/i;
-                                        
-                                        if (fifthLevelPattern.test(trimmed) && !foundFifthLevel) {
-                                            // 第一个第5级内容，作为subsubitem
-                                            newEntry.subsubitem = trimmed;
-                                            foundFifthLevel = true;
-                                        } else if (foundFifthLevel) {
-                                            // 第一个第5级之后的后续内容保持为content
-                                            remainingLines.push(line);
-                                        } else {
-                                            // 第5级之前的内容也保持为content
-                                            remainingLines.push(line);
-                                        }
-                                    }
-                                    
-                                    // 如果有提取到第5级，则更新content
-                                    if (foundFifthLevel) {
-                                        newEntry.content = remainingLines.join('\n');
-                                        newEntry.contentText = remainingLines.join('\n');
-                                    }
-                                }
-                                
-                                return newEntry;
-                            });
-                            
-                            resolve(enhanced);
+                            resolve(imported);
                         } catch (err) {
                             alert(`文件 "${file.name}" 解析失败: ${err.message}`);
                             resolve(null);
@@ -7374,7 +6314,7 @@
                 const data = [];
 
                 // 当前层级状态
-                let cur = { chapter: '', section: '', item: '', subitem: '', subsubitem: '', content: '' };
+                let cur = { chapter: '', section: '', item: '', subitem: '', content: '' };
 
                 // 检测文本标题级别的正则（按优先级排列）
                 const LEVEL_PATTERNS = [
@@ -7388,15 +6328,10 @@
                     { level: 2, re: /^\d+\.\d+[\s.、]/, maxLen: 80 },
                     // 第3级：(一)（如果不是第2级） / 1) / （1）
                     { level: 3, re: /^\d+[)）]\s*/, maxLen: 100 },
-                    // 第4级：① / a. / A.
+                    // 第4级：(1) / ① / a. / A.
+                    { level: 4, re: /^[（(]\d+[)）]/, maxLen: 120 },
                     { level: 4, re: /^[①②③④⑤⑥⑦⑧⑨⑩]/, maxLen: 120 },
                     { level: 4, re: /^[a-zA-Z][.、．)\）]\s*/, maxLen: 120 },
-                    // 第5级：(a) / ⅰ / i. / I. / （A） / (1) / 1) / 1.
-                    { level: 5, re: /^[（(][a-zA-Z][)）]/, maxLen: 150 },
-                    { level: 5, re: /^[ⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ]/, maxLen: 150 },
-                    { level: 5, re: /^[iIvVxXlLcCdDmM][\.、．)\）]\s*/, maxLen: 150 },
-                    { level: 5, re: /^[（(]\d+[)）]/, maxLen: 150 },      // (1), (2) 等
-                    { level: 5, re: /^\d+[)）\.]/, maxLen: 150 },        // 1), 2), 1., 2. 等
                 ];
 
                 function detectLevelByPattern(text) {
@@ -7407,24 +6342,22 @@
                 }
 
                 function saveRecord() {
-                    if (cur.chapter && (cur.subsubitem || cur.content.trim())) {
+                    if (cur.chapter) {
                         data.push({
                             chapter: cur.chapter,
                             section: cur.section || '默认分类',
                             item: cur.item || '检查项点',
                             subitem: cur.subitem,
-                            subsubitem: cur.subsubitem,
                             content: cur.content.trim()
                         });
                     }
                 }
 
                 function resetBelow(level) {
-                    if (level <= 1) { cur.section = ''; cur.item = ''; cur.subitem = ''; cur.subsubitem = ''; cur.content = ''; }
-                    if (level <= 2) { cur.item = ''; cur.subitem = ''; cur.subsubitem = ''; cur.content = ''; }
-                    if (level <= 3) { cur.subitem = ''; cur.subsubitem = ''; cur.content = ''; }
-                    if (level <= 4) { cur.subsubitem = ''; cur.content = ''; }
-                    if (level <= 5) { cur.content = ''; }
+                    if (level <= 1) { cur.section = ''; cur.item = ''; cur.subitem = ''; cur.content = ''; }
+                    if (level <= 2) { cur.item = ''; cur.subitem = ''; cur.content = ''; }
+                    if (level <= 3) { cur.subitem = ''; cur.content = ''; }
+                    if (level <= 4) { cur.content = ''; }
                 }
 
                 // 获取所有块级元素，保持文档顺序
@@ -7449,12 +6382,7 @@
                     // 如果HTML标签无法判断，用文本模式
                     let patternLevel = htmlLevel > 0 ? htmlLevel : detectLevelByPattern(text);
 
-                    if (patternLevel === 5) {
-                        // 第5级：每个h5作为独立记录
-                        saveRecord();
-                        cur.subsubitem = text;
-                        cur.content = text;
-                    } else if (patternLevel >= 1 && patternLevel <= 4) {
+                    if (patternLevel >= 1 && patternLevel <= 4) {
                         saveRecord();
                         resetBelow(patternLevel);
                         if (patternLevel === 1) cur.chapter = text;
@@ -7492,200 +6420,7 @@
                 return data;
             }
 
-            // 简单的stripHtml函数（用于检查手册模块）
-            function _stripHtml(html) {
-                if (!html) return '';
-                // 创建临时div元素
-                const tmp = document.createElement('div');
-                tmp.innerHTML = html;
-                return tmp.textContent || tmp.innerText || '';
-            }
-
-            // 增强的HTML解析函数，保留图片和HTML结构
-            function parseHandbookHtmlWithImages(html) {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const data = [];
-
-                // 当前层级状态 - 扩展支持第5级
-                let cur = { chapter: '', section: '', item: '', subitem: '', subsubitem: '', contentHtml: '', contentText: '' };
-
-                // 检测文本标题级别的正则（按优先级排列）
-                const LEVEL_PATTERNS = [
-                    // 第1级：第X章 / 一、/ 1. / 1、/ 第一章 / Part I
-                    { level: 1, re: /^第[一二三四五六七八九十百千\d]+[章节部分篇]\s*/, maxLen: 60 },
-                    { level: 1, re: /^[一二三四五六七八九十]+、/, maxLen: 60 },
-                    { level: 1, re: /^\d+[、.．]\s*/, maxLen: 50 },
-                    // 第2级：第X节 / (一) / 1.1 / 1.1.1（仅当不是第1级时）
-                    { level: 2, re: /^第[一二三四五六七八九十百千\d]+节\s*/, maxLen: 80 },
-                    { level: 2, re: /^[（(][一二三四五六七八九十]+[)）]/, maxLen: 80 },
-                    { level: 2, re: /^\d+\.\d+[\s.、]/, maxLen: 80 },
-                    // 第3级：(一)（如果不是第2级） / 1) / （1）
-                    { level: 3, re: /^\d+[)）]\s*/, maxLen: 100 },
-                    // 第4级：① / a. / A.
-                    { level: 4, re: /^[①②③④⑤⑥⑦⑧⑨⑩]/, maxLen: 120 },
-                    { level: 4, re: /^[a-zA-Z][.、．)\）]\s*/, maxLen: 120 },
-                    // 第5级：(a) / ⅰ / i. / I. / （A） / (1) / 1) / 1.
-                    { level: 5, re: /^[（(][a-zA-Z][)）]/, maxLen: 150 },
-                    { level: 5, re: /^[ⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ]/, maxLen: 150 },
-                    { level: 5, re: /^[iIvVxXlLcCdDmM][\.、．)\）]\s*/, maxLen: 150 },
-                    { level: 5, re: /^[（(]\d+[)）]/, maxLen: 150 },      // (1), (2) 等
-                    { level: 5, re: /^\d+[)）\.]/, maxLen: 150 },        // 1), 2), 1., 2. 等
-                ];
-
-                function detectLevelByPattern(text) {
-                    for (const p of LEVEL_PATTERNS) {
-                        if (p.re.test(text) && text.length <= p.maxLen) return p.level;
-                    }
-                    return 0;
-                }
-
-                function saveRecord() {
-                    // 必须有实际内容才保存（subsubitem也算内容，因为它本身就是第5级标题）
-                    if (cur.chapter && (cur.subsubitem || cur.contentHtml.trim())) {
-                        data.push({
-                            chapter: cur.chapter,
-                            section: cur.section || '默认分类',
-                            item: cur.item || '检查项点',
-                            subitem: cur.subitem,
-                            subsubitem: cur.subsubitem,
-                            contentHtml: cur.contentHtml.trim(),
-                            contentText: _stripHtml(cur.contentHtml).trim()
-                        });
-                    }
-                }
-
-                function resetBelow(level) {
-                    // 然后重置相关字段
-                    if (level <= 1) { cur.section = ''; cur.item = ''; cur.subitem = ''; cur.subsubitem = ''; }
-                    if (level <= 2) { cur.item = ''; cur.subitem = ''; cur.subsubitem = ''; }
-                    if (level <= 3) { cur.subitem = ''; cur.subsubitem = ''; }
-                    if (level <= 4) { cur.subsubitem = ''; }
-                    // 无论什么级别，遇到新标题都清空内容
-                    cur.contentHtml = '';
-                    cur.contentText = '';
-                }
-
-                // 获取所有块级元素，保持文档顺序
-                const allElements = Array.from(doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, li'));
-
-                // 检测mammoth生成标题对应的HTML级别
-                allElements.forEach(el => {
-                    const text = el.textContent.trim();
-                    if (!text) return;
-
-                    const tagName = el.tagName.toLowerCase();
-                    const className = el.className || '';
-
-                    // 通过HTML标签/style类名检测级别
-                    let htmlLevel = 0;
-                    if (tagName === 'h1' || className.includes('style3') || className.includes('MsoTitle')) htmlLevel = 1;
-                    else if (tagName === 'h2' || className.includes('style4') || className.includes('MsoHeading1')) htmlLevel = 2;
-                    else if (tagName === 'h3' || className.includes('style5') || className.includes('MsoHeading2')) htmlLevel = 3;
-                    else if (tagName === 'h4' || className.includes('style6') || className.includes('MsoHeading3')) htmlLevel = 4;
-                    else if (tagName === 'h5' || className.includes('style7') || className.includes('MsoHeading4')) htmlLevel = 5;
-
-                    // 如果HTML标签无法判断，用文本模式
-                    let patternLevel = htmlLevel > 0 ? htmlLevel : detectLevelByPattern(text);
-
-                    if (patternLevel === 5) {
-                        // 第5级：每个h5作为独立记录，subsubitem=当前h5文本，content=h5文本本身
-                        saveRecord();
-                        cur.subsubitem = text;
-                        cur.contentHtml = el.outerHTML;
-                        cur.contentText = text;
-                    } else if (patternLevel >= 1 && patternLevel <= 4) {
-                        // 1~4级：保存当前记录，重置，设置新标题
-                        saveRecord();
-                        resetBelow(patternLevel);
-                        if (patternLevel === 1) cur.chapter = text;
-                        else if (patternLevel === 2) cur.section = text;
-                        else if (patternLevel === 3) cur.item = text;
-                        else if (patternLevel === 4) cur.subitem = text;
-                    } else {
-                        // 普通内容（p/div等），保留HTML结构
-                        const elementHtml = el.innerHTML.trim();
-                        if (elementHtml) {
-                            cur.contentHtml += (cur.contentHtml ? '\n' : '') + elementHtml;
-                        }
-                    }
-                });
-
-                saveRecord();
-
-                // 如果没有解析出结构，尝试用XML检测Word大纲级别
-                if (data.length === 0) {
-                    const paragraphs = doc.body.querySelectorAll('p');
-                    let tempChapter = '未分类文档';
-                    let tempSection = '默认分类';
-
-                    paragraphs.forEach((p, idx) => {
-                        const html = p.innerHTML.trim();
-                        const text = p.textContent.trim();
-                        if (text) {
-                            data.push({
-                                chapter: tempChapter,
-                                section: tempSection,
-                                item: `段落 ${idx + 1}`,
-                                subitem: '',
-                                contentHtml: html,
-                                contentText: _stripHtml(html).trim()
-                            });
-                        }
-                    });
-                }
-
-                return data;
-            }
-
             // ========== 大纲浏览模式 ==========
-            
-            // 检查手册图片懒加载观察器
-            let _hbImgLazyObserver = null;
-            function hbSetupLazyImageObserver(container) {
-                if (_hbImgLazyObserver) _hbImgLazyObserver.disconnect();
-                _hbImgLazyObserver = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const img = entry.target;
-                            const imgId = img.getAttribute('data-img-id');
-                            if (imgId && !img._loaded) {
-                                img._loaded = true;
-                                // 检查图片是否在IndexedDB中
-                                if (typeof getImageFromDB === 'function') {
-                                    getImageFromDB(imgId).then(blob => {
-                                        if (blob) {
-                                            const url = URL.createObjectURL(blob);
-                                            img.src = url;
-                                            img.classList.remove('hb-lazy-img');
-                                            img.classList.add('hb-loaded-img');
-                                            img.onload = () => {
-                                                URL.revokeObjectURL(url);
-                                            };
-                                        } else {
-                                            img.alt = '图片加载失败';
-                                        }
-                                    }).catch(() => {
-                                        img.alt = '图片加载错误';
-                                    });
-                                } else {
-                                    // 如果没有getImageFromDB函数，可能是base64图片
-                                    const src = img.getAttribute('data-src');
-                                    if (src && src.startsWith('data:')) {
-                                        img.src = src;
-                                        img.classList.remove('hb-lazy-img');
-                                        img.classList.add('hb-loaded-img');
-                                    }
-                                }
-                            }
-                            _hbImgLazyObserver.unobserve(img);
-                        }
-                    });
-                }, { root: container, rootMargin: '200px' });
-                container.querySelectorAll('img[data-img-id], img[data-src]').forEach(img => {
-                    _hbImgLazyObserver.observe(img);
-                });
-            }
 
             // 切换浏览模式
             window.hbSwitchView = function(view) {
@@ -7720,35 +6455,33 @@
                     return;
                 }
 
-                // 构建树形结构 - 扩展支持第5级
+                // 构建树形结构
                 const tree = [];
                 const chapMap = {};   // chapter -> node index in tree
                 const secMap = {};    // chapter||section -> node index
                 const itemMap = {};   // chapter||section||item -> node index
-                const subMap = {};    // chapter||section||item||subitem -> node index
 
                 handbookData.forEach(entry => {
                     const c = entry.chapter || '', s = entry.section || '';
                     const it = entry.item || '', sub = entry.subitem || '';
-                    const subsub = entry.subsubitem || '';  // 第5级
-                    const cont = entry.content || entry.contentText || '';
+                    const cont = entry.content || '';
 
                     // 确保chapter节点存在
                     if (c && chapMap[c] === undefined) {
                         chapMap[c] = tree.length;
-                        tree.push({ level: 0, label: c, children: [], chapter: c, section: '', item: '', subitem: '', subsubitem: '' });
+                        tree.push({ level: 0, label: c, children: [], chapter: c, section: '', item: '', subitem: '' });
                     }
                     const chapIdx = chapMap[c];
                     if (!s) {
                         // 无section，内容挂在chapter下
-                        if (cont) tree[chapIdx].children.push({ level: 3, label: it || '内容', children: [], chapter: c, section: s, item: it, subitem: sub, subsubitem: subsub, content: cont });
+                        if (cont) tree[chapIdx].children.push({ level: 3, label: it || '内容', children: [], chapter: c, section: s, item: it, subitem: sub, content: cont });
                         return;
                     }
 
                     const k1 = c + '||' + s;
                     if (secMap[k1] === undefined) {
                         secMap[k1] = tree[chapIdx].children.length;
-                        tree[chapIdx].children.push({ level: 1, label: s, children: [], chapter: c, section: s, item: '', subitem: '', subsubitem: '' });
+                        tree[chapIdx].children.push({ level: 1, label: s, children: [], chapter: c, section: s, item: '', subitem: '' });
                     }
                     const secIdx = secMap[k1];
                     const secNode = tree[chapIdx].children[secIdx];
@@ -7758,28 +6491,13 @@
                     const k2 = k1 + '||' + it;
                     if (itemMap[k2] === undefined) {
                         itemMap[k2] = secNode.children.length;
-                        secNode.children.push({ level: 2, label: it, children: [], chapter: c, section: s, item: it, subitem: '', subsubitem: '' });
+                        secNode.children.push({ level: 2, label: it, children: [], chapter: c, section: s, item: it, subitem: '' });
                     }
                     const itemIdx = itemMap[k2];
                     const itemNode = secNode.children[itemIdx];
 
                     if (sub) {
-                        const k3 = k2 + '||' + sub;
-                        if (subMap[k3] === undefined) {
-                            subMap[k3] = itemNode.children.length;
-                            itemNode.children.push({ level: 3, label: sub, children: [], chapter: c, section: s, item: it, subitem: sub, subsubitem: '' });
-                        }
-                        const subIdx = subMap[k3];
-                        const subNode = itemNode.children[subIdx];
-                        
-                        // 处理第5级subsubitem - 聚合到第4级节点中，不作为独立子节点
-                        if (subsub) {
-                            // 将第5级内容作为子条目存储在subNode.subsubList中
-                            if (!subNode.subsubList) subNode.subsubList = [];
-                            subNode.subsubList.push({ label: subsub, content: cont });
-                        } else if (cont) {
-                            subNode.content = subNode.content ? subNode.content + '\n' + cont : cont;
-                        }
+                        itemNode.children.push({ level: 3, label: sub, children: [], chapter: c, section: s, item: it, subitem: sub, content: cont });
                     } else if (cont) {
                         itemNode.content = itemNode.content ? itemNode.content + '\n' + cont : cont;
                     }
@@ -7796,7 +6514,7 @@
                     const leafCount = countLeaves(node);
                     let html = '<div class="hb-tree-node hb-tree-level-' + node.level + '">';
 
-                    html += '<div class="hb-tree-header" data-chapter="' + _esc(node.chapter) + '" data-section="' + _esc(node.section) + '" data-item="' + _esc(node.item) + '" data-subitem="' + _esc(node.subitem) + '" data-subsubitem="' + _esc(node.subsubitem) + '">';
+                    html += '<div class="hb-tree-header" data-chapter="' + _esc(node.chapter) + '" data-section="' + _esc(node.section) + '" data-item="' + _esc(node.item) + '" data-subitem="' + _esc(node.subitem) + '">';
                     html += '<span class="hb-tree-arrow ' + (hasChildren ? '' : 'hidden') + '">▶</span>';
                     html += '<span class="hb-tree-label" title="' + _esc(node.label) + '">' + _esc(node.label) + '</span>';
                     if (hasChildren) html += '<span class="hb-tree-count">' + leafCount + '</span>';
@@ -7841,14 +6559,9 @@
                         treeEl.querySelectorAll('.hb-tree-header.selected').forEach(h => h.classList.remove('selected'));
                         this.classList.add('selected');
 
-                        // 查找该节点对应的所有内容 - 支持第5级
+                        // 查找该节点对应的所有内容
                         let contents = [];
-                        const subsubitem = this.dataset.subsubitem || '';
-                        
-                        if (subsubitem) {
-                            contents = handbookData.filter(d => d.chapter === chapter && d.section === section && d.item === item && d.subitem === subitem && d.subsubitem === subsubitem);
-                        } else if (subitem) {
-                            // 点击第4级(subitem)时，获取该级下所有内容包括第5级
+                        if (subitem) {
                             contents = handbookData.filter(d => d.chapter === chapter && d.section === section && d.item === item && d.subitem === subitem);
                         } else if (item) {
                             contents = handbookData.filter(d => d.chapter === chapter && d.section === section && d.item === item);
@@ -7865,83 +6578,18 @@
                         if (item) pathHtml += '<span class="path-item">' + _esc(item) + '</span>';
                         if (subitem) pathHtml += '<span class="path-subitem">' + _esc(subitem) + '</span>';
 
-                        // 检查该节点是否聚合了第5级子条目
-                        const subsubsFromTree = [];
-                        if (subitem && !subsubitem) {
-                            // 从树节点中获取聚合的第5级数据
-                            let foundNode = null;
-                            for (const root of tree) {
-                                if (root.label === chapter) {
-                                    for (const sec of root.children) {
-                                        if (sec.label === section) {
-                                            for (const it2 of sec.children) {
-                                                if (it2.label === item) {
-                                                    for (const sub2 of it2.children) {
-                                                        if (sub2.label === subitem) {
-                                                            foundNode = sub2;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            if (foundNode && foundNode.subsubList && foundNode.subsubList.length > 0) {
-                                foundNode.subsubList.forEach(ss => subsubsFromTree.push(ss));
-                            }
-                        }
-
                         let bodyHtml = '';
-                        
-                        if (subsubsFromTree.length > 0) {
-                            // 有第5级子条目：以列表形式展示所有第5级内容
-                            subsubsFromTree.forEach((ss, idx) => {
-                                const cont = ss.content || '';
-                                // content通常已包含label文本（如"(1) 检查..."），避免重复显示
-                                // 仅当content不包含label时才单独显示label
-                                const hasLabelInContent = cont.includes(ss.label) || ss.label.startsWith(cont.substring(0, Math.min(20, cont.length)));
-                                const isLast = idx === subsubsFromTree.length - 1;
-                                bodyHtml += '<div class="subsub-item" style="margin-bottom:' + (isLast ? '2px' : '6px') + '; padding-bottom:' + (isLast ? '0' : '6px') + '; border-bottom:' + (isLast ? 'none' : '1px dashed var(--border, #e0e0e0)') + ';">';
-                                if (!hasLabelInContent && ss.label) {
-                                    bodyHtml += '<div style="font-weight:600; color:var(--primary, #1e3a5f); margin-bottom:2px;">' + _esc(ss.label) + '</div>';
-                                }
-                                bodyHtml += '<div style="color:var(--text-secondary, #444); line-height:1.7;">' + _esc(cont).replace(/\n/g, '<br>') + '</div>';
-                                bodyHtml += '</div>';
-                            });
-                            // 如果第4级自身也有内容（无第5级的条目），也显示出来
-                            const selfContent = contents.filter(d => !d.subsubitem);
-                            selfContent.forEach(d => {
-                                const content = d.contentHtml || d.contentText || '';
-                                if (content) {
-                                    bodyHtml += '<div style="margin-bottom:8px;">' + (d.contentHtml ? content : _esc(content).replace(/\n/g, '<br>')) + '</div>';
-                                }
-                            });
-                        } else {
-                            // 无第5级：按原有逻辑渲染
-                            contents.forEach(d => {
-                                const levelKey = d.subitem ? 'subitem' : null;
-                                const levelValue = d.subitem;
-                                
-                                if (levelValue && (d.contentHtml || d.contentText)) {
-                                    const content = d.contentHtml || d.contentText;
-                                    bodyHtml += '<div style="margin-bottom:12px;">';
-                                    bodyHtml += '<strong style="color:var(--primary);">' + _esc(levelValue) + '</strong>\n';
-                                    bodyHtml += (d.contentHtml ? content : _esc(content).replace(/\n/g, '<br>')) + '</div>';
-                                } else if (d.contentHtml || d.contentText) {
-                                    const content = d.contentHtml || d.contentText;
-                                    bodyHtml += '<div style="margin-bottom:8px;">' + (d.contentHtml ? content : _esc(content).replace(/\n/g, '<br>')) + '</div>';
-                                }
-                            });
-                        }
+                        contents.forEach(d => {
+                            if (d.subitem && d.content) {
+                                bodyHtml += '<div style="margin-bottom:12px;"><strong style="color:var(--primary);">' + _esc(d.subitem) + '</strong>\n' + _esc(d.content).replace(/\n/g, '<br>') + '</div>';
+                            } else if (d.content) {
+                                bodyHtml += '<div style="margin-bottom:8px;">' + _esc(d.content).replace(/\n/g, '<br>') + '</div>';
+                            }
+                        });
 
                         if (!bodyHtml) bodyHtml = '<span style="color:#94a3b8;">（无详细内容，请展开子项查看）</span>';
 
                         contentEl.innerHTML = '<div class="hb-content-path">' + pathHtml + '</div><div class="hb-content-text">' + bodyHtml + '</div>';
-
-                        // 设置图片懒加载观察器
-                        hbSetupLazyImageObserver(contentEl);
 
                         // 手机端：点击后自动滚动到内容区
                         if (window.innerWidth <= 600) {
@@ -8153,298 +6801,44 @@
         });
 
         // [DEBUG] 规章制度搜索调试工具
-        // 移除调试面板以提升性能（已注释）
-        // 如需调试，可取消注释以下代码
-        /*
         setTimeout(function() {
+            // 检查 rules 数据
             if (typeof rules !== 'undefined') {
                 console.log('[DEBUG] rules总数:', rules.length);
+                rules.forEach(function(r, i) {
+                    console.log('[DEBUG] rule[' + i + ']:', {
+                        title: r.title,
+                        trade: r.trade,
+                        contentLen: (r.content || '').length,
+                        contentHtmlLen: (r.contentHtml || '').length,
+                        searchTextLen: (r.searchText || '').length,
+                        contentPreview: (r.content || '').substring(0, 80),
+                        isHtml: (r.content || '').indexOf('<') > -1
+                    });
+                });
+                // 在页面底部显示调试信息面板
+                var debugDiv = document.createElement('div');
+                debugDiv.id = 'rule-debug-panel';
+                debugDiv.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1e293b;color:#e2e8f0;padding:12px;font-size:12px;font-family:monospace;z-index:99999;max-height:200px;overflow-y:auto;border-top:2px solid #f59e0b;';
+                var info = '<b style="color:#f59e0b;">🔍 规章搜索调试面板</b> | rules总数: ' + rules.length;
+                rules.forEach(function(r, i) {
+                    var cl = (r.content || '').length;
+                    var chl = (r.contentHtml || '').length;
+                    var sl = (r.searchText || '').length;
+                    info += '<br>[' + i + '] <b>' + (r.title || '无标题') + '</b> (' + (r.trade || '') + ') | content:' + cl + '字 | contentHtml:' + chl + '字 | searchText:' + sl + '字 | isHtml:' + ((r.content || '').indexOf('<') > -1);
+                });
+                debugDiv.innerHTML = info;
+                // 点击关闭
+                debugDiv.title = '点击关闭';
+                debugDiv.onclick = function() { debugDiv.remove(); };
+                document.body.appendChild(debugDiv);
+            } else {
+                console.log('[DEBUG] rules 变量未定义（可能在闭包内）');
             }
         }, 3000);
-        */
 
         window.onclick = function(e) { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-
-        // ================================================================================
-        // Web Worker 大数据解析优化
-        // ================================================================================
-        (function() {
-            'use strict';
-            
-            // 创建Blob URL的Worker代码
-            const workerCode = `
-self.onmessage = function(e) {
-    const { id, type, data, options } = e.data;
-    
-    try {
-        switch (type) {
-            case 'parse-docx':
-                // DOCX解析逻辑（mammoth库需要外部引入）
-                self.postMessage({ id, type: 'error', error: 'DOCX解析需要mammoth库，请在主线程处理' });
-                break;
-                
-            case 'parse-pdf':
-                // PDF解析
-                if (typeof pdfjsLib !== 'undefined') {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = self.pdfjsWorkerSrc;
-                    
-                    const loadPdf = async () => {
-                        try {
-                            const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(data) }).promise;
-                            let fullText = '';
-                            let images = [];
-                            
-                            for (let i = 1; i <= pdf.numPages; i++) {
-                                const page = await pdf.getPage(i);
-                                const textContent = await page.getTextContent();
-                                
-                                // 文本提取和格式处理
-                                const pageText = textContent.items
-                                    .filter(item => item.str.trim())
-                                    .reduce((acc, item, index, array) => {
-                                        const str = item.str;
-                                        const y = item.transform[5];
-                                        const prevY = index > 0 ? array[index-1].transform[5] : null;
-                                        
-                                        if (prevY !== null && Math.abs(y - prevY) > 5) {
-                                            acc += '\\n';
-                                        } else if (index > 0) {
-                                            acc += ' ';
-                                        }
-                                        
-                                        acc += str;
-                                        return acc;
-                                    }, '');
-                                
-                                fullText += pageText + '\\n\\n';
-                            }
-                            
-                            self.postMessage({ 
-                                id, 
-                                type: 'success', 
-                                result: { 
-                                    text: fullText.trim(),
-                                    images: images,
-                                    pages: pdf.numPages
-                                }
-                            });
-                        } catch (error) {
-                            self.postMessage({ id, type: 'error', error: error.message });
-                        }
-                    };
-                    
-                    loadPdf();
-                } else {
-                    self.postMessage({ id, type: 'error', error: 'pdfjsLib未定义，无法解析PDF' });
-                }
-                break;
-                
-            case 'parse-excel':
-                // Excel解析
-                if (typeof XLSX !== 'undefined') {
-                    try {
-                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                        
-                        self.postMessage({ 
-                            id, 
-                            type: 'success', 
-                            result: { 
-                                data: jsonData,
-                                sheetName: workbook.SheetNames[0],
-                                rows: jsonData.length,
-                                cols: jsonData[0] ? jsonData[0].length : 0
-                            }
-                        });
-                    } catch (error) {
-                        self.postMessage({ id, type: 'error', error: error.message });
-                    }
-                } else {
-                    self.postMessage({ id, type: 'error', error: 'XLSX未定义，无法解析Excel' });
-                }
-                break;
-                
-            default:
-                self.postMessage({ id, type: 'error', error: '未知的解析类型: ' + type });
-        }
-    } catch (error) {
-        self.postMessage({ id, type: 'error', error: error.message });
-    }
-};
-`;
-            
-            // 全局文件解析管理器
-            window.FileParserWorker = {
-                _worker: null,
-                _callbacks: {},
-                _nextId: 1,
-                
-                // 初始化Worker
-                init() {
-                    if (!window.FileParserWorker._worker && typeof Worker !== 'undefined') {
-                        try {
-                            const blob = new Blob([workerCode], { type: 'application/javascript' });
-                            const blobUrl = URL.createObjectURL(blob);
-                            window.FileParserWorker._worker = new Worker(blobUrl);
-                            
-                            // 设置PDF.js worker路径（如果需要）
-                            if (typeof pdfjsLib !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-                                // 在Worker消息中传递workerSrc
-                                window.FileParserWorker._worker.postMessage({
-                                    type: 'config',
-                                    pdfjsWorkerSrc: pdfjsLib.GlobalWorkerOptions.workerSrc
-                                });
-                            }
-                            
-                            window.FileParserWorker._worker.onmessage = function(e) {
-                                const { id, type, result, error } = e.data;
-                                const callback = window.FileParserWorker._callbacks[id];
-                                
-                                if (callback) {
-                                    if (type === 'success') {
-                                        callback.resolve(result);
-                                    } else {
-                                        callback.reject(new Error(error || '解析失败'));
-                                    }
-                                    delete window.FileParserWorker._callbacks[id];
-                                }
-                            };
-                            
-                            window.FileParserWorker._worker.onerror = function(e) {
-                                console.error('文件解析Worker错误:', e);
-                            };
-                        } catch (error) {
-                            console.warn('Web Worker初始化失败，将回退到主线程解析:', error);
-                            window.FileParserWorker._worker = null;
-                        }
-                    }
-                },
-                
-                // 解析文件
-                async parseFile(type, data, options = {}) {
-                    // 如果没有Worker支持，直接在主线程处理（降级方案）
-                    if (!window.FileParserWorker._worker || options.forceMainThread) {
-                        return window.FileParserWorker._parseInMainThread(type, data, options);
-                    }
-                    
-                    const id = window.FileParserWorker._nextId++;
-                    
-                    return new Promise((resolve, reject) => {
-                        window.FileParserWorker._callbacks[id] = { resolve, reject };
-                        window.FileParserWorker._worker.postMessage({
-                            id,
-                            type,
-                            data,
-                            options
-                        });
-                        
-                        // 设置超时（30秒）
-                        setTimeout(() => {
-                            if (window.FileParserWorker._callbacks[id]) {
-                                reject(new Error('文件解析超时 (30秒)'));
-                                delete window.FileParserWorker._callbacks[id];
-                            }
-                        }, 30000);
-                    });
-                },
-                
-                // 主线程解析（降级方案）
-                _parseInMainThread(type, data, options) {
-                    return new Promise((resolve, reject) => {
-                        console.log('在主线程解析文件:', type);
-                        
-                        switch (type) {
-                            case 'parse-pdf':
-                                if (typeof pdfjsLib !== 'undefined') {
-                                    const loadPdf = async () => {
-                                        try {
-                                            const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(data) }).promise;
-                                            let fullText = '';
-                                            
-                                            for (let i = 1; i <= pdf.numPages; i++) {
-                                                const page = await pdf.getPage(i);
-                                                const textContent = await page.getTextContent();
-                                                
-                                                const pageText = textContent.items
-                                                    .filter(item => item.str.trim())
-                                                    .reduce((acc, item, index, array) => {
-                                                        const str = item.str;
-                                                        const y = item.transform[5];
-                                                        const prevY = index > 0 ? array[index-1].transform[5] : null;
-                                                        
-                                                        if (prevY !== null && Math.abs(y - prevY) > 5) {
-                                                            acc += '\\n';
-                                                        } else if (index > 0) {
-                                                            acc += ' ';
-                                                        }
-                                                        
-                                                        acc += str;
-                                                        return acc;
-                                                    }, '');
-                                                
-                                                fullText += pageText + '\\n\\n';
-                                            }
-                                            
-                                            resolve({ 
-                                                text: fullText.trim(),
-                                                images: [],
-                                                pages: pdf.numPages
-                                            });
-                                        } catch (error) {
-                                            reject(error);
-                                        }
-                                    };
-                                    loadPdf();
-                                } else {
-                                    reject(new Error('pdfjsLib未定义，无法解析PDF'));
-                                }
-                                break;
-                                
-                            case 'parse-excel':
-                                if (typeof XLSX !== 'undefined') {
-                                    try {
-                                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
-                                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                                        
-                                        resolve({ 
-                                            data: jsonData,
-                                            sheetName: workbook.SheetNames[0],
-                                            rows: jsonData.length,
-                                            cols: jsonData[0] ? jsonData[0].length : 0
-                                        });
-                                    } catch (error) {
-                                        reject(error);
-                                    }
-                                } else {
-                                    reject(new Error('XLSX未定义，无法解析Excel'));
-                                }
-                                break;
-                                
-                            case 'parse-docx':
-                            default:
-                                reject(new Error('不支持在主线程解析该文件类型: ' + type));
-                        }
-                    });
-                },
-                
-                // 销毁Worker
-                destroy() {
-                    if (window.FileParserWorker._worker) {
-                        window.FileParserWorker._worker.terminate();
-                        window.FileParserWorker._worker = null;
-                        window.FileParserWorker._callbacks = {};
-                    }
-                }
-            };
-            
-            // 延迟初始化Worker
-            setTimeout(() => {
-                window.FileParserWorker.init();
-            }, 1000);
-        })();
     </script>
 </body>
 </html>
