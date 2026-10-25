@@ -1066,22 +1066,29 @@
                     //   菜单(💻 本地文件 / 📚 资料库) → 资料库才弹出选择层（不重复、不占版面）。
                     //   模板区直接显示当前选中项（本地模板也在这里可见）。
                     var _addBtnCss = 'padding:5px 10px;border:1px solid var(--primary);background:#fff;color:var(--primary);border-radius:16px;font-size:0.78rem;cursor:pointer;white-space:nowrap;';
-                    var modalHtml = '<div class="wr-step-panel" style="background:#fff;border-radius:14px;padding:20px;width:min(560px,95vw);max-height:85vh;display:flex;flex-direction:column;gap:12px;">'
-                        + '<div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-weight:700;font-size:0.97rem;color:var(--primary);">✍️ 选择模板和参考资料</span><button onclick="this.closest(\'.wr-step-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;">✕</button></div>'
+                    // 【2026-10-25】三段式外壳（头部固定 / 正文滚动 / 底部按钮常驻），详见 _wrStepShell 注释
+                    var _S = _wrStepShell();
+                    var _lineCss = 'margin-top:6px;padding:8px 10px;border:1px dashed var(--border);border-radius:8px;'
+                        + 'background:#f8fafc;min-height:38px;max-height:108px;overflow-y:auto;'
+                        + 'display:flex;align-items:center;flex-wrap:wrap;gap:6px;';
+                    var modalHtml = '<div class="wr-step-panel" style="' + _S.panel + 'width:min(560px,95vw);">'
+                        + '<div style="' + _S.head + '"><span style="font-weight:700;font-size:0.97rem;color:var(--primary);">✍️ 选择模板和参考资料</span><button onclick="this.closest(\'.wr-step-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;" aria-label="关闭">✕</button></div>'
+                        + '<div class="wr-step-body" style="' + _S.body + '">'
                         + '<div style="font-size:0.8rem;color:var(--text-secondary);">两个来源任选：<b>💻 本地文件</b>（本机直选，<b>会保存进资料库</b>，与「资料中心 → 导入」同一套解析）或 <b>📚 资料库</b>（点按钮才弹出，不占版面）</div>'
                         + '<div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><label style="font-weight:600;">📄 写作模板（可选）</label>'
                         + '<button type="button" class="wr-step-addbtn" onclick="wrStepAddMenu(\'template\', this)" style="' + _addBtnCss + '">选择模板 ▾</button></div>'
-                        + '<div id="wr-step-tpl-line" class="wr-step-line" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--border);border-radius:8px;background:#f8fafc;min-height:38px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;"></div></div>'
+                        + '<div id="wr-step-tpl-line" class="wr-step-line" style="' + _lineCss + '"></div></div>'
                         + '<div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><label style="font-weight:600;">📚 参考资料（可多选）</label>'
                         + '<button type="button" class="wr-step-addbtn" onclick="wrStepAddMenu(\'reference\', this)" style="' + _addBtnCss + '">＋ 添加 ▾</button></div>'
-                        + '<div id="wr-step-ref-line" class="wr-step-line" style="margin-top:6px;padding:8px 10px;border:1px dashed var(--border);border-radius:8px;background:#f8fafc;min-height:38px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;"></div></div>'
+                        + '<div id="wr-step-ref-line" class="wr-step-line" style="' + _lineCss + '"></div></div>'
                         // 【2026-09-23 用户反馈"模板/资料用不用的逻辑有点乱"】常显一块"将如何生成"说明：
                         //   不同选择（有/无模板 × 有/无资料）会走哪条链路、以什么为准，全部写清楚，并显示本次写作需求
                         + '<div id="wr-step-hint" style="font-size:0.78rem;line-height:1.7;color:#475569;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px 10px;"></div>'
-                        + '<div style="display:flex;gap:8px;justify-content:flex-end;"><button onclick="wrConfirmSelection()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;">确认并生成</button><button onclick="this.closest(\'.wr-step-modal\').remove()" style="padding:8px 16px;">取消</button></div></div>';
+                        + '</div>'
+                        + '<div style="' + _S.foot + '"><button onclick="wrConfirmSelection()" style="padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;white-space:nowrap;">确认并生成</button><button onclick="this.closest(\'.wr-step-modal\').remove()" style="padding:9px 16px;border:1px solid var(--border);border-radius:6px;background:#f8fafc;cursor:pointer;white-space:nowrap;">取消</button></div></div>';
                     var modal = document.createElement('div');
                     modal.className = 'wr-step-modal';
-                    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10100;display:flex;align-items:center;justify-content:center;';
+                    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10100;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;';
                     modal.innerHTML = modalHtml;
                     document.body.appendChild(modal);
                     wrStepRenderChips();   // 【v3.76】打开即回填本地来源的已选项
@@ -1107,6 +1114,30 @@
                     window._wrAllTpls = [];
                 });
             };
+
+            /**
+             * 【2026-10-25 手机端修复】弹层"三段式"外壳：头部/底部固定，中间正文滚动。
+             * 用户反馈：手机端智能写作「选择模板和参考资料」里选了很多资料后，「确认并生成」按钮被遮挡/挤出屏幕。
+             * 原因：原来只有 max-height 没有 overflow —— 内容超高时 flex 子项把高度顶破，
+             *   而弹层是居中定位，溢出的部分上下一起超出可视区，底部按钮就看不见了。
+             * 现在：面板 overflow:hidden；正文 flex:1 + min-height:0 + overflow-y:auto（用完高度就滚动，绝不顶破）；
+             *   底部按钮常驻、与正文有分隔线；max-height 用 svh（移动端地址栏收放时高度不跳），
+             *   底部再加 env(safe-area-inset-bottom) 避开 iPhone 底部横条。
+             * 已选芯片区（.wr-step-line）另有 max-height，避免几十份资料把正文撑得过长。
+             */
+            function _wrStepShell() {
+                return {
+                    panel: 'background:#fff;border-radius:14px;box-sizing:border-box;max-height:86vh;max-height:86svh;'
+                        + 'display:flex;flex-direction:column;overflow:hidden;',
+                    head: 'flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;'
+                        + 'padding:14px 16px 10px;border-bottom:1px solid var(--border);',
+                    body: 'flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;'
+                        + 'overscroll-behavior:contain;padding:12px 16px;display:flex;flex-direction:column;gap:12px;',
+                    foot: 'flex:0 0 auto;display:flex;gap:8px;justify-content:flex-end;align-items:center;'
+                        + 'padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));'
+                        + 'border-top:1px solid var(--border);'
+                };
+            }
 
             // ==================== 【v3.76】模板 / 参考资料「两路输入」====================
             // 设计（二改后定稿）：
@@ -1193,13 +1224,17 @@
                 }
                 var overlay = document.createElement('div');
                 overlay.id = 'wr-step-lib';
-                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10250;display:flex;align-items:center;justify-content:center;';
-                overlay.innerHTML = '<div class="wr-step-panel" style="background:#fff;border-radius:14px;padding:18px;width:min(520px,94vw);max-height:80vh;display:flex;flex-direction:column;gap:10px;">'
-                    + '<div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-weight:700;font-size:0.94rem;color:var(--primary);">📚 资料库中选' + (kind === 'template' ? '模板' : '参考资料') + '</span><button onclick="document.getElementById(\'wr-step-lib\').remove()" style="background:none;border:none;cursor:pointer;font-size:1.15rem;">✕</button></div>'
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10250;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;';
+                // 【2026-10-25 手机端修复】同样改成三段式：资料再多也只让列表滚动，「确定/取消」始终固定在底部
+                var _S2 = _wrStepShell();
+                overlay.innerHTML = '<div class="wr-step-panel" style="' + _S2.panel + 'width:min(520px,94vw);">'
+                    + '<div style="' + _S2.head + '"><span style="font-weight:700;font-size:0.94rem;color:var(--primary);">📚 资料库中选' + (kind === 'template' ? '模板' : '参考资料') + '</span><button onclick="document.getElementById(\'wr-step-lib\').remove()" style="background:none;border:none;cursor:pointer;font-size:1.15rem;" aria-label="关闭">✕</button></div>'
+                    + '<div class="wr-step-body" style="' + _S2.body + 'gap:6px;">'
                     + '<div style="font-size:0.78rem;color:var(--text-secondary);">' + (kind === 'template' ? '单选；本地模板与资料库模板都在这里，可随时切换。' : '可多选；与「💻 本地文件」添加的参考资料会一起交给 AI。') + '</div>'
-                    + '<div style="display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:52vh;">' + body + '</div>'
-                    + '<div style="display:flex;gap:8px;justify-content:flex-end;"><button onclick="wrStepLibConfirm(\'' + kind + '\')" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:0.88rem;font-weight:600;cursor:pointer;">确定</button>'
-                    + '<button class="wr-step-btn-plain" onclick="document.getElementById(\'wr-step-lib\').remove()" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:#f8fafc;font-size:0.88rem;cursor:pointer;">取消</button></div></div>';
+                    + '<div style="display:flex;flex-direction:column;gap:5px;">' + body + '</div>'
+                    + '</div>'
+                    + '<div style="' + _S2.foot + '"><button onclick="wrStepLibConfirm(\'' + kind + '\')" style="padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:0.88rem;font-weight:600;cursor:pointer;">确定</button>'
+                    + '<button class="wr-step-btn-plain" onclick="document.getElementById(\'wr-step-lib\').remove()" style="padding:9px 16px;border:1px solid var(--border);border-radius:6px;background:#f8fafc;font-size:0.88rem;cursor:pointer;">取消</button></div></div>';
                 document.body.appendChild(overlay);
             }
 
@@ -4735,7 +4770,8 @@
                 const suppList = [];
                 mats.forEach(m => suppList.push({ kind: 'mat', id: m.id, title: (m.title || m.fileName || '资料'), label: (WR_MAT_TYPES[m.matType] || {}).label || m.matType || '其它', content: m.content || '' }));
                 otherReports.forEach(rp => suppList.push({ kind: 'report', id: rp.id, title: (rp.title || '未命名报告'), label: '历史报告', content: rp.content || '' }));
-                let matHtml = '<div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--bg);">';
+                // 【2026-10-25】去掉内层 max-height/overflow：外层正文区已经是滚动容器，避免"套娃滚动"
+                let matHtml = '<div style="display:flex;flex-direction:column;gap:6px;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--bg);">';
                 if (!suppList.length) {
                     matHtml += '<div style="padding:10px;text-align:center;color:var(--text-secondary);font-size:0.82rem;">暂无可用资料或其它报告（可在「资料中心」导入）</div>';
                 } else {
@@ -4765,17 +4801,21 @@
 
                 const modal = document.createElement('div');
                 modal.id = 'wr-modify-history-modal';
-                modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10100;display:flex;align-items:center;justify-content:center;';
-                modal.innerHTML = '<div style="background:var(--card-bg);border-radius:14px;padding:20px;width:min(480px,95vw);max-height:85vh;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">'
-                    + '<div style="display:flex;align-items:center;justify-content:space-between;">'
+                modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10100;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;';
+                // 【2026-10-25 手机端修复】三段式（标题/正文滚动/按钮固定）：
+                //   补充资料可勾选几十条，原来整块面板滚动，「✅ 开始修改」会被顶到可视区外，必须往下拖才看得见。
+                modal.innerHTML = '<div style="background:var(--card-bg);border-radius:14px;width:min(480px,95vw);max-height:88vh;max-height:88svh;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;">'
+                    + '<div style="flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--border);">'
                     + '<span style="font-weight:700;font-size:0.97rem;color:var(--primary);">✏️ 修改报告：' + wrEsc((r.title||'未命名报告').slice(0,20)) + '</span>'
-                    + '<button onclick="document.getElementById(\'wr-modify-history-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-secondary);">✕</button>'
+                    + '<button onclick="document.getElementById(\'wr-modify-history-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-secondary);" aria-label="关闭">✕</button>'
                     + '</div>'
+                    + '<div class="wr-modify-body" style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 18px;display:flex;flex-direction:column;gap:12px;">'
                     + '<div style="font-size:0.8rem;color:var(--text-secondary);">请输入修改要求，AI 将基于原报告进行调整。</div>'
-                    + '<textarea id="wr-modify-instruction" placeholder="例如：增加安全检查项点、补充数据分析段落、调整报告结构..." style="width:100%;min-height:80px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;resize:vertical;font-family:inherit;"></textarea>'
+                    + '<textarea id="wr-modify-instruction" placeholder="例如：增加安全检查项点、补充数据分析段落、调整报告结构..." style="width:100%;min-height:80px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>'
                     + '<div style="font-size:0.82rem;font-weight:600;color:var(--text);">📎 补充资料（可选，勾选后随修改要求一并提交给 AI）</div>'
                     + matHtml
-                    + '<div style="display:flex;gap:10px;margin-top:4px;">'
+                    + '</div>'
+                    + '<div style="flex:0 0 auto;display:flex;gap:10px;padding:12px 18px;padding-bottom:calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--border);">'
                     + '<button id="wr-modify-confirm-btn" style="flex:1;padding:10px;background:var(--ds-blue);color:#fff;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;">✅ 开始修改</button>'
                     + '<button onclick="document.getElementById(\'wr-modify-history-modal\').remove()" style="padding:10px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:0.9rem;cursor:pointer;">取消</button>'
                     + '</div></div>';

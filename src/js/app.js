@@ -1275,7 +1275,9 @@ window.onclick = function(e) {
             box.id = '_pwa_install_tip';
             box.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:16px;';
             var card = document.createElement('div');
-            card.style.cssText = 'background:var(--card-bg,#fff);color:var(--text,#0f172a);border-radius:14px;max-width:430px;width:100%;padding:16px;font-size:.86rem;line-height:1.75;';
+            // 【2026-10-25】补 max-height + 内部滚动：卡片文案较长（含网址），矮屏/小屏上原本会溢出可视区
+            card.style.cssText = 'background:var(--card-bg,#fff);color:var(--text,#0f172a);border-radius:14px;max-width:430px;width:100%;'
+                + 'max-height:86vh;max-height:86svh;overflow-y:auto;box-sizing:border-box;padding:16px;font-size:.86rem;line-height:1.75;';
             card.innerHTML = ''
                 + '<div style="font-weight:700;margin-bottom:8px;">📲 添加到桌面（手动一步）</div>'
                 + '<div style="margin-bottom:8px;">当前浏览器没有提供页面内的安装弹窗（鸿蒙 6/7 的浏览器未开放该接口），请用菜单添加：</div>'

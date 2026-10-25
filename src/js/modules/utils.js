@@ -1359,10 +1359,16 @@ window.showChoiceModal = function(opts) {
                         : 'background:#fff;color:#334155;border:1px solid #cbd5e1;');
                 return '<button type="button" data-i="' + i + '" style="padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.86rem;' + style + '">' + (a.label || '确定') + '</button>';
             }).join('');
+            // 【2026-10-25 手机端修复】正文单独放进可滚动容器，按钮行固定在最底。
+            //   原来正文和按钮同在一个 overflow:hidden 的 .modal-content 里、正文不可滚：
+            //   调用方一旦传长正文（如导入汇总清单，几十行），正文把按钮挤出 90vh 并被直接裁掉，
+            //   用户看到的是"确认/覆盖"按钮不见了 —— 与智能写作弹框同一类问题。
             mask.innerHTML = '<div class="modal-content" style="max-width:460px;">'
+                + '<div style="flex:1 1 auto;min-height:0;overflow-y:auto;padding:16px 18px 0;">'
                 + (opts.title ? '<h3 style="margin:0 0 8px;font-size:1.02rem;">' + opts.title + '</h3>' : '')
                 + (opts.body ? '<div style="font-size:0.86rem;color:#475569;line-height:1.6;white-space:pre-wrap;">' + opts.body + '</div>' : '')
-                + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;">' + btns + '</div>'
+                + '</div>'
+                + '<div style="flex:0 0 auto;display:flex;gap:8px;justify-content:flex-end;padding:14px 18px;padding-bottom:calc(14px + env(safe-area-inset-bottom));flex-wrap:wrap;border-top:1px solid #e2e8f0;margin-top:12px;">' + btns + '</div>'
                 + '</div>';
             document.body.appendChild(mask);
             var done = function(v) { try { mask.remove(); } catch (e) {} resolve(v); };

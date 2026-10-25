@@ -1362,8 +1362,9 @@
     </main>
 
     <!-- 资料导入类型选择弹窗 -->
-    <div id="wr-import-type-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:11500;align-items:center;justify-content:center;">
-        <div style="background:#fff;border-radius:14px;padding:20px;width:min(480px,95vw);display:flex;flex-direction:column;gap:14px;">
+    <div id="wr-import-type-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:11500;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;">
+        <!-- 【2026-10-25】补 max-height + 内部滚动：矮屏（如 320×480）上原来没有任何高度约束，卡片会超出可视区 -->
+        <div style="background:#fff;border-radius:14px;padding:20px;width:min(480px,95vw);max-height:88vh;max-height:88svh;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
                 <span style="font-weight:700;font-size:1rem;color:var(--primary);">📥 导入资料 — 选择类型</span>
                 <button onclick="document.getElementById('wr-import-type-modal').style.display='none'" class="btn-close">✕</button>
@@ -1382,12 +1383,15 @@
     </div>
 
     <!-- 智能写作：自定义模板编辑弹窗 -->
-    <div id="wr-tpl-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;">
-        <div style="background:#fff;border-radius:14px;padding:20px;width:min(600px,95vw);max-height:85vh;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
+    <!-- 【2026-10-25 手机端修复】三段式：标题栏固定 / 表单滚动 / 「取消·保存模板」固定贴底。
+         原来整块面板 overflow-y:auto，模板内容框 rows=12 很高，小屏上「保存模板」被顶到可视区外，要往下拖才看得到。 -->
+    <div id="wr-tpl-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;">
+        <div style="background:#fff;border-radius:14px;width:min(600px,95vw);max-height:88vh;max-height:88svh;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;">
+            <div style="flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--border);">
                 <span id="wr-tpl-modal-title" style="font-weight:700;font-size:1rem;color:var(--primary);">📝 自定义模板</span>
                 <button onclick="wrCloseTemplateModal()" class="btn-close">✕</button>
             </div>
+            <div style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 18px;display:flex;flex-direction:column;gap:12px;">
             <div style="font-size:0.8rem;color:var(--text-secondary);padding:6px 10px;background:#eff6ff;border-radius:6px;border:1px solid #bfdbfe;">💡 自定义模板：可将历史报告文本粘贴于此，保存后在撰写报告时可选用。支持 {{占位符}} 格式。</div>
             <!-- 已保存模板列表（原缺失此容器，导致 wrRenderTplList 在开头即 return，
                  已保存模板既看不到也无从编辑/删除，只能不断新建） -->
@@ -1420,19 +1424,23 @@
                 <textarea id="wr-tpl-content" rows="12" placeholder="在此输入或粘贴历史报告内容，可使用占位符如：&#10;{{日期}}  {{部门}}  {{问题总数}}  {{典型问题列表}}  {{整改要求}}"
                     style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.87rem;resize:vertical;line-height:1.7;font-family:inherit;"></textarea>
             </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;">
+            </div>
+            <div style="flex:0 0 auto;display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;padding-bottom:calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--border);">
                 <button onclick="wrCloseTemplateModal()" style="padding:9px 20px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#f8fafc;cursor:pointer;">取消</button>
                 <button onclick="wrSaveTemplate()" style="padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;">保存模板</button>
             </div>
         </div>
     </div>
 
-    <!-- 智能写作：历史报告查看弹窗 -->
-    <div id="wr-report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;">
-        <div style="background:#fff;border-radius:14px;padding:20px;width:min(680px,96vw);max-height:88vh;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-                <span id="wr-report-modal-title" style="font-weight:700;font-size:0.97rem;color:var(--primary);flex:1;margin-right:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">报告详情</span>
-                <div style="display:flex;gap:6px;flex-shrink:0;">
+    <!-- 智能写作：历史报告查看弹窗
+         【2026-10-25 手机端修复】头部工具栏原来是一整排不换行（复制/修改/下载TXT/排版/导出DOCX/✕），
+           390px 宽的手机上「📄 导出DOCX」「✕」被挤到 x=491、521 —— 超出屏宽、必须横向拖动才点得到。
+           现在头部允许换行（flex-wrap），按钮组放不下就自动折到第二行，全部留在屏内。 -->
+    <div id="wr-report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;">
+        <div style="background:#fff;border-radius:14px;padding:16px 18px;width:min(680px,96vw);max-height:88vh;max-height:88svh;display:flex;flex-direction:column;gap:12px;overflow-y:auto;box-sizing:border-box;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:8px;">
+                <span id="wr-report-modal-title" style="font-weight:700;font-size:0.97rem;color:var(--primary);flex:1 1 160px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">报告详情</span>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0;">
                     <button onclick="wrCopyReport()" style="padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#f8fafc;font-size:0.82rem;cursor:pointer;">📋 复制</button>
                     <button onclick="wrModifyReportFromView()" style="padding:6px 12px;border:1px solid #bfdbfe;border-radius:var(--radius-sm);background:#eff6ff;color:#1d4ed8;font-size:0.82rem;cursor:pointer;">✏️ 修改</button>
                     <button onclick="wrDownloadReport()" style="padding:6px 12px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.82rem;cursor:pointer;">📥 下载TXT</button>
@@ -2283,31 +2291,36 @@
     </div>
 
     <!-- 写作资料库选择弹窗 -->
-    <div id="ds-material-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:11200;align-items:center;justify-content:center;">
-        <div style="background:var(--card-bg);border-radius:14px;padding:20px;width:min(500px,95vw);max-height:70vh;overflow-y:auto;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <!-- 【2026-10-25 手机端修复】改成三段式：标题栏固定 / 搜索+列表滚动 / 「取消·附加选中资料」固定贴底。
+         原来整块面板 overflow-y:auto + 列表写死 max-height:400px —— 小屏 40 条资料时两个按钮被推到可视区外，
+         要往下拖才点得到（和智能写作弹框同一类问题）。 -->
+    <div id="ds-material-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:11200;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;">
+        <div style="background:var(--card-bg);border-radius:14px;width:min(500px,95vw);max-height:88vh;max-height:88svh;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;">
+            <div style="flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--border);">
                 <span style="font-weight:700;font-size:0.97rem;color:var(--primary);">📚 写作资料库</span>
-                <button onclick="document.getElementById('ds-material-modal').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-secondary);">✕</button>
+                <button onclick="document.getElementById('ds-material-modal').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-secondary);" aria-label="关闭">✕</button>
             </div>
-            <div style="display:flex;gap:8px;margin-bottom:12px;">
-                <input type="text" id="ds-material-search" placeholder="搜索资料..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;" oninput="dsFilterMaterials()">
-                <select id="ds-material-type-filter" onchange="dsFilterMaterials()" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;background:var(--card-bg);">
-                    <option value="">全部类型</option>
-                    <option value="report">写作报告</option>
-                    <option value="inspect">检查信息</option>
-                    <option value="fault">故障报告</option>
-                    <!-- 【2026-09-22】原来写的是 notice —— 资料库类型字段用的是 matType（通报文电=dispatch），
-                         筛选值对不上，选任何类型都筛不出资料 -->
-                    <option value="dispatch">通报文电</option>
-                    <option value="meeting">会议纪要</option>
-                    <option value="template">写作模版</option>
-                    <option value="other">其它</option>
-                </select>
+            <div style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 18px;display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="ds-material-search" placeholder="搜索资料..." style="flex:1;min-width:0;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;" oninput="dsFilterMaterials()">
+                    <select id="ds-material-type-filter" onchange="dsFilterMaterials()" style="flex:0 0 auto;max-width:120px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;background:var(--card-bg);">
+                        <option value="">全部类型</option>
+                        <option value="report">写作报告</option>
+                        <option value="inspect">检查信息</option>
+                        <option value="fault">故障报告</option>
+                        <!-- 【2026-09-22】原来写的是 notice —— 资料库类型字段用的是 matType（通报文电=dispatch），
+                             筛选值对不上，选任何类型都筛不出资料 -->
+                        <option value="dispatch">通报文电</option>
+                        <option value="meeting">会议纪要</option>
+                        <option value="template">写作模版</option>
+                        <option value="other">其它</option>
+                    </select>
+                </div>
+                <div id="ds-material-list" style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="text-align:center;padding:20px;color:var(--text-secondary);">加载中…</div>
+                </div>
             </div>
-            <div id="ds-material-list" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
-                <div style="text-align:center;padding:20px;color:var(--text-secondary);">加载中…</div>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;">
+            <div style="flex:0 0 auto;display:flex;gap:10px;justify-content:flex-end;padding:12px 18px;padding-bottom:calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--border);">
                 <button onclick="document.getElementById('ds-material-modal').style.display='none'" class="btn-outline">取消</button>
                 <button id="ds-material-confirm" class="btn-primary-sm">附加选中资料</button>
             </div>
@@ -2385,7 +2398,9 @@
             <textarea id="ds-fim-prefix" rows="4" placeholder="例如：def fib(a):" style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font-size:.85rem;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"></textarea>
             <label style="display:block;font-size:.82rem;color:#475569;margin:10px 0 4px;">后缀（光标后内容，可选）</label>
             <textarea id="ds-fim-suffix" rows="3" placeholder="例如：&#10;    return fib(a-1) + fib(a-2)" style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font-size:.85rem;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"></textarea>
-            <div style="display:flex;gap:10px;align-items:center;margin:12px 0;">
+            <!-- 【2026-10-25 手机端修复】原来这一排不换行，模型下拉框带长选项文字把总宽撑到 480+，
+                 窄屏上「补全」按钮跑到屏幕外（实测 x=484 > 390）。改为允许换行 -->
+            <div style="display:flex;gap:10px;align-items:center;margin:12px 0;flex-wrap:wrap;">
                 <span style="font-size:.8rem;color:#475569;">模型</span>
                 <select id="ds-fim-model" style="font-size:.8rem;padding:5px 8px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;">
                     <option value="deepseek-flash">deepseek-flash（V4.1 Flash）</option>
